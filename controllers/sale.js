@@ -1,0 +1,360 @@
+const { validationResult } = require('express-validator');
+
+const Sale = require('../models/sale');
+const Product = require('../models/product');
+const Group = require('../models/group');
+
+exports.getSales = async (req, res, next) => {
+  const currentPage = req.query.page || 1;
+  const perPage = 2;
+  try {
+    const totalSales = await Sale.find({
+      creator: req.groupId
+    }).countDocuments();
+    const sales = await Sale.find({ creator: req.groupId })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+    // .skip((currentPage - 1) * perPage)
+    // .limit(perPage);
+
+    if (totalSales === 0) {
+      const error = new Error('No sales found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    res.status(200).json({
+      sales: sales,
+      totalSales: totalSales
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getSalesBySeller = async (req, res, next) => {
+  const currentPage = req.query.page || 1;
+  const perPage = 2;
+  const sellerId = req.params.sellerId;
+  try {
+    const totalSales = await Sale.find({
+      creator: req.groupId,
+      seller: sellerId
+    }).countDocuments();
+    const sales = await Sale.find({ creator: req.groupId, seller: sellerId })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+    // .skip((currentPage - 1) * perPage)
+    // .limit(perPage);
+
+    if (totalSales === 0) {
+      const error = new Error('No sales found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    res.status(200).json({
+      sales: sales,
+      totalSales: totalSales
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getSalesByCustomer = async (req, res, next) => {
+  const currentPage = req.query.page || 1;
+  const perPage = 2;
+  const customerId = req.params.customerId;
+  try {
+    const totalSales = await Sale.find({
+      creator: req.groupId,
+      customer: customerId
+    }).countDocuments();
+    const sales = await Sale.find({ creator: req.groupId, customer: customerId })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+    // .skip((currentPage - 1) * perPage)
+    // .limit(perPage);
+
+    if (totalSales === 0) {
+      const error = new Error('No sales found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    res.status(200).json({
+      sales: sales,
+      totalSales: totalSales
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getSale = async (req, res, next) => {
+  const saleId = req.params.saleId;
+  try {
+    const sale = await Sale.findOne({
+      _id: saleId,
+      creator: req.groupId
+    })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 });
+    if (!sale) {
+      const error = new Error('No sale found');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      sale: sale
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.listSale = async (req, res, next) => {
+  try {
+    let value = req.query.value;
+    const sale = await Sale.find(
+      {
+        $or: [
+          { 'ticketSerie': new RegExp(value, 'i') },
+          { 'ticketNumber': new RegExp(value, 'i') }
+        ]
+      },
+      { createdAt: 0 }
+    )
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 });
+    res.status(200).json({
+      sale: sale
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.addSale = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error('Validation failed, entered data is incorrect');
+    error.statusCode = 422;
+    throw error;
+  }
+  try {
+    if (req.body.customer) {
+      const sale = new Sale({
+        ticketType: req.body.ticketType,
+        ticketSerie: req.body.ticketSerie,
+        ticketNumber: req.body.ticketNumber,
+        details: req.body.details,
+        aggregateDiscount: req.body.aggregateDiscount,
+        total: req.body.total,
+        creator: req.groupId,
+        seller: req.body.seller,
+        customer: req.body.customer
+      });
+      let details = req.body.details;
+      await details.map(detail => {
+        decreaseStock(detail.product, detail.quantity);
+      });
+      await sale.save();
+      res.status(200).json({
+        message: 'Sale created.',
+        sale: sale
+      });
+    } else if (!req.body.customer) {
+      const sale = new Sale({
+        ticketType: req.body.ticketType,
+        ticketSerie: req.body.ticketSerie,
+        ticketNumber: req.body.ticketNumber,
+        details: req.body.details,
+        aggregateDiscount: req.body.aggregateDiscount,
+        total: req.body.total,
+        creator: req.groupId,
+        seller: req.body.seller
+      });
+      let details = req.body.details;
+      await details.map(detail => {
+        decreaseStock(detail.product, detail.quantity);
+      });
+      await sale.save();
+      res.status(200).json({
+        message: 'Sale created.',
+        sale: sale
+      });
+    }
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.updateSale = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error('Validation failed, entered data is incorrect');
+    error.statusCode = 422;
+    throw error;
+  }
+  const saleId = req.params.saleId;
+  try {
+    const sale = await Sale.findById(saleId)
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 });
+    if (!sale) {
+      const error = new Error('Could not find any sale');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (sale.creator._id.toString() !== req.groupId) {
+      const error = new Error('Not authorized');
+      error.statusCode = 403;
+      throw error;
+    }
+    const details = {
+      product: req.body.product,
+      quantity: req.body.quantity,
+      price: req.body.price
+    };
+    sale.ticketType = req.body.ticketType;
+    sale.ticketSerie = req.body.ticketSerie;
+    sale.ticketNumber = req.body.ticketNumber;
+    sale.total = req.body.total;
+    sale.aggregateDiscount = req.body.aggregateDiscount;
+    sale.details = details;
+
+    await sale.save();
+    res.status(200).json({
+      message: 'Sale updated.',
+      sale: sale
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.activateSale = async (req, res, next) => {
+  const saleId = req.params.saleId;
+  try {
+    const sale = await Sale.findById(saleId);
+    if (!sale) {
+      const error = new Error('Could not find any sale');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (sale.creator._id.toString() !== req.groupId) {
+      const error = new Error('Not authorized');
+      error.statusCode = 403;
+      throw error;
+    }
+    sale.status = 'active';
+    await sale.save();
+    res.status(200).json({
+      message: 'Sale has been activated',
+      sale: sale
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deactivateSale = async (req, res, next) => {
+  const saleId = req.params.saleId;
+  try {
+    const sale = await Sale.findById(saleId);
+    if (!sale) {
+      const error = new Error('Could not find any sale');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (sale.creator._id.toString() !== req.groupId) {
+      const error = new Error('Not authorized');
+      error.statusCode = 403;
+      throw error;
+    }
+    sale.status = 'inactive';
+    await sale.save();
+    res.status(200).json({
+      message: 'Sale has been deactivated',
+      sale: sale
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteSale = async (req, res, next) => {
+  const saleId = req.params.saleId;
+  try {
+    const sale = await Sale.findById(saleId);
+    if (!sale) {
+      const error = new Error('Could not find any sale');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (sale.creator._id.toString() !== req.groupId) {
+      const error = new Error('Not authorized.');
+      error.statusCode = 403;
+      throw error;
+    }
+    await Sale.findByIdAndRemove(saleId);
+    res.status(200).json({
+      message: 'Sale deleted'
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+const decreaseStock = async (productId, quantity) => {
+  const product = await Product.findById(productId);
+  if (!product) {
+    const error = new Error('Could not find any product');
+    error.statusCode = 404;
+    throw error;
+  }
+  newStock = product.stock - quantity;
+  product.stock = newStock;
+  await product.save();
+};
