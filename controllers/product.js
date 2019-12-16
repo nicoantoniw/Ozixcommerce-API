@@ -4,8 +4,6 @@ const Product = require('../models/product');
 const Category = require('../models/category');
 
 exports.getProducts = async (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
   try {
     const totalItems = await Product.find({
       creator: req.groupId
@@ -22,7 +20,6 @@ exports.getProducts = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-
     res.status(200).json({
       products: products,
       totalItems: totalItems
@@ -69,7 +66,7 @@ exports.getProduct = async (req, res, next) => {
   const productId = req.params.productId;
   try {
     const product = await Product.findOne({
-      _id: productId,
+      name: productId,
       creator: req.groupId
     })
       .populate('category', { name: 1, _id: 1 })
@@ -131,7 +128,7 @@ exports.addProduct = async (req, res, next) => {
       category: req.body.category,
       price: Number(req.body.price),
       percentage: Number(req.body.percentage),
-      finalPrice: Number(calculatedPrice).toFixed(3),
+      finalPrice: Number(calculatedPrice).toFixed(2),
       stock: req.body.stock,
       creator: req.groupId
     });
@@ -179,7 +176,7 @@ exports.updateProduct = async (req, res, next) => {
     product.description = req.body.description;
     product.price = req.body.price;
     product.percentage = req.body.percentage;
-    product.finalPrice = calculatedPrice;
+    product.finalPrice = Number(calculatedPrice).toFixed(2);
     product.stock = req.body.stock;
     product.category = req.body.category;
     await product.save();

@@ -11,7 +11,8 @@ const personSchema = new Schema({
     required: false
   },
   birth: {
-    type: Date
+    type: Date,
+    required: false
   },
   age: {
     type: Number

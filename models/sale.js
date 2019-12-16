@@ -33,16 +33,15 @@ const saleSchema = new Schema({
     type: Number,
     required: true
   },
-  aggregateDiscount: {
-    type: Number,
-    required: true,
-    default: 0
-  },
   details: [
     {
+      aggregateDiscount: {
+        type: Number,
+        required: true,
+        default: 0
+      },
       product: {
-        type: Schema.Types.ObjectId,
-        ref: 'Product',
+        type: String,
         required: true
       },
       quantity: {
@@ -58,7 +57,7 @@ const saleSchema = new Schema({
   status: {
     type: String,
     required: true,
-    default: 'active'
+    default: 'activo'
   },
   createdAt: {
     type: Date,

@@ -173,15 +173,14 @@ exports.addSale = async (req, res, next) => {
         ticketSerie: req.body.ticketSerie,
         ticketNumber: req.body.ticketNumber,
         details: req.body.details,
-        aggregateDiscount: req.body.aggregateDiscount,
         total: req.body.total,
         creator: req.groupId,
         seller: req.body.seller,
         customer: req.body.customer
       });
       let details = req.body.details;
-      await details.map(detail => {
-        decreaseStock(detail.product, detail.quantity);
+      await details.map(async detail => {
+        await decreaseStock(detail.product, Number(detail.quantity), req.groupId);
       });
       await sale.save();
       res.status(200).json({
@@ -194,7 +193,6 @@ exports.addSale = async (req, res, next) => {
         ticketSerie: req.body.ticketSerie,
         ticketNumber: req.body.ticketNumber,
         details: req.body.details,
-        aggregateDiscount: req.body.aggregateDiscount,
         total: req.body.total,
         creator: req.groupId,
         seller: req.body.seller
@@ -347,14 +345,14 @@ exports.deleteSale = async (req, res, next) => {
   }
 };
 
-const decreaseStock = async (productId, quantity) => {
-  const product = await Product.findById(productId);
+const decreaseStock = async (productId, quantity, creator) => {
+  const product = await Product.findOne({ name: productId, creator: creator });
   if (!product) {
     const error = new Error('Could not find any product');
     error.statusCode = 404;
     throw error;
   }
-  newStock = product.stock - quantity;
+  const newStock = parseInt(product.stock) - Number(quantity);
   product.stock = newStock;
   await product.save();
 };

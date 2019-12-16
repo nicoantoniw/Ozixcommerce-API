@@ -31,9 +31,6 @@ router.post(
     body('ticketNumber')
       .isString()
       .trim(),
-    body('aggregateDiscount')
-      .isNumeric()
-      .trim()
   ],
   auth.isSeller,
   saleController.addSale
@@ -50,9 +47,6 @@ router.put(
     body('ticketNumber')
       .isString()
       .trim(),
-    body('aggregateDiscount')
-      .isNumeric()
-      .trim()
   ],
   auth.isSeller,
   saleController.updateSale

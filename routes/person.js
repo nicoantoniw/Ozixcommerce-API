@@ -14,32 +14,11 @@ router.get('/list/suppliers', auth.isUser, personController.listSupplier);
 router.post(
   '/add',
   [
-    body('name')
-      .isString()
-      .trim()
-      .isLength({ min: 2, max: 40 }),
-    body('lastName')
-      .isString()
-      .trim()
-      .isLength({ min: 2, max: 40 }),
+
     body('company')
       .trim()
       .isString(),
-    body('typeId')
-      .trim()
-      .isString(),
-    body('numberId')
-      .trim()
-      .isString(),
-    body('address')
-      .trim()
-      .isAlphanumeric(),
-    body('phoneNumber')
-      .trim()
-      .isNumeric(),
-    body('email')
-      .trim()
-      .isEmail()
+
   ],
   auth.isSeller,
   personController.addPerson
@@ -71,32 +50,9 @@ router.post(
 router.put(
   '/update/:personId',
   [
-    body('name')
-      .isString()
-      .trim()
-      .isLength({ min: 2, max: 40 }),
-    body('lastName')
-      .isString()
-      .trim()
-      .isLength({ min: 2, max: 40 }),
     body('company')
       .trim()
-      .isString(),
-    body('typeId')
-      .trim()
-      .isString(),
-    body('numberId')
-      .trim()
-      .isString(),
-    body('address')
-      .trim()
-      .isAlphanumeric(),
-    body('phoneNumber')
-      .trim()
-      .isNumeric(),
-    body('email')
-      .trim()
-      .isEmail()
+      .isString()
   ],
   auth.isSeller,
   personController.updatePerson

@@ -21,9 +21,6 @@ router.get('/list', auth.isUser, purchaseController.listPurchase);
 router.post(
   '/add',
   [
-    body('title')
-      .isString()
-      .trim(),
     body('description')
       .isString()
       .trim(),
@@ -46,9 +43,6 @@ router.post(
 router.put(
   '/update/:purchaseId',
   [
-    body('title')
-      .isString()
-      .trim(),
     body('description')
       .isString()
       .trim(),

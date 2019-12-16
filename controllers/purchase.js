@@ -2,7 +2,6 @@ const { validationResult } = require('express-validator');
 
 const Purchase = require('../models/purchase');
 const Product = require('../models/product');
-const Group = require('../models/group');
 
 exports.getPurchases = async (req, res, next) => {
   const currentPage = req.query.page || 1;
@@ -23,7 +22,6 @@ exports.getPurchases = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-
     res.status(200).json({
       purchases: purchases,
       totalPurchases: totalPurchases
@@ -129,7 +127,6 @@ exports.addPurchase = async (req, res, next) => {
   }
   try {
     const purchase = new Purchase({
-      title: req.body.title,
       description: req.body.description,
       ticketType: req.body.ticketType,
       ticketSerie: req.body.ticketSerie,
@@ -140,8 +137,8 @@ exports.addPurchase = async (req, res, next) => {
       supplier: req.body.supplier
     });
     let details = req.body.details;
-    await details.map(detail => {
-      increaseStock(detail.product, detail.quantity, Number(detail.price));
+    await details.map(async detail => {
+      await increaseStock(detail.product, Number(detail.quantity), Number(detail.price), req.groupId);
     });
     await purchase.save();
     res.status(200).json({
@@ -178,7 +175,6 @@ exports.updatePurchase = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    purchase.title = req.body.title;
     purchase.description = req.body.description;
     purchase.ticketType = req.body.ticketType;
     purchase.ticketSerie = req.body.ticketSerie;
@@ -186,8 +182,8 @@ exports.updatePurchase = async (req, res, next) => {
     purchase.total = req.body.total;
     purchase.details = req.body.details;
     let details = req.body.details;
-    await details.map(detail => {
-      increaseStock(detail.product, 0, Number(detail.price));
+    await details.map(async detail => {
+      await increaseStock(detail.product, Number(detail.quantity), Number(detail.price), req.groupId);
     });
     await purchase.save();
     res.status(200).json({
@@ -284,17 +280,25 @@ exports.deletePurchase = async (req, res, next) => {
   }
 };
 
-const increaseStock = async (productId, quantity, price) => {
-  const product = await Product.findById(productId);
-  if (!product) {
-    const error = new Error('Could not find any product');
-    error.statusCode = 404;
-    throw error;
+const increaseStock = async (productId, quantity, price, creator) => {
+  try {
+    const product = await Product.findOne({ name: productId, creator: creator });
+    if (!product) {
+      const error = new Error('Could not find any product');
+      error.statusCode = 404;
+      throw error;
+    }
+    const newStock = parseInt(product.stock) + Number(quantity);
+    product.stock = newStock;
+    // product.price = price;
+    // product.finalPrice =
+    //   price + (Number(product.percentage) * Number(product.price)) / 100;
+    await product.save();
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    console.log(err);
   }
-  newStock = Number(product.stock) + Number(quantity);
-  product.stock = newStock;
-  product.price = price;
-  product.finalPrice =
-    price + (Number(product.percentage) * Number(product.price)) / 100;
-  await product.save();
+
 };

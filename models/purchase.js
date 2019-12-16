@@ -12,10 +12,6 @@ const purchaseSchema = new Schema({
     ref: 'Person',
     required: false
   },
-  title: {
-    type: String,
-    required: true
-  },
   description: {
     type: String,
     required: true
@@ -39,8 +35,7 @@ const purchaseSchema = new Schema({
   details: [
     {
       product: {
-        type: Schema.Types.ObjectId,
-        ref: 'Product',
+        type: String,
         required: true
       },
       quantity: {
@@ -56,7 +51,7 @@ const purchaseSchema = new Schema({
   status: {
     type: String,
     required: true,
-    default: 'active'
+    default: 'activo'
   },
   createdAt: {
     type: Date,
