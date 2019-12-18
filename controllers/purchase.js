@@ -93,37 +93,12 @@ exports.getPurchase = async (req, res, next) => {
   }
 };
 
-exports.listPurchase = async (req, res, next) => {
-  try {
-    let value = req.query.value;
-    const purchase = await Purchase.find(
-      {
-        $or: [
-          { 'title': new RegExp(value, 'i') },
-          { 'ticketNumber': new RegExp(value, 'i') }
-        ]
-      },
-      { createdAt: 0 }
-    )
-      .populate('supplier', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 });
-    res.status(200).json({
-      purchase: purchase
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 exports.addPurchase = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   try {
     const purchase = new Purchase({

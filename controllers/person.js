@@ -98,67 +98,12 @@ exports.getPerson = async (req, res, next) => {
   }
 };
 
-exports.listCustomer = async (req, res, next) => {
-  try {
-    let value = req.query.value;
-    const customer = await Person.find(
-      {
-        type: 'customer',
-        $or: [
-          { 'name': new RegExp(value, 'i') },
-          { 'lastName': new RegExp(value, 'i') },
-          { 'numberId': new RegExp(value, 'i') },
-          { 'email': new RegExp(value, 'i') }
-        ]
-      },
-      { createdAt: 0 }
-    )
-      .populate('creator', { name: 1, _id: 1 });
-    res.status(200).json({
-      customer: customer
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.listSupplier = async (req, res, next) => {
-  try {
-    let value = req.query.value;
-    const supplier = await Person.find(
-      {
-        type: 'supplier',
-        $or: [
-
-          { 'name': { $regex: value, $options: 'i' } },
-          { 'lastName': { $regex: value, $options: 'i' } },
-          { 'company': { $regex: value, $options: 'i' } },
-          { 'numberId': { $regex: value, $options: 'i' } },
-          { 'email': { $regex: value, $options: 'i' } },
-        ]
-      },
-      { createdAt: 0 }
-    ).populate('creator', { name: 1, _id: 1 });
-    res.status(200).json({
-      supplier: supplier
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 exports.addPerson = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const calculatedAge = getAge(req.body.birth);
   const person = new Person({
@@ -194,7 +139,7 @@ exports.updatePerson = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const personId = req.params.personId;
   try {

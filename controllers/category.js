@@ -50,37 +50,12 @@ exports.getCategory = async (req, res, next) => {
     next(err);
   }
 };
-
-// exports.listCategory = async (req, res, next) => {
-//   try {
-//     let value = req.query.value;
-//     const category = await Category.find(
-//       {
-//         $or: [
-
-//           { 'name': { $regex: value, $options: 'i' } },
-//           { 'description': { $regex: value, $options: 'i' } }
-//         ]
-//       },
-//       { createdAt: 0 }
-//     ).populate('creator', { name: 1, _id: 1 });
-//     res.status(200).json({
-//       category: category
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// };
-
 exports.addCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const category = new Category({
     name: req.body.name,
@@ -106,7 +81,7 @@ exports.updateCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const categoryId = req.params.categoryId;
   try {

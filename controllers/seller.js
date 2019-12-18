@@ -55,36 +55,12 @@ exports.getSeller = async (req, res, next) => {
   }
 };
 
-exports.listSeller = async (req, res, next) => {
-  try {
-    let value = req.query.value;
-    const seller = await Seller.find(
-      {
-        $or: [
-          { 'name': new RegExp(value, 'i') },
-          { 'lastName': new RegExp(value, 'i') },
-          { 'numberId': new RegExp(value, 'i') }
-        ]
-      },
-      { createdAt: 0 }
-    ).populate('creator', { name: 1, _id: 1 });
-    res.status(200).json({
-      seller: seller
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 exports.addSeller = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const calculatedAge = getAge(req.body.birth);
   const seller = new Seller({
@@ -119,7 +95,7 @@ exports.updateSeller = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const sellerId = req.params.sellerId;
   try {

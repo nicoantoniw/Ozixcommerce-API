@@ -8,7 +8,6 @@ const router = express.Router();
 
 router.get('/sellers', auth.isUser, sellerController.getSellers);
 router.get('/sellers/:sellerId', auth.isUser, sellerController.getSeller);
-router.get('/list', auth.isUser, sellerController.listSeller);
 router.post(
   '/add',
   [

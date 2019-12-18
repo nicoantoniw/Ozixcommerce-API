@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 
 const Product = require('../models/product');
-const Category = require('../models/category');
+const Group = require('../models/group')
 
 exports.getProducts = async (req, res, next) => {
   try {
@@ -12,8 +12,6 @@ exports.getProducts = async (req, res, next) => {
       .populate('category', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
-    // .skip((currentPage - 1) * perPage)
-    // .limit(perPage);
 
     if (totalItems === 0) {
       const error = new Error('No products found');
@@ -87,36 +85,12 @@ exports.getProduct = async (req, res, next) => {
   }
 };
 
-exports.listProduct = async (req, res, next) => {
-  let value = req.query.value;
-  try {
-    const product = await Product.find({
-      $or: [
-
-        { 'name': { $regex: value, $options: 'i' } },
-        { 'description': { $regex: value, $options: 'i' } },
-        { 'code': { $regex: value, $options: 'i' } }
-      ]
-    }, { createdAt: 0 })
-      .populate('category', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 });
-    res.status(200).json({
-      product: product
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 exports.addProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   try {
     const calculatedPercentage = (Number(req.body.price) * Number(req.body.percentage)) / 100;
@@ -150,7 +124,7 @@ exports.updateProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const productId = req.params.productId;
   try {

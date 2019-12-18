@@ -2,11 +2,8 @@ const { validationResult } = require('express-validator');
 
 const Sale = require('../models/sale');
 const Product = require('../models/product');
-const Group = require('../models/group');
 
 exports.getSales = async (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
   try {
     const totalSales = await Sale.find({
       creator: req.groupId
@@ -16,8 +13,6 @@ exports.getSales = async (req, res, next) => {
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
-    // .skip((currentPage - 1) * perPage)
-    // .limit(perPage);
 
     if (totalSales === 0) {
       const error = new Error('No sales found');
@@ -38,8 +33,6 @@ exports.getSales = async (req, res, next) => {
 };
 
 exports.getSalesBySeller = async (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
   const sellerId = req.params.sellerId;
   try {
     const totalSales = await Sale.find({
@@ -51,8 +44,6 @@ exports.getSalesBySeller = async (req, res, next) => {
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
-    // .skip((currentPage - 1) * perPage)
-    // .limit(perPage);
 
     if (totalSales === 0) {
       const error = new Error('No sales found');
@@ -73,8 +64,6 @@ exports.getSalesBySeller = async (req, res, next) => {
 };
 
 exports.getSalesByCustomer = async (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
   const customerId = req.params.customerId;
   try {
     const totalSales = await Sale.find({
@@ -86,8 +75,6 @@ exports.getSalesByCustomer = async (req, res, next) => {
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
-    // .skip((currentPage - 1) * perPage)
-    // .limit(perPage);
 
     if (totalSales === 0) {
       const error = new Error('No sales found');
@@ -133,38 +120,13 @@ exports.getSale = async (req, res, next) => {
   }
 };
 
-exports.listSale = async (req, res, next) => {
-  try {
-    let value = req.query.value;
-    const sale = await Sale.find(
-      {
-        $or: [
-          { 'ticketSerie': new RegExp(value, 'i') },
-          { 'ticketNumber': new RegExp(value, 'i') }
-        ]
-      },
-      { createdAt: 0 }
-    )
-      .populate('seller', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 });
-    res.status(200).json({
-      sale: sale
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
 
 exports.addSale = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   try {
     if (req.body.customer) {
@@ -220,7 +182,7 @@ exports.updateSale = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error)
   }
   const saleId = req.params.saleId;
   try {

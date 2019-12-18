@@ -17,7 +17,6 @@ router.get(
   auth.isUser,
   purchaseController.getPurchasesBySupplier
 );
-router.get('/list', auth.isUser, purchaseController.listPurchase);
 router.post(
   '/add',
   [

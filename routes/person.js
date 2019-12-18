@@ -9,8 +9,6 @@ const router = express.Router();
 router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/suppliers', auth.isUser, personController.getSuppliers);
 router.get('/persons/:personId', auth.isUser, personController.getPerson);
-router.get('/list/customers', auth.isUser, personController.listCustomer);
-router.get('/list/suppliers', auth.isUser, personController.listSupplier);
 router.post(
   '/add',
   [

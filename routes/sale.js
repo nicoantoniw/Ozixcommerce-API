@@ -18,7 +18,6 @@ router.get(
   auth.isUser,
   saleController.getSalesByCustomer
 );
-router.get('/list', auth.isUser, saleController.listSale);
 router.post(
   '/add',
   [

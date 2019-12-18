@@ -43,7 +43,7 @@ app.use('/api/sale', saleRoutes);
 app.use('/api/purchase', purchasesRoutes);
 
 app.use((error, req, res, next) => {
-  console.log(error);
+  console.log(error)
   const status = error.statusCode || 500;
   const message = error.message;
   const data = error.data;

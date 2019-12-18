@@ -13,7 +13,6 @@ router.get(
   auth.isUser,
   productController.getProductsByCategory
 );
-router.get('/list', auth.isUser, productController.listProduct);
 router.post(
   '/add',
   [
