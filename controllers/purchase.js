@@ -138,7 +138,7 @@ exports.addPurchase = async (req, res, next) => {
     });
     let details = req.body.details;
     await details.map(async detail => {
-      await increaseStock(detail.product, Number(detail.quantity), Number(detail.price), req.groupId);
+      await increaseStock(detail.product, Number(detail.quantity), Number(detail.percentage), Number(detail.newPrice), req.groupId);
     });
     await purchase.save();
     res.status(200).json({
@@ -153,50 +153,50 @@ exports.addPurchase = async (req, res, next) => {
   }
 };
 
-exports.updatePurchase = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error('Validation failed, entered data is incorrect');
-    error.statusCode = 422;
-    throw error;
-  }
-  const purchaseId = req.params.purchaseId;
-  try {
-    const purchase = await Purchase.findById(purchaseId)
-      .populate('supplier', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 });
-    if (!purchase) {
-      const error = new Error('Could not find any purchase');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (purchase.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    purchase.description = req.body.description;
-    purchase.ticketType = req.body.ticketType;
-    purchase.ticketSerie = req.body.ticketSerie;
-    purchase.ticketNumber = req.body.ticketNumber;
-    purchase.total = req.body.total;
-    purchase.details = req.body.details;
-    let details = req.body.details;
-    await details.map(async detail => {
-      await increaseStock(detail.product, Number(detail.quantity), Number(detail.price), req.groupId);
-    });
-    await purchase.save();
-    res.status(200).json({
-      message: 'Purchase updated.',
-      purchase: purchase
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
+// exports.updatePurchase = async (req, res, next) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     const error = new Error('Validation failed, entered data is incorrect');
+//     error.statusCode = 422;
+//     throw error;
+//   }
+//   const purchaseId = req.params.purchaseId;
+//   try {
+//     const purchase = await Purchase.findById(purchaseId)
+//       .populate('supplier', { name: 1, _id: 1 })
+//       .populate('creator', { name: 1, _id: 1 });
+//     if (!purchase) {
+//       const error = new Error('Could not find any purchase');
+//       error.statusCode = 404;
+//       throw error;
+//     }
+//     if (purchase.creator._id.toString() !== req.groupId) {
+//       const error = new Error('Not authorized');
+//       error.statusCode = 403;
+//       throw error;
+//     }
+//     purchase.description = req.body.description;
+//     purchase.ticketType = req.body.ticketType;
+//     purchase.ticketSerie = req.body.ticketSerie;
+//     purchase.ticketNumber = req.body.ticketNumber;
+//     purchase.total = req.body.total;
+//     purchase.details = req.body.details;
+//     let details = req.body.details;
+//     await details.map(async detail => {
+//       await increaseStock(detail.product, Number(detail.quantity), Number(detail.newPrice), req.groupId);
+//     });
+//     await purchase.save();
+//     res.status(200).json({
+//       message: 'Purchase updated.',
+//       purchase: purchase
+//     });
+//   } catch (err) {
+//     if (!err.statusCode) {
+//       err.statusCode = 500;
+//     }
+//     next(err);
+//   }
+// };
 
 exports.activatePurchase = async (req, res, next) => {
   const purchaseId = req.params.purchaseId;
@@ -212,7 +212,7 @@ exports.activatePurchase = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    purchase.status = 'active';
+    purchase.status = 'activo';
     await purchase.save();
     res.status(200).json({
       message: 'Purchase has been activated',
@@ -240,7 +240,7 @@ exports.deactivatePurchase = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    purchase.status = 'inactive';
+    purchase.status = 'inactivo';
     await purchase.save();
     res.status(200).json({
       message: 'Purchase has been deactivated',
@@ -280,7 +280,7 @@ exports.deletePurchase = async (req, res, next) => {
   }
 };
 
-const increaseStock = async (productId, quantity, price, creator) => {
+const increaseStock = async (productId, quantity, percentage, price, creator) => {
   try {
     const product = await Product.findOne({ name: productId, creator: creator });
     if (!product) {
@@ -290,9 +290,14 @@ const increaseStock = async (productId, quantity, price, creator) => {
     }
     const newStock = parseInt(product.stock) + Number(quantity);
     product.stock = newStock;
-    // product.price = price;
-    // product.finalPrice =
-    //   price + (Number(product.percentage) * Number(product.price)) / 100;
+    if (price !== 0) {
+      product.price = price;
+      product.finalPrice =
+        price + percentage * price / 100;
+    }
+    if (percentage !== 0) {
+      product.percentage = percentage
+    }
     await product.save();
   } catch (err) {
     if (!err.statusCode) {

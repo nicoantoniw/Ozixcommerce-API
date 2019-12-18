@@ -277,7 +277,7 @@ exports.activateSale = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    sale.status = 'active';
+    sale.status = 'activo';
     await sale.save();
     res.status(200).json({
       message: 'Sale has been activated',
@@ -305,7 +305,7 @@ exports.deactivateSale = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    sale.status = 'inactive';
+    sale.status = 'inactivo';
     await sale.save();
     res.status(200).json({
       message: 'Sale has been deactivated',

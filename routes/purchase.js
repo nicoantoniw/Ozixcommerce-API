@@ -40,28 +40,28 @@ router.post(
   auth.isSeller,
   purchaseController.addPurchase
 );
-router.put(
-  '/update/:purchaseId',
-  [
-    body('description')
-      .isString()
-      .trim(),
-    body('ticketType')
-      .isString()
-      .trim(),
-    body('ticketSerie')
-      .isNumeric()
-      .trim(),
-    body('ticketNumber')
-      .isString()
-      .trim(),
-    body('total')
-      .isFloat()
-      .trim()
-  ],
-  auth.isSeller,
-  purchaseController.updatePurchase
-);
+// router.put(
+//   '/update/:purchaseId',
+//   [
+//     body('description')
+//       .isString()
+//       .trim(),
+//     body('ticketType')
+//       .isString()
+//       .trim(),
+//     body('ticketSerie')
+//       .isNumeric()
+//       .trim(),
+//     body('ticketNumber')
+//       .isString()
+//       .trim(),
+//     body('total')
+//       .isFloat()
+//       .trim()
+//   ],
+//   auth.isSeller,
+//   purchaseController.updatePurchase
+// );
 router.patch(
   '/activate/:purchaseId',
   auth.isAdmin,

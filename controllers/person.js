@@ -248,7 +248,7 @@ exports.activatePerson = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    person.status = 'active';
+    person.status = 'activo';
     await person.save();
     res.status(200).json({
       message: 'Person has been activated',
@@ -276,7 +276,7 @@ exports.deactivatePerson = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    person.status = 'inactive';
+    person.status = 'inactivo';
     await person.save();
     res.status(200).json({
       message: 'Person has been deactivated',
