@@ -21,10 +21,6 @@ const saleSchema = new Schema({
     type: String,
     required: true
   },
-  ticketSerie: {
-    type: String,
-    required: true
-  },
   ticketNumber: {
     type: String,
     required: true

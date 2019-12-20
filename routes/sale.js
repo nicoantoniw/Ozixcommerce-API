@@ -6,16 +6,16 @@ const auth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get('/sales', auth.isUser, saleController.getSales);
-router.get('/sales/:saleId', auth.isUser, saleController.getSale);
+router.get('/sales', auth.isAdmin, saleController.getSales);
+router.get('/sales/:saleId', auth.isAdmin, saleController.getSale);
 router.get(
   '/sales/seller/:sellerId',
-  auth.isUser,
+  auth.isAdmin,
   saleController.getSalesBySeller
 );
 router.get(
   '/sales/customer/:customerId',
-  auth.isUser,
+  auth.isAdmin,
   saleController.getSalesByCustomer
 );
 router.post(
@@ -24,14 +24,11 @@ router.post(
     body('ticketType')
       .isString()
       .trim(),
-    body('ticketSerie')
-      .isString()
-      .trim(),
     body('ticketNumber')
       .isString()
       .trim(),
   ],
-  auth.isSeller,
+  auth.isUser,
   saleController.addSale
 );
 router.put(
@@ -40,14 +37,11 @@ router.put(
     body('ticketType')
       .isString()
       .trim(),
-    body('ticketSerie')
-      .isString()
-      .trim(),
     body('ticketNumber')
       .isString()
       .trim(),
   ],
-  auth.isSeller,
+  auth.isAdmin,
   saleController.updateSale
 );
 router.patch('/activate/:saleId', auth.isAdmin, saleController.activateSale);

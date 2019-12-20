@@ -6,7 +6,8 @@ const auth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get('/sellers', auth.isUser, sellerController.getSellers);
+router.get('/sellers', auth.isAdmin, sellerController.getSellers);
+router.get('/sellersFS', auth.isUser, sellerController.getSellersForSale);
 router.get('/sellers/:sellerId', auth.isUser, sellerController.getSeller);
 router.post(
   '/add',
@@ -35,7 +36,7 @@ router.post(
       .trim()
       .isEmail()
   ],
-  auth.isSeller,
+  auth.isAdmin,
   sellerController.addSeller
 );
 router.post(
@@ -89,7 +90,7 @@ router.put(
       .trim()
       .isEmail()
   ],
-  auth.isSeller,
+  auth.isAdmin,
   sellerController.updateSeller
 );
 router.patch(

@@ -32,6 +32,36 @@ exports.getSellers = async (req, res, next) => {
   }
 };
 
+exports.getSellersForSale = async (req, res, next) => {
+  try {
+    const totalSellers = await Seller.find({
+      creator: req.groupId
+    }).countDocuments();
+    const sellers = await Seller.find({
+      creator: req.groupId
+    })
+      .populate('creator', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+    // .skip((currentPage - 1) * perPage)
+    // .limit(perPage);
+
+    if (totalSellers === 0) {
+      const error = new Error('No sellers found');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      sellers: sellers,
+      totalSellers: totalSellers
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 exports.getSeller = async (req, res, next) => {
   const sellerId = req.params.sellerId;
   try {
@@ -225,7 +255,7 @@ exports.addDebt = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error);
   }
   const sellerId = req.params.sellerId;
   const debt = Number(req.body.debt);
@@ -263,7 +293,7 @@ exports.subtractDebt = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error);
   }
   const sellerId = req.params.sellerId;
   const debt = Number(req.body.debt);

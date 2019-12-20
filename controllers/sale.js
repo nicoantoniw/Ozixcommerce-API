@@ -132,7 +132,6 @@ exports.addSale = async (req, res, next) => {
     if (req.body.customer) {
       const sale = new Sale({
         ticketType: req.body.ticketType,
-        ticketSerie: req.body.ticketSerie,
         ticketNumber: req.body.ticketNumber,
         details: req.body.details,
         total: req.body.total,
@@ -152,7 +151,6 @@ exports.addSale = async (req, res, next) => {
     } else if (!req.body.customer) {
       const sale = new Sale({
         ticketType: req.body.ticketType,
-        ticketSerie: req.body.ticketSerie,
         ticketNumber: req.body.ticketNumber,
         details: req.body.details,
         total: req.body.total,
@@ -206,7 +204,6 @@ exports.updateSale = async (req, res, next) => {
       price: req.body.price
     };
     sale.ticketType = req.body.ticketType;
-    sale.ticketSerie = req.body.ticketSerie;
     sale.ticketNumber = req.body.ticketNumber;
     sale.total = req.body.total;
     sale.aggregateDiscount = req.body.aggregateDiscount;

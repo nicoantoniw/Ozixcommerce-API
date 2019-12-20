@@ -6,10 +6,6 @@ const personSchema = new Schema({
     type: String,
     required: false
   },
-  lastName: {
-    type: String,
-    required: false
-  },
   birth: {
     type: Date,
     required: false

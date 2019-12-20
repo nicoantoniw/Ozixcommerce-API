@@ -104,7 +104,6 @@ exports.addPurchase = async (req, res, next) => {
     const purchase = new Purchase({
       description: req.body.description,
       ticketType: req.body.ticketType,
-      ticketSerie: req.body.ticketSerie,
       ticketNumber: req.body.ticketNumber,
       total: req.body.total,
       details: req.body.details,
@@ -152,7 +151,6 @@ exports.addPurchase = async (req, res, next) => {
 //     }
 //     purchase.description = req.body.description;
 //     purchase.ticketType = req.body.ticketType;
-//     purchase.ticketSerie = req.body.ticketSerie;
 //     purchase.ticketNumber = req.body.ticketNumber;
 //     purchase.total = req.body.total;
 //     purchase.details = req.body.details;

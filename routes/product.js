@@ -69,17 +69,17 @@ router.put(
 );
 router.patch(
   '/activate/:productId',
-  auth.isAdmin,
+  auth.isSeller,
   productController.activateProduct
 );
 router.patch(
   '/deactivate/:productId',
-  auth.isAdmin,
+  auth.isSeller,
   productController.deactivateProduct
 );
 router.delete(
   '/delete/:productId',
-  auth.isAdmin,
+  auth.isSeller,
   productController.deleteProduct
 );
 

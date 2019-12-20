@@ -20,10 +20,6 @@ const purchaseSchema = new Schema({
     type: String,
     required: true
   },
-  ticketSerie: {
-    type: String,
-    required: true
-  },
   ticketNumber: {
     type: String,
     required: true

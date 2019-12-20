@@ -108,7 +108,6 @@ exports.addPerson = async (req, res, next) => {
   const calculatedAge = getAge(req.body.birth);
   const person = new Person({
     name: req.body.name,
-    lastName: req.body.lastName,
     birth: req.body.birth,
     age: calculatedAge,
     type: req.body.type,
@@ -156,7 +155,6 @@ exports.updatePerson = async (req, res, next) => {
     }
     const calculatedAge = getAge(req.body.birth);
     person.name = req.body.name;
-    person.lastName = req.body.lastName;
     person.birth = req.body.birth;
     person.age = calculatedAge;
     person.type = req.body.type;
@@ -266,7 +264,7 @@ exports.addDebt = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error);
   }
   const personId = req.params.personId;
   const debt = Number(req.body.debt);
@@ -304,7 +302,7 @@ exports.subtractDebt = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    throw error;
+    next(error);
   }
   const personId = req.params.personId;
   const debt = Number(req.body.debt);

@@ -6,15 +6,15 @@ const auth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get('/purchases', auth.isUser, purchaseController.getPurchases);
+router.get('/purchases', auth.isAdmin, purchaseController.getPurchases);
 router.get(
   '/purchases/:purchaseId',
-  auth.isUser,
+  auth.isAdmin,
   purchaseController.getPurchase
 );
 router.get(
   '/purchases/supplier/:supplierId',
-  auth.isUser,
+  auth.isAdmin,
   purchaseController.getPurchasesBySupplier
 );
 router.post(
@@ -26,9 +26,6 @@ router.post(
     body('ticketType')
       .isString()
       .trim(),
-    body('ticketSerie')
-      .isNumeric()
-      .trim(),
     body('ticketNumber')
       .isString()
       .trim(),
@@ -36,7 +33,7 @@ router.post(
       .isFloat()
       .trim()
   ],
-  auth.isSeller,
+  auth.isAdmin,
   purchaseController.addPurchase
 );
 // router.put(

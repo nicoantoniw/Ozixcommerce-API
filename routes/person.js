@@ -7,7 +7,7 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/customers', auth.isUser, personController.getCustomers);
-router.get('/suppliers', auth.isUser, personController.getSuppliers);
+router.get('/suppliers', auth.isAdmin, personController.getSuppliers);
 router.get('/persons/:personId', auth.isUser, personController.getPerson);
 router.post(
   '/add',
@@ -18,7 +18,7 @@ router.post(
       .isString(),
 
   ],
-  auth.isSeller,
+  auth.isUser,
   personController.addPerson
 );
 router.post(
@@ -30,7 +30,7 @@ router.post(
     .isString()
     .trim()
     .isLength({ max: 100 }),
-  auth.isAdmin,
+  auth.isUser,
   personController.addDebt
 );
 router.post(
@@ -42,7 +42,7 @@ router.post(
     .isString()
     .trim()
     .isLength({ max: 100 }),
-  auth.isAdmin,
+  auth.isUser,
   personController.subtractDebt
 );
 router.put(
@@ -52,19 +52,19 @@ router.put(
       .trim()
       .isString()
   ],
-  auth.isSeller,
+  auth.isUser,
   personController.updatePerson
 );
 router.patch(
   '/activate/:personId',
-  auth.isAdmin,
+  auth.isUser,
   personController.activatePerson
 );
 router.patch(
   '/deactivate/:personId',
-  auth.isAdmin,
+  auth.isUser,
   personController.deactivatePerson
 );
-router.delete('/delete/:personId', auth.isAdmin, personController.deletePerson);
+router.delete('/delete/:personId', auth.isSeller, personController.deletePerson);
 
 module.exports = router;
