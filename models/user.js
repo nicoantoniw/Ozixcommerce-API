@@ -21,7 +21,8 @@ const userSchema = new Schema({
   },
   status: {
     type: String,
-    default: 'active'
+    default: 'active',
+    required: true
   },
   sales: [
     {

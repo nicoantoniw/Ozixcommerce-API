@@ -4,18 +4,14 @@ const Purchase = require('../models/purchase');
 const Product = require('../models/product');
 
 exports.getPurchases = async (req, res, next) => {
-  const currentPage = req.query.page || 1;
-  const perPage = 2;
   try {
     const totalPurchases = await Purchase.find({
       creator: req.groupId
     }).countDocuments();
     const purchases = await Purchase.find({ creator: req.groupId })
-      .populate('supplier', { name: 1, _id: 1 })
+      .populate('supplier', { company: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
-    // .skip((currentPage - 1) * perPage)
-    // .limit(perPage);
 
     if (totalPurchases === 0) {
       const error = new Error('No purchases found');
@@ -75,7 +71,7 @@ exports.getPurchase = async (req, res, next) => {
   const purchaseId = req.params.purchaseId;
   try {
     const purchase = await Purchase.findById(purchaseId)
-      .populate('supplier', { name: 1, _id: 1 })
+      .populate('supplier', { company: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 });
     if (!purchase) {
       const error = new Error('No purchase found');

@@ -12,14 +12,14 @@ const groupSchema = new Schema({
       ref: 'User'
     }
   ],
+  plan: {
+    type: String,
+    required: true
+  },
   status: {
     type: String,
     default: 'active',
     required: true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
 });
 

@@ -14,11 +14,9 @@ router.post(
   [
     body('name')
       .isString()
-      .trim()
       .isLength({ max: 40 }),
     body('lastName')
       .isString()
-      .trim()
       .isLength({ max: 40 }),
     body('typeId')
       .trim()
@@ -28,7 +26,7 @@ router.post(
       .isNumeric(),
     body('address')
       .trim()
-      .isAlphanumeric(),
+      .isString(),
     body('phoneNumber')
       .trim()
       .isNumeric(),
@@ -46,7 +44,6 @@ router.post(
     .trim(),
   body('description')
     .isString()
-    .trim()
     .isLength({ max: 100 }),
   auth.isAdmin,
   sellerController.addDebt
@@ -58,7 +55,6 @@ router.post(
     .trim(),
   body('description')
     .isString()
-    .trim()
     .isLength({ max: 100 }),
   auth.isAdmin,
   sellerController.subtractDebt
@@ -68,11 +64,9 @@ router.put(
   [
     body('name')
       .isString()
-      .trim()
       .isLength({ max: 40 }),
     body('lastName')
       .isString()
-      .trim()
       .isLength({ max: 40 }),
     body('typeId')
       .trim()
@@ -81,8 +75,7 @@ router.put(
       .trim()
       .isString(),
     body('address')
-      .trim()
-      .isAlphanumeric(),
+      .isString(),
     body('phoneNumber')
       .trim()
       .isNumeric(),

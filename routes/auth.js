@@ -7,6 +7,7 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.post('/login', authController.login);
+router.post('/user', auth.isSuper, authController.createUser);
 router.get('/status', auth.isAdmin, authController.getUserStatus);
 router.patch(
   '/activate/:userStatusId',
