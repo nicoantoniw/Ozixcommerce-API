@@ -24,10 +24,7 @@ router.post(
   [
     body('ticketType')
       .isString()
-      .trim(),
-    body('ticketNumber')
-      .isString()
-      .trim(),
+      .trim()
   ],
   auth.isUser,
   saleController.addSale

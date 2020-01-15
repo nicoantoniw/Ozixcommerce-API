@@ -28,8 +28,10 @@ exports.getVoucher = async (req, res, next) => {
     }
 };
 exports.getLastVoucher = async (req, res, next) => {
+    const salePoint = req.query.salePoint;
+    const ticketType = req.query.ticketType;
     try {
-        const lastVoucher = await afip.ElectronicBilling.getLastVoucher(1, 6); //Devuelve el número del último comprobante creado para el punto de venta 1 y el tipo de comprobante 6 (Factura B)
+        const lastVoucher = await afip.ElectronicBilling.getLastVoucher(salePoint, ticketType); //Devuelve el número del último comprobante creado para el punto de venta 1 y el tipo de comprobante 6 (Factura B)
         if (lastVoucher === null) {
             const error = new Error('Could not find any voucher');
             error.statusCode = 404;
@@ -134,61 +136,40 @@ exports.getServerStatus = async (req, res, next) => {
 
 exports.addVoucher = async (req, res, next) => {
     const date = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
-
-    // let data = {
-    //     'CantReg': 1,  // Cantidad de comprobantes a registrar
-    //     'PtoVta': req.body.salePoint,  // Punto de venta
-    //     'CbteTipo': req.body.ticketType,  // Tipo de comprobante (ver tipos disponibles) 
-    //     'Concepto': req.body.concept,  // Concepto del Comprobante: (1)Productos, (2)Servicios, (3)Productos y Servicios
-    //     'DocTipo': req.body.idType, // Tipo de documento del comprador (99 consumidor final, ver tipos disponibles)
-    //     'DocNro': req.body.idNumber,  // Número de documento del comprador (0 consumidor final)
-    //     'CbteDesde': 1,  // Número de comprobante o numero del primer comprobante en caso de ser mas de uno
-    //     'CbteHasta': 1,  // Número de comprobante o numero del último comprobante en caso de ser mas de uno
-    //     'CbteFch': parseInt(date.replace(/-/g, '')), // (Opcional) Fecha del comprobante (yyyymmdd) o fecha actual si es nulo
-    //     'ImpTotal': req.body.total, // Importe total del comprobante
-    //     'ImpTotConc': req.body.salePoint.noNetoAmount,   // Importe neto no gravado
-    //     'ImpNeto': req.body.netoAmount, // Importe neto gravado
-    //     'ImpOpEx': req.body.noIvaAmount,   // Importe exento de IVA
-    //     'ImpIVA': req.body.iva,  //Importe total de IVA
-    //     'ImpTrib': req.body.tributeAmount,   //Importe total de tributos
-    //     'MonId': req.body.currency, //Tipo de moneda usada en el comprobante (ver tipos disponibles)('PES' para pesos argentinos) 
-    //     'MonCotiz': req.body.currencyExchange,     // Cotización de la moneda usada (1 para pesos argentinos)  
-    //     'Iva': [ // (Opcional) Alícuotas asociadas al comprobante
-    //         {
-    //             'Id': req.body.ivaType, // Id del tipo de IVA (5 para 21%)(ver tipos disponibles) 
-    //             'BaseImp': req.body.netoAmount, // Base imponible
-    //             'Importe': req.body.iva // Importe 
-    //         }
-    //     ],
-    // };
+    const total = req.body.total;
     let data = {
         'CantReg': 1,  // Cantidad de comprobantes a registrar
-        'PtoVta': 1,  // Punto de venta
-        'CbteTipo': 6,  // Tipo de comprobante (ver tipos disponibles) 
-        'Concepto': 1,  // Concepto del Comprobante: (1)Productos, (2)Servicios, (3)Productos y Servicios
-        'DocTipo': 99, // Tipo de documento del comprador (99 consumidor final, ver tipos disponibles)
-        'DocNro': 0,  // Número de documento del comprador (0 consumidor final)
-        'CbteDesde': 1,  // Número de comprobante o numero del primer comprobante en caso de ser mas de uno
-        'CbteHasta': 1,  // Número de comprobante o numero del último comprobante en caso de ser mas de uno
+        'PtoVta': req.body.PtoVta,  // Punto de venta
+        'CbteTipo': (req.body.CbteTipo),  // Tipo de comprobante (ver tipos disponibles) 
+        'Concepto': (req.body.Concepto),  // Concepto del Comprobante: (1)Productos, (2)Servicios, (3)Productos y Servicios
+        'DocTipo': (req.body.DocTipo), // Tipo de documento del comprador (99 consumidor final, ver tipos disponibles)
+        'DocNro': parseInt(req.body.DocNro),  // Número de documento del comprador (0 consumidor final)
+        'CbteDesde': parseInt(req.body.CbteDesde) + 1,  // Número de comprobante o numero del primer comprobante en caso de ser mas de uno
+        'CbteHasta': parseInt(req.body.CbteHasta) + 1,  // Número de comprobante o numero del último comprobante en caso de ser mas de uno
         'CbteFch': parseInt(date.replace(/-/g, '')), // (Opcional) Fecha del comprobante (yyyymmdd) o fecha actual si es nulo
-        'ImpTotal': 121, // Importe total del comprobante
-        'ImpTotConc': 0,   // Importe neto no gravado
-        'ImpNeto': 100, // Importe neto gravado
-        'ImpOpEx': 0,   // Importe exento de IVA
-        'ImpIVA': 21,  //Importe total de IVA
-        'ImpTrib': 0,   //Importe total de tributos
-        'MonId': 'PES', //Tipo de moneda usada en el comprobante (ver tipos disponibles)('PES' para pesos argentinos) 
-        'MonCotiz': 1,     // Cotización de la moneda usada (1 para pesos argentinos)  
+        'ImpTotal': parseFloat((total).toFixedNoRounding(2)), // Importe total del comprobante
+        'ImpTotConc': (req.body.ImpTotConc),   // Importe neto no gravado
+        'ImpNeto': parseFloat((total / 121 * 100).toFixedNoRounding(2)), // Importe neto gravado
+        'ImpOpEx': (req.body.ImpOpEx),   // Importe exento de IVA
+        'ImpIVA': parseFloat((total / 121 * 21).toFixedNoRounding(2)),  //Importe total de IVA
+        'ImpTrib': (req.body.ImpTrib),   //Importe total de tributos
+        'MonId': req.body.MonId, //Tipo de moneda usada en el comprobante (ver tipos disponibles)('PES' para pesos argentinos) 
+        'MonCotiz': (req.body.MonCotiz), // Cotización de la moneda usada (1 para pesos argentinos) 
         'Iva': [ // (Opcional) Alícuotas asociadas al comprobante
             {
                 'Id': 5, // Id del tipo de IVA (5 para 21%)(ver tipos disponibles) 
-                'BaseImp': 100, // Base imponible
-                'Importe': 21 // Importe 
+                'BaseImp': parseFloat((total / 121 * 100).toFixedNoRounding(2)), // Base imponible
+                'Importe': parseFloat((total / 121 * 21).toFixedNoRounding(2)) // Importe 
             }
         ],
     };
+    if (data.CbteTipo === 1 && data.DocTipo !== 80 || data.CbteTipo === 2 && data.DocTipo !== 80 || data.CbteTipo === 3 && data.DocTipo !== 80) {
+        const error = new Error('id type should be 80 with Tickets type A');
+        error.statusCode = 601;
+        next(error);
+    }
     try {
-        const response = await afip.ElectronicBilling.createNextVoucher(data);
+        const response = await afip.ElectronicBilling.createVoucher(data);
         res.status(200).json({
             message: 'Voucher Created',
             response
@@ -199,4 +180,15 @@ exports.addVoucher = async (req, res, next) => {
         }
         next(err);
     }
+};
+
+Number.prototype.toFixedNoRounding = function (n) {
+    const reg = new RegExp("^-?\\d+(?:\\.\\d{0," + n + "})?", "g");
+    const a = this.toString().match(reg)[0];
+    const dot = a.indexOf(".");
+    if (dot === -1) { // integer, insert decimal dot and pad up zeros
+        return a + "." + "0".repeat(n);
+    }
+    const b = n - (a.length - dot) + 1;
+    return b > 0 ? (a + "0".repeat(b)) : a;
 };
