@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const macaddress = require('macaddress');
 
 const User = require('../models/user');
 const Group = require('../models/group');
+const Mac = require('../models/mac');
 
 exports.login = async (req, res, next) => {
   const username = req.body.username;
@@ -21,6 +23,17 @@ exports.login = async (req, res, next) => {
       const error = new Error('Password incorrect');
       error.statusCode = 401;
       throw error;
+    }
+    if (user.role !== 'admin') {
+      const macAddress = macaddress.one(function (err, mac) {
+        return mac;
+      });
+      const address = await Mac.findOne({ address: macAddress, creator: group._id });
+      if (!address) {
+        const error = new Error('Not authorized in this device');
+        error.statusCode = 403;
+        throw error;
+      }
     }
     const token = jwt.sign(
       {
@@ -109,7 +122,7 @@ exports.deactivateUserStatus = async (req, res, next) => {
 
 exports.createUser = async (req, res, next) => {
   const username = req.body.username;
-  const groupId = req.body.group
+  const groupId = req.body.group;
   const password = req.body.password;
   const role = req.body.role;
   try {
@@ -130,4 +143,4 @@ exports.createUser = async (req, res, next) => {
     next(err);
   }
 
-}
+};

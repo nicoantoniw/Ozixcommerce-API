@@ -13,6 +13,7 @@ const afipRoutes = require('./routes/afip');
 const purchasesRoutes = require('./routes/purchase');
 const personRoutes = require('./routes/person');
 const sellerRoutes = require('./routes/seller');
+const macRoutes = require('./routes/mac');
 
 const app = express();
 const dbURI =
@@ -37,6 +38,7 @@ app.use((req, res, next) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/person', personRoutes);
+app.use('/api/mac', macRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/product', productRoutes);

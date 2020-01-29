@@ -1,7 +1,8 @@
 const { validationResult } = require('express-validator');
+const macaddress = require('macaddress');
 
 const Product = require('../models/product');
-const Group = require('../models/group')
+const Group = require('../models/group');
 
 exports.getProducts = async (req, res, next) => {
   try {
@@ -90,7 +91,7 @@ exports.addProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   try {
     const calculatedPercentage = (Number(req.body.price) * Number(req.body.percentage)) / 100;
@@ -124,7 +125,7 @@ exports.updateProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const productId = req.params.productId;
   try {
