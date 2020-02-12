@@ -137,7 +137,7 @@ exports.getServerStatus = async (req, res, next) => {
 exports.addVoucher = async (req, res, next) => {
     const date = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     const total = req.body.total;
-    let data = {
+    let data2 = {
         'CantReg': 1,  // Cantidad de comprobantes a registrar
         'PtoVta': req.body.PtoVta,  // Punto de venta
         'CbteTipo': (req.body.CbteTipo),  // Tipo de comprobante (ver tipos disponibles) 
@@ -163,16 +163,17 @@ exports.addVoucher = async (req, res, next) => {
             }
         ],
     };
-    if (data.CbteTipo === 1 && data.DocTipo !== 80 || data.CbteTipo === 2 && data.DocTipo !== 80 || data.CbteTipo === 3 && data.DocTipo !== 80) {
-        const error = new Error('id type should be 80 with Tickets type A');
+    if (data2.CbteTipo === 1 && data2.DocTipo !== 80 || data2.CbteTipo === 2 && data2.DocTipo !== 80 || data2.CbteTipo === 3 && data2.DocTipo !== 80) {
+        const error = new Error('id type should be 80 with Tickets type A or C');
         error.statusCode = 601;
         next(error);
     }
     try {
-        const response = await afip.ElectronicBilling.createVoucher(data);
+        const response = await afip.ElectronicBilling.createVoucher(data2);
         res.status(200).json({
             message: 'Voucher Created',
-            response
+            response,
+            data2
         });
     } catch (err) {
         if (!err.statusCode) {

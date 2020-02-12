@@ -24,7 +24,7 @@ exports.login = async (req, res, next) => {
       error.statusCode = 401;
       throw error;
     }
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'super') {
       const macAddress = macaddress.one(function (err, mac) {
         return mac;
       });

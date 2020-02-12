@@ -14,11 +14,7 @@ router.get(
   auth.isAdmin,
   saleController.getSalesBySeller
 );
-// router.get(
-//   '/sales/customer/:customerId',
-//   auth.isAdmin,
-//   saleController.getSalesByCustomer
-// );
+router.post('/ticket', auth.isUser, saleController.createTicket);
 router.post(
   '/add',
   [

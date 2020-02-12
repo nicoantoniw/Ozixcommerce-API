@@ -1,7 +1,13 @@
+const fs = require('fs');
+const path = require('path');
+
 const { validationResult } = require('express-validator');
+const PDFDocument = require('pdfkit');
+
 
 const Sale = require('../models/sale');
 const Product = require('../models/product');
+const Group = require('../models/group');
 
 exports.getSales = async (req, res, next) => {
   try {
@@ -277,7 +283,7 @@ exports.addSale = async (req, res, next) => {
     next(error);
   }
   try {
-    if (req.body.customer) {
+    if (req.body.customer !== '') {
       const sale = new Sale({
         ticketType: req.body.ticketType,
         ticketNumber: req.body.ticketNumber,
@@ -296,7 +302,7 @@ exports.addSale = async (req, res, next) => {
         message: 'Sale created.',
         sale: sale
       });
-    } else if (!req.body.customer) {
+    } else if (req.body.customer === '') {
       const sale = new Sale({
         ticketType: req.body.ticketType,
         ticketNumber: req.body.ticketNumber,
@@ -307,7 +313,7 @@ exports.addSale = async (req, res, next) => {
       });
       let details = req.body.details;
       await details.map(detail => {
-        decreaseStock(detail.product, detail.quantity);
+        decreaseStock(detail.product, detail.quantity, req.groupId);
       });
       await sale.save();
       res.status(200).json({
@@ -315,6 +321,116 @@ exports.addSale = async (req, res, next) => {
         sale: sale
       });
     }
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.createTicket = async (req, res, next) => {
+  const cae = req.body.CAE;
+  const fchVto = req.body.CAEFchVto;
+  const idType = req.body.DocTipo;
+  const idNumber = req.body.DocNro;
+  const ticketType = req.body.ticketType;
+  const ticketNumber = req.body.CbteDesd;
+  const ticketDate = req.body.CbteFch;
+  const total = req.body.ImpTotal;
+  const totalNoTax = req.body.ImpNeto;
+  const iva = req.body.ImpIVA;
+  const salePoint = req.body.PtoVta;
+  const details = req.body.details;
+  const pdfDoc = new PDFDocument();
+  let date = new Date();
+  let day = date.getDate();
+  let month = date.getMonth() + 1;
+  let year = date.getFullYear();
+  if (day < 10) {
+    day = `0${day}`;
+  }
+  if (month === 13) {
+    month = 1;
+    year = year + 1;
+  }
+  if (month < 10) {
+    month = `0${month}`;
+  }
+  const hour = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  try {
+    const group = await Group.findById(req.groupId);
+    const category = group.category;
+    const cuit = group.cuit;
+    const activitiesDate = group.activitiesDate;
+    const socialName = group.socialName;
+    const city = group.city;
+    const streetAddress = group.streetAddress;
+    const zip = group.zip;
+    if (ticketType === 'Factura B') {
+      pdfDoc.pipe(
+        fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+      );
+      pdfDoc.pipe(res);
+      pdfDoc.fontSize(18).text(`${socialName}`);
+      pdfDoc.fontSize(18).text(`${ticketType}`);
+      pdfDoc.fontSize(10).text(`CUIT: ${cuit}`);
+      pdfDoc.fontSize(10).text(`${streetAddress}`);
+      pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`);
+      pdfDoc.fontSize(10).text(`INIC.ACT: ${activitiesDate}`);
+      if (idNumber === 0) {
+        pdfDoc.fontSize(10).text(`IVA ${category} `);
+        pdfDoc.fontSize(10).text(`A CONSUMIDOR FINAL`);
+      }
+      pdfDoc.text(' ');
+      pdfDoc.fontSize(10).text(`P. V. 00${salePoint}`);
+      pdfDoc.fontSize(10).text(`No.T. 0000${ticketNumber}`);
+      pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`);
+      pdfDoc.text(' ');
+      pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`);
+      pdfDoc.fontSize(10).text(`DESCRIPCION                 IMPORTE`);
+      details.forEach(detail => {
+        pdfDoc.fontSize(6).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
+        pdfDoc.fontSize(6).text(`${detail.product}                                    $${detail.price}`);
+      });
+      pdfDoc.fontSize(10).text(`  `);
+      pdfDoc.fontSize(10).text(`Total: $${total}`);
+      pdfDoc.fontSize(10).text(`  `);
+      pdfDoc.fontSize(10).text(`CAE: ${cae}`);
+      pdfDoc.fontSize(10).text(`Vto. CAE: ${fchVto}`);
+      pdfDoc.end();
+    } else if (ticketType === 'Cotización') {
+      pdfDoc.pipe(
+        fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+      );
+      pdfDoc.pipe(res);
+      pdfDoc.fontSize(12).text(`${socialName}`, { align: 'left' });
+      pdfDoc.fontSize(12).text(`PRESUPUESTO`, { align: 'left' });
+      pdfDoc.fontSize(12).text(`TICKET NO FISCAL`, { align: 'left' });
+      pdfDoc.fontSize(10).text(`${streetAddress}`, { align: 'left' });
+      pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`, { align: 'left' });
+      pdfDoc.text(' ');
+      pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`, { align: 'left' });
+      pdfDoc.text(' ');
+      pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
+      pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
+      pdfDoc.fontSize(10).text(`DESCRIPCION`);
+      pdfDoc.fontSize(10).text(` `);
+      details.forEach(detail => {
+        pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
+        pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
+        pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
+      });
+      pdfDoc.fontSize(10).text(`  `);
+      pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
+      pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
+      pdfDoc.end();
+    } else {
+      console.log('hey');
+    }
+
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
