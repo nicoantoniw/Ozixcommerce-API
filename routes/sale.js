@@ -15,6 +15,7 @@ router.get(
   saleController.getSalesBySeller
 );
 router.post('/ticket', auth.isUser, saleController.createTicket);
+router.post('/ticketa4', saleController.createTicketA4);
 router.post(
   '/add',
   [

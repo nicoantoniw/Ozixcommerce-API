@@ -375,8 +375,7 @@ exports.createTicket = async (req, res, next) => {
         fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
       );
       pdfDoc.pipe(res);
-      pdfDoc.fontSize(18).text(`${socialName}`);
-      pdfDoc.fontSize(18).text(`${ticketType}`);
+      pdfDoc.fontSize(10).text(`${socialName}`);
       pdfDoc.fontSize(10).text(`CUIT: ${cuit}`);
       pdfDoc.fontSize(10).text(`${streetAddress}`);
       pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`);
@@ -390,14 +389,18 @@ exports.createTicket = async (req, res, next) => {
       pdfDoc.fontSize(10).text(`No.T. 0000${ticketNumber}`);
       pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`);
       pdfDoc.text(' ');
-      pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`);
-      pdfDoc.fontSize(10).text(`DESCRIPCION                 IMPORTE`);
+      pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
+      pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
+      pdfDoc.fontSize(10).text(`DESCRIPCION`);
+      pdfDoc.fontSize(10).text(` `);
       details.forEach(detail => {
-        pdfDoc.fontSize(6).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
-        pdfDoc.fontSize(6).text(`${detail.product}                                    $${detail.price}`);
+        pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
+        pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
+        pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
       });
       pdfDoc.fontSize(10).text(`  `);
-      pdfDoc.fontSize(10).text(`Total: $${total}`);
+      pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
+      pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
       pdfDoc.fontSize(10).text(`  `);
       pdfDoc.fontSize(10).text(`CAE: ${cae}`);
       pdfDoc.fontSize(10).text(`Vto. CAE: ${fchVto}`);
@@ -428,7 +431,12 @@ exports.createTicket = async (req, res, next) => {
       pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
       pdfDoc.end();
     } else {
-      console.log('hey');
+      pdfDocA4.pipe(
+        fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+      );
+      pdfDocA4.pipe(res);
+
+      pdfDocA4.end();
     }
 
   } catch (err) {
@@ -437,6 +445,80 @@ exports.createTicket = async (req, res, next) => {
     }
     next(err);
   }
+};
+exports.createTicketA4 = (req, res, next) => {
+  let date = new Date();
+  let day = date.getDate();
+  let month = date.getMonth() + 1;
+  let year = date.getFullYear();
+  if (day < 10) {
+    day = `0${day}`;
+  }
+  if (month === 13) {
+    month = 1;
+    year = year + 1;
+  }
+  if (month < 10) {
+    month = `0${month}`;
+  }
+  const hour = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const pdfDocA4 = new PDFDocument({
+    size: 'A4',
+    margins: {
+      top: 25,
+      bottom: 20,
+      left: 20,
+      right: 30,
+    }
+  });
+  pdfDocA4.pipe(
+    fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+  );
+  pdfDocA4.pipe(res);
+  pdfDocA4.fontSize(30).text('                               A');
+  pdfDocA4.fontSize(10).text('                                                                                          COD. 01');
+  pdfDocA4.rect(250, 20, 75, 65).stroke();
+  //derecha
+  pdfDocA4.fontSize(14).text('FACTURA', { align: 'right' });
+  pdfDocA4.fontSize(10).text('ORIGINAL', { align: 'right' });
+  pdfDocA4.fontSize(10).text('numero comprobante', { align: 'right' });
+  pdfDocA4.fontSize(10).text('fecha emision', { align: 'right' });
+  pdfDocA4.fontSize(10).text('categoria tributaria', { align: 'right' });
+  pdfDocA4.fontSize(10).text('cuit', { align: 'right' });
+  pdfDocA4.fontSize(10).text('ingresos brutos', { align: 'right' });
+  pdfDocA4.fontSize(10).text('inicio actividades', { align: 'right' });
+  // izquierda
+  //logo
+  pdfDocA4.fontSize(10).text(' razon social');
+  pdfDocA4.fontSize(10).text(' domicilio');
+  pdfDocA4.fontSize(10).text(' localidad, provincia');
+  pdfDocA4.rect(pdfDocA4.x, 20, 550, pdfDocA4.y).stroke();
+  pdfDocA4.fontSize(10).text(' ');
+  pdfDocA4.fontSize(10).text(' ');
+  pdfDocA4.fontSize(10).text(' ');
+  pdfDocA4.fontSize(10).text('  razon social cliente');
+  pdfDocA4.fontSize(10).text('  domicilio');
+  pdfDocA4.fontSize(10).text('  localidad, provincia', { lineGap: -33 });
+  //derecha
+  pdfDocA4.fontSize(10).text('resp. iva', { align: 'center' });
+  pdfDocA4.fontSize(10).text('cuit', { align: 'center' });
+  pdfDocA4.fontSize(10).text('condicion de venta', { align: 'center' });
+  pdfDocA4.rect(pdfDocA4.x, 20, 550, pdfDocA4.y).stroke();
+  pdfDocA4.fontSize(10).text(' ');
+  pdfDocA4.fontSize(10).text(' ');
+  pdfDocA4.fontSize(10).text(' ');
+  pdfDocA4.fontSize(10).text('        Codigo                         Descripcion                        Cantidad          Precio Unit.       % Bonif      Alicuota            Total');
+  pdfDocA4.fontSize(10).text('                                                                                                                                                               IVA ');
+  pdfDocA4.rect(20, 294, 75, 40).stroke();
+  pdfDocA4.rect(95, 294, 150, 40).stroke();
+  pdfDocA4.rect(245, 294, 75, 40).stroke();
+  pdfDocA4.rect(320, 294, 75, 40).stroke();
+  pdfDocA4.rect(395, 294, 50, 40).stroke();
+  pdfDocA4.rect(445, 294, 50, 40).stroke();
+  pdfDocA4.rect(495, 294, 75, 40).stroke();
+  pdfDocA4.end();
 };
 
 exports.updateSale = async (req, res, next) => {
