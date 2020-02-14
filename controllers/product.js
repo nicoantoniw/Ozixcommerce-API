@@ -63,10 +63,23 @@ exports.getProductsByCategory = async (req, res, next) => {
 
 exports.getProduct = async (req, res, next) => {
   const productId = req.params.productId;
+  const code = req.params.code;
   try {
     const product = await Product.findOne({
-      name: productId,
-      creator: req.groupId
+      $or:
+        [
+          {
+            name: productId,
+            creator: req.groupId
+          },
+          {
+            code: code,
+            creator: req.groupId
+          }
+
+        ]
+
+
     })
       .populate('category', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 });

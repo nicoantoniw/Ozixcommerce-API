@@ -369,6 +369,7 @@ exports.createTicket = async (req, res, next) => {
     const city = group.city;
     const streetAddress = group.streetAddress;
     const zip = group.zip;
+
     if (ticketType === 'Factura B') {
       pdfDoc.pipe(
         fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
@@ -401,18 +402,17 @@ exports.createTicket = async (req, res, next) => {
       pdfDoc.fontSize(10).text(`CAE: ${cae}`);
       pdfDoc.fontSize(10).text(`Vto. CAE: ${fchVto}`);
       pdfDoc.end();
-    } else if (ticketType === 'Cotización') {
+    }
+
+    else if (ticketType === 'Cotización') {
       pdfDoc.pipe(
         fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
       );
       pdfDoc.pipe(res);
-      pdfDoc.fontSize(12).text(`${socialName}`, { align: 'left' });
-      pdfDoc.fontSize(12).text(`PRESUPUESTO`, { align: 'left' });
-      pdfDoc.fontSize(12).text(`TICKET NO FISCAL`, { align: 'left' });
-      pdfDoc.fontSize(10).text(`${streetAddress}`, { align: 'left' });
-      pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`, { align: 'left' });
-      pdfDoc.text(' ');
-      pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`, { align: 'left' });
+      pdfDoc.fontSize(10).text(`PRESUPUESTO`, { align: 'center' });
+      pdfDoc.fontSize(10).text(`TICKET NO FISCAL`, { align: 'center' });
+      pdfDoc.text('-------------------------------------------------', { align: 'center' });
+      pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}:${seconds}`, { align: 'center' });
       pdfDoc.text(' ');
       pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
       pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
