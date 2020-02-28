@@ -145,7 +145,7 @@ exports.getSalesByDate = async (req, res, next) => {
       createdAt: { '$gte': start, '$lt': end }
     }).countDocuments();
     if (seller !== '') {
-      const sales = await Sale.find({ createdAt: { '$gte': start, '$lt': end }, seller: seller })
+      const sales = await Sale.find({ createdAt: { '$gte': start, '$lt': end }, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, _id: 1 })
@@ -220,6 +220,37 @@ exports.getSalesBySeller = async (req, res, next) => {
       seller: sellerId
     }).countDocuments();
     const sales = await Sale.find({ creator: req.groupId, seller: sellerId })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+
+    if (totalSales === 0) {
+      const error = new Error('No sales found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    res.status(200).json({
+      sales: sales,
+      totalSales: totalSales
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getSalesByTicketType = async (req, res, next) => {
+  const ticketType = req.params.ticketType;
+  try {
+    const totalSales = await Sale.find({
+      creator: req.groupId,
+      ticketType: ticketType
+    }).countDocuments();
+    const sales = await Sale.find({ creator: req.groupId, ticketType: ticketType })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
@@ -431,12 +462,12 @@ exports.createTicket = async (req, res, next) => {
       pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
       pdfDoc.end();
     } else {
-      pdfDocA4.pipe(
-        fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-      );
-      pdfDocA4.pipe(res);
+      // pdfDocA4.pipe(
+      //   fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+      // );
+      // pdfDocA4.pipe(res);
 
-      pdfDocA4.end();
+      // pdfDocA4.end();
     }
 
   } catch (err) {
@@ -473,51 +504,62 @@ exports.createTicketA4 = (req, res, next) => {
       right: 30,
     }
   });
+  const number = 40001;
   pdfDocA4.pipe(
     fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
   );
   pdfDocA4.pipe(res);
-  pdfDocA4.fontSize(30).text('                               A');
-  pdfDocA4.fontSize(10).text('                                                                                          COD. 01');
+  pdfDocA4.fontSize(50).text('                               A');
+  pdfDocA4.fontSize(12).text('                                                                                          COD. 01');
   pdfDocA4.rect(250, 20, 75, 65).stroke();
   //derecha
-  pdfDocA4.fontSize(14).text('FACTURA', { align: 'right' });
-  pdfDocA4.fontSize(10).text('ORIGINAL', { align: 'right' });
-  pdfDocA4.fontSize(10).text('numero comprobante', { align: 'right' });
-  pdfDocA4.fontSize(10).text('fecha emision', { align: 'right' });
-  pdfDocA4.fontSize(10).text('categoria tributaria', { align: 'right' });
-  pdfDocA4.fontSize(10).text('cuit', { align: 'right' });
-  pdfDocA4.fontSize(10).text('ingresos brutos', { align: 'right' });
-  pdfDocA4.fontSize(10).text('inicio actividades', { align: 'right' });
+  pdfDocA4.fontSize(20).text('FACTURA', { align: 'right' });
+  pdfDocA4.fontSize(18).text('ORIGINAL', { align: 'right' });
+  pdfDocA4.fontSize(12).text('numero comprobante', { align: 'right' });
+  pdfDocA4.fontSize(12).text('fecha emision', { align: 'right' });
+  pdfDocA4.fontSize(12).text('categoria tributaria', { align: 'right' });
+  pdfDocA4.fontSize(12).text('cuit', { align: 'right' });
+  pdfDocA4.fontSize(12).text('ingresos brutos', { align: 'right' });
+  pdfDocA4.fontSize(12).text('inicio actividades', { align: 'right' });
   // izquierda
   //logo
-  pdfDocA4.fontSize(10).text(' razon social');
-  pdfDocA4.fontSize(10).text(' domicilio');
-  pdfDocA4.fontSize(10).text(' localidad, provincia');
-  pdfDocA4.rect(pdfDocA4.x, 20, 550, pdfDocA4.y).stroke();
-  pdfDocA4.fontSize(10).text(' ');
-  pdfDocA4.fontSize(10).text(' ');
-  pdfDocA4.fontSize(10).text(' ');
-  pdfDocA4.fontSize(10).text('  razon social cliente');
-  pdfDocA4.fontSize(10).text('  domicilio');
-  pdfDocA4.fontSize(10).text('  localidad, provincia', { lineGap: -33 });
+  pdfDocA4.fontSize(12).text(' razon social');
+  pdfDocA4.fontSize(12).text(' domicilio');
+  pdfDocA4.fontSize(12).text(' localidad, provincia');
+  pdfDocA4.rect(pdfDocA4.x, 20, 560, pdfDocA4.y).stroke();
+  pdfDocA4.fontSize(12).text(' ');
+  pdfDocA4.fontSize(12).text(' ');
+  pdfDocA4.fontSize(12).text(' ');
+  pdfDocA4.fontSize(12).text('  razon social cliente');
+  pdfDocA4.fontSize(12).text('  domicilio');
+  pdfDocA4.fontSize(12).text('  localidad, provincia', { lineGap: -33 });
   //derecha
-  pdfDocA4.fontSize(10).text('resp. iva', { align: 'center' });
-  pdfDocA4.fontSize(10).text('cuit', { align: 'center' });
-  pdfDocA4.fontSize(10).text('condicion de venta', { align: 'center' });
-  pdfDocA4.rect(pdfDocA4.x, 20, 550, pdfDocA4.y).stroke();
-  pdfDocA4.fontSize(10).text(' ');
-  pdfDocA4.fontSize(10).text(' ');
-  pdfDocA4.fontSize(10).text(' ');
-  pdfDocA4.fontSize(10).text('        Codigo                         Descripcion                        Cantidad          Precio Unit.       % Bonif      Alicuota            Total');
-  pdfDocA4.fontSize(10).text('                                                                                                                                                               IVA ');
-  pdfDocA4.rect(20, 294, 75, 40).stroke();
-  pdfDocA4.rect(95, 294, 150, 40).stroke();
-  pdfDocA4.rect(245, 294, 75, 40).stroke();
-  pdfDocA4.rect(320, 294, 75, 40).stroke();
-  pdfDocA4.rect(395, 294, 50, 40).stroke();
-  pdfDocA4.rect(445, 294, 50, 40).stroke();
-  pdfDocA4.rect(495, 294, 75, 40).stroke();
+  pdfDocA4.fontSize(12).text('resp. iva', { align: 'center' });
+  pdfDocA4.fontSize(12).text('cuit', { align: 'center' });
+  pdfDocA4.fontSize(12).text('condicion de venta', { align: 'center' });
+  pdfDocA4.rect(pdfDocA4.x, 20, 560, pdfDocA4.y).stroke();
+  pdfDocA4.fontSize(12).text(' ');
+  pdfDocA4.fontSize(12).text(' ');
+  pdfDocA4.fontSize(12).text('      Codigo                   Descripcion                Cantidad      Precio Unit.     % Bonif   Alicuota        Total');
+  pdfDocA4.fontSize(12).text('                                                                                                                                     IVA ');
+  pdfDocA4.fontSize(10).text(`  `);
+  pdfDocA4.fontSize(10).text(`                   ${number}00`);
+  pdfDocA4.rect(20, 377, 80, 40).stroke();
+  pdfDocA4.rect(100, 377, 150, 40).stroke();
+  pdfDocA4.rect(250, 377, 65, 40).stroke();
+  pdfDocA4.rect(315, 377, 85, 40).stroke();
+  pdfDocA4.rect(400, 377, 50, 40).stroke();
+  pdfDocA4.rect(450, 377, 50, 40).stroke();
+  pdfDocA4.rect(500, 377, 80, 40).stroke();
+  details.forEach(detail => {
+    pdfDocA4.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
+    pdfDocA4.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
+    pdfDocA4.fontSize(10).text(`$${detail.price}`, { align: 'right' });
+  });
+  pdfDocA4.rect(pdfDocA4.x, 20, 560, pdfDocA4.y).stroke();
+  pdfDocA4.fontSize(10).text(`  `);
+  pdfDocA4.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'bottom' });
+  pdfDocA4.fontSize(10).text(`$652000`, { align: 'right' });
   pdfDocA4.end();
 };
 

@@ -18,15 +18,10 @@ router.post(
   [
     body('name')
       .isString()
-      .trim()
-      .isLength({ min: 2, max: 40 }),
+      .trim(),
     body('code')
       .trim()
       .isAlphanumeric(),
-    body('description')
-      .isString()
-      .trim()
-      .isLength({ max: 100 }),
     body('price')
       .trim()
       .isNumeric(),
@@ -45,15 +40,10 @@ router.put(
   [
     body('name')
       .isString()
-      .trim()
-      .isLength({ min: 2, max: 20 }),
+      .trim(),
     body('code')
       .trim()
       .isAlphanumeric(),
-    body('description')
-      .isString()
-      .trim()
-      .isLength({ max: 100 }),
     body('price')
       .trim()
       .isFloat(),

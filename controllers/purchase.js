@@ -43,7 +43,7 @@ exports.getPurchasesBySupplier = async (req, res, next) => {
       creator: req.groupId,
       supplier: supplierId
     })
-      .populate('supplier', { name: 1, _id: 1 })
+      .populate('supplier', { company: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
     // .skip((currentPage - 1) * perPage)
@@ -58,6 +58,183 @@ exports.getPurchasesBySupplier = async (req, res, next) => {
     res.status(200).json({
       purchases: purchases,
       totalPurchases: totalPurchases
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getPurchasesByDate = async (req, res, next) => {
+  let day = req.query.day;
+  let month = req.query.month;
+  let year = req.query.year;
+  const supplier = req.query.supplier;
+  let start = 0;
+  let end = 0;
+  let leap = leapYear(year);
+  if (day === '0' && month === '0') {
+    start = `${year}-01-01T00:00:00`;
+    end = `${year}-12-31T23:59:59`;
+  } else if (day === '0' && leap) {
+    switch (month) {
+      case '01':
+        day = 31;
+        break;
+      case '02':
+        day = 29;
+        break;
+      case '03':
+        day = 31;
+        break;
+      case '04':
+        day = 30;
+        break;
+      case '05':
+        day = 31;
+        break;
+      case '06':
+        day = 30;
+        break;
+      case '07':
+        day = 31;
+        break;
+      case '08':
+        day = 31;
+        break;
+      case '09':
+        day = 30;
+        break;
+      case '10':
+        day = 31;
+        break;
+      case '11':
+        day = 30;
+        break;
+      case '12':
+        day = 31;
+        break;
+    }
+    start = `${year}-${month}-01T00:00:00`;
+    end = `${year}-${month}-${day}T23:59:59`;
+  } else if (day === '0') {
+    switch (month) {
+      case '01':
+        day = 31;
+        break;
+      case '02':
+        day = 28;
+        break;
+      case '03':
+        day = 31;
+        break;
+      case '04':
+        day = 30;
+        break;
+      case '05':
+        day = 31;
+        break;
+      case '06':
+        day = 30;
+        break;
+      case '07':
+        day = 31;
+        break;
+      case '08':
+        day = 31;
+        break;
+      case '09':
+        day = 30;
+        break;
+      case '10':
+        day = 31;
+        break;
+      case '11':
+        day = 30;
+        break;
+      case '12':
+        day = 31;
+        break;
+    }
+    start = `${year}-${month}-01T00:00:00`;
+    end = `${year}-${month}-${day}T23:59:59`;
+  } else if (day !== '0' && month === '0') {
+    const error = new Error('Entered data is incorrect');
+    error.statusCode = 422;
+    next(error);
+  } else {
+    start = `${year}-${month}-${day}T00:00:00`;
+    end = `${year}-${month}-${day}T23:59:59`;
+  }
+  try {
+    const totalPurchases = await Purchase.find({
+      creator: req.groupId,
+      createdAt: { '$gte': start, '$lt': end }
+    }).countDocuments();
+    if (supplier !== '') {
+      const purchases = await Purchase.find({ createdAt: { '$gte': start, '$lt': end }, supplier: supplier, creator: req.groupId })
+        .populate('supplier', { company: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .sort({ createdAt: -1 });
+
+      if (totalPurchases === 0) {
+        const error = new Error('No purchases found');
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json({
+        purchases: purchases,
+        totalPurchases: totalPurchases
+      });
+    } else {
+      const purchases = await Purchase.find({ createdAt: { '$gte': start, '$lt': end } })
+        .populate('supplier', { company: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .sort({ createdAt: -1 });
+
+      if (totalPurchases === 0) {
+        const error = new Error('No purchases found');
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json({
+        purchases,
+        totalPurchases
+      });
+    }
+
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+
+exports.getPurchasesByTicketType = async (req, res, next) => {
+  const ticketType = req.params.ticketType;
+  try {
+    const totalPurchases = await Purchase.find({
+      creator: req.groupId,
+      ticketType: ticketType
+    }).countDocuments();
+    const purchases = await Purchase.find({ creator: req.groupId, ticketType: ticketType })
+      .populate('supplier', { company: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+
+    if (totalPurchases === 0) {
+      const error = new Error('No purchases found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    res.status(200).json({
+      purchases,
+      totalPurchases
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -94,7 +271,7 @@ exports.addPurchase = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   try {
     const purchase = new Purchase({
@@ -102,13 +279,15 @@ exports.addPurchase = async (req, res, next) => {
       ticketType: req.body.ticketType,
       ticketNumber: req.body.ticketNumber,
       total: req.body.total,
+      subTotal: req.body.subTotal,
+      ivaTotal: req.body.ivaTotal,
       details: req.body.details,
       creator: req.groupId,
       supplier: req.body.supplier
     });
     let details = req.body.details;
     await details.map(async detail => {
-      await increaseStock(detail.product, Number(detail.quantity), Number(detail.percentage), Number(detail.newPrice), req.groupId);
+      await increaseStock(detail.product, Number(detail.quantity), Number(detail.percentage), Number(detail.newPrice), Number(detail.iva), req.groupId);
     });
     await purchase.save();
     res.status(200).json({
@@ -249,7 +428,7 @@ exports.deletePurchase = async (req, res, next) => {
   }
 };
 
-const increaseStock = async (productId, quantity, percentage, price, creator) => {
+const increaseStock = async (productId, quantity, percentage, price, iva, creator) => {
   try {
     const product = await Product.findOne({ name: productId, creator: creator });
     if (!product) {
@@ -261,12 +440,15 @@ const increaseStock = async (productId, quantity, percentage, price, creator) =>
     product.stock = newStock;
     if (price !== 0) {
       product.price = price;
-      product.finalPrice =
-        price + percentage * price / 100;
     }
     if (percentage !== 0) {
-      product.percentage = percentage
+      product.percentage = percentage;
     }
+    product.iva = iva;
+
+    const calculatedPercentage = Number(product.price) + (Number(product.price) * Number(product.percentage)) / 100;
+    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(product.iva) * Number(calculatedPercentage)) / 100);
+    product.finalPrice = Number(calculatedPriceIva).toFixed(2);
     await product.save();
   } catch (err) {
     if (!err.statusCode) {
@@ -275,4 +457,8 @@ const increaseStock = async (productId, quantity, percentage, price, creator) =>
     console.log(err);
   }
 
+};
+
+const leapYear = (year) => {
+  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
 };

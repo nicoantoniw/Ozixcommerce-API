@@ -107,8 +107,8 @@ exports.addProduct = async (req, res, next) => {
     next(error);
   }
   try {
-    const calculatedPercentage = (Number(req.body.price) * Number(req.body.percentage)) / 100;
-    const calculatedPrice = Number(req.body.price) + calculatedPercentage;
+    const calculatedPercentage = Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage)) / 100;
+    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(req.body.iva) * Number(calculatedPercentage)) / 100);
     const product = new Product({
       name: req.body.name,
       code: req.body.code,
@@ -116,7 +116,8 @@ exports.addProduct = async (req, res, next) => {
       category: req.body.category,
       price: Number(req.body.price),
       percentage: Number(req.body.percentage),
-      finalPrice: Number(calculatedPrice).toFixed(2),
+      finalPrice: Number(calculatedPriceIva).toFixed(2),
+      iva: Number(req.body.iva),
       stock: req.body.stock,
       creator: req.groupId
     });
@@ -156,15 +157,15 @@ exports.updateProduct = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    const calculatedPercentage = (req.body.price * req.body.percentage) / 100;
-    const calculatedPrice =
-      Number(req.body.price) + Number(calculatedPercentage);
+    const calculatedPercentage = Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage)) / 100;
+    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(req.body.iva) * Number(calculatedPercentage)) / 100);
     product.name = req.body.name;
     product.code = req.body.code;
     product.description = req.body.description;
     product.price = req.body.price;
     product.percentage = req.body.percentage;
-    product.finalPrice = Number(calculatedPrice).toFixed(2);
+    product.finalPrice = Number(calculatedPriceIva).toFixed(2);
+    product.iva = Number(req.body.iva);
     product.stock = req.body.stock;
     product.category = req.body.category;
     await product.save();

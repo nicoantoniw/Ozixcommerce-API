@@ -14,6 +14,11 @@ router.get(
   auth.isAdmin,
   saleController.getSalesBySeller
 );
+router.get(
+  '/sales/ticket/:ticketType',
+  auth.isAdmin,
+  saleController.getSalesByTicketType
+);
 router.post('/ticket', auth.isUser, saleController.createTicket);
 router.post('/ticketa4', saleController.createTicketA4);
 router.post(

@@ -28,6 +28,14 @@ const purchaseSchema = new Schema({
     type: Number,
     required: true
   },
+  subTotal: {
+    type: Number,
+    required: true
+  },
+  ivaTotal: {
+    type: Number,
+    required: true
+  },
   details: [
     {
       product: {
@@ -41,7 +49,19 @@ const purchaseSchema = new Schema({
       price: {
         type: Number,
         required: true
-      }
+      },
+      subtotal: {
+        type: Number,
+        required: true
+      },
+      unitaryPrice: {
+        type: Number,
+        required: true
+      },
+      ivaCalculated: {
+        type: Number,
+        required: true
+      },
     }
   ],
   status: {

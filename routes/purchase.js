@@ -12,6 +12,12 @@ router.get(
   auth.isAdmin, auth.isPrime,
   purchaseController.getPurchase
 );
+router.get('/purchases-by-date', auth.isAdmin, purchaseController.getPurchasesByDate);
+router.get(
+  '/purchases/ticket/:ticketType',
+  auth.isAdmin,
+  purchaseController.getPurchasesByTicketType
+);
 router.get(
   '/purchases/supplier/:supplierId',
   auth.isAdmin, auth.isPrime,

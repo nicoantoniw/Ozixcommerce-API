@@ -6,8 +6,9 @@ const auth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/suppliers', auth.isAdmin, auth.isPrime, personController.getSuppliers);
+router.get('/suppliersFP', auth.isUser, personController.getSuppliersForPurchase);
+router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/persons/:personId', auth.isUser, auth.isPrime, personController.getPerson);
 router.post(
   '/add',

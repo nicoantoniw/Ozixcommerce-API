@@ -72,13 +72,41 @@ exports.getSuppliers = async (req, res, next) => {
   }
 };
 
+exports.getSuppliersForPurchase = async (req, res, next) => {
+  try {
+    const totalSuppliers = await Person.find({
+      creator: req.groupId,
+      type: 'supplier'
+    }).countDocuments();
+    const suppliers = await Person.find({
+      creator: req.groupId,
+      type: 'supplier'
+    })
+      .populate('creator', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+
+    if (totalSuppliers === 0) {
+      const error = new Error('No suppliers found');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      suppliers,
+      totalSuppliers
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+
 exports.getPerson = async (req, res, next) => {
   const personId = req.params.personId;
   try {
-    const person = await Person.findOne({
-      _id: personId,
-      creator: req.groupId
-    }).populate('creator', {
+    const person = await Person.findById(personId).populate('creator', {
       name: 1,
       _id: 1
     });
@@ -103,7 +131,7 @@ exports.addPerson = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const calculatedAge = getAge(req.body.birth);
   const person = new Person({
@@ -138,7 +166,7 @@ exports.updatePerson = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const personId = req.params.personId;
   try {

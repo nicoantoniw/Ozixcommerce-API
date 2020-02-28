@@ -47,6 +47,14 @@ const saleSchema = new Schema({
       price: {
         type: Number,
         required: true
+      },
+      totalIva: {
+        type: Number,
+        required: true
+      },
+      subtotal: {
+        type: Number,
+        required: true
       }
     }
   ],
