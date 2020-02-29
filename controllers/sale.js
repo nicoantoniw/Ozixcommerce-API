@@ -3,6 +3,7 @@ const path = require('path');
 
 const { validationResult } = require('express-validator');
 const PDFDocument = require('pdfkit');
+const moment = require('moment');
 
 
 const Sale = require('../models/sale');
@@ -692,6 +693,36 @@ exports.deleteSale = async (req, res, next) => {
   }
 };
 
+exports.getSales30Days = async (req, res, next) => {
+  try {
+    const start = moment().subtract(30, 'days');
+    const end = moment();
+    const totalSales = await Sale.find({
+      creator: req.groupId, createdAt: { '$gte': start, '$lt': end }
+    }).countDocuments();
+    const sales = await Sale.find({ creator: req.groupId, createdAt: { '$gte': start, '$lt': end } })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ createdAt: -1 });
+
+    if (totalSales === 0) {
+      const error = new Error('No sales found');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      totalSales,
+      sales
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 const decreaseStock = async (productId, quantity, creator) => {
   const product = await Product.findOne({ name: productId, creator: creator });
   if (!product) {
@@ -707,3 +738,4 @@ const decreaseStock = async (productId, quantity, creator) => {
 const leapYear = (year) => {
   return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
 };
+

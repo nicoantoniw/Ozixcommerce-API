@@ -18,6 +18,7 @@
     "helmet": "^3.21.2",
     "jsonwebtoken": "^8.5.1",
     "macaddress": "^0.2.9",
+    "moment": "^2.24.0",
     "mongodb": "^3.3.3",
     "mongoose": "^5.7.7",
     "morgan": "^1.9.1",

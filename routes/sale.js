@@ -19,6 +19,7 @@ router.get(
   auth.isAdmin,
   saleController.getSalesByTicketType
 );
+router.get('/sales30days', auth.isAdmin, saleController.getSales30Days);
 router.post('/ticket', auth.isUser, saleController.createTicket);
 router.post('/ticketa4', saleController.createTicketA4);
 router.post(
