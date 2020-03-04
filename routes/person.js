@@ -23,7 +23,7 @@ router.post(
   personController.addPerson
 );
 router.post(
-  '/debt/add/:personId',
+  '/debt/add',
   body('debt')
     .isNumeric()
     .trim(),
@@ -35,7 +35,7 @@ router.post(
   personController.addDebt
 );
 router.post(
-  '/debt/subtract/:personId',
+  '/debt/subtract',
   body('debt')
     .isNumeric()
     .trim(),

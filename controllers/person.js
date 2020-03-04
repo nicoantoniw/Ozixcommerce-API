@@ -294,14 +294,14 @@ exports.addDebt = async (req, res, next) => {
     error.statusCode = 422;
     next(error);
   }
-  const personId = req.params.personId;
+  const personId = req.body.personId;
   const debt = Number(req.body.debt);
   const description = req.body.description;
-  const type = req.body.type;
+  const typeDebt = req.body.type;
   const data = {
-    debt: debt,
-    description: description,
-    typeDebt: type
+    debt,
+    description,
+    typeDebt
   };
   try {
     const person = await Person.findById(personId);
@@ -332,14 +332,15 @@ exports.subtractDebt = async (req, res, next) => {
     error.statusCode = 422;
     next(error);
   }
-  const personId = req.params.personId;
+
+  const personId = req.body.personId;
   const debt = Number(req.body.debt);
   const description = req.body.description;
-  const type = req.body.type;
+  const typeDebt = req.body.type;
   const data = {
-    debt: debt,
-    description: description,
-    typeDebt: type
+    debt,
+    description,
+    typeDebt
   };
   try {
     const person = await Person.findById(personId);

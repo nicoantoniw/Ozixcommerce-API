@@ -724,15 +724,22 @@ exports.getSales30Days = async (req, res, next) => {
 };
 
 const decreaseStock = async (productId, quantity, creator) => {
-  const product = await Product.findOne({ name: productId, creator: creator });
-  if (!product) {
-    const error = new Error('Could not find any product');
-    error.statusCode = 404;
-    throw error;
+  try {
+    const product = await Product.findOne({ name: productId, creator: creator });
+    if (!product) {
+      const error = new Error('Could not find any product');
+      error.statusCode = 404;
+      console.log('product not found');
+    }
+    const newStock = parseInt(product.stock) - Number(quantity);
+    product.stock = newStock;
+    await product.save();
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    console.log(err);
   }
-  const newStock = parseInt(product.stock) - Number(quantity);
-  product.stock = newStock;
-  await product.save();
 };
 
 const leapYear = (year) => {

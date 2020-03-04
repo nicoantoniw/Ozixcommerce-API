@@ -15,6 +15,7 @@ const personRoutes = require('./routes/person');
 const sellerRoutes = require('./routes/seller');
 const macRoutes = require('./routes/mac');
 const groupRoutes = require('./routes/group');
+const orderRoutes = require('./routes/order');
 
 const app = express();
 const dbURI =
@@ -47,6 +48,7 @@ app.use('/api/sale', saleRoutes);
 app.use('/api/afip', afipRoutes);
 app.use('/api/purchase', purchasesRoutes);
 app.use('/api/group', groupRoutes);
+app.use('/api/order', orderRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);
