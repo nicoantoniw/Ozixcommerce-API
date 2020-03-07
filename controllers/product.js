@@ -1,5 +1,7 @@
 const { validationResult } = require('express-validator');
 const macaddress = require('macaddress');
+const xls = require('xls-to-json');
+const exec = require('child_process').exec;
 
 const Product = require('../models/product');
 const Group = require('../models/group');
@@ -132,6 +134,41 @@ exports.addProduct = async (req, res, next) => {
     }
     next(err);
   }
+};
+
+exports.addMassiveProducts = (req, res, next) => {
+  let data = [];
+  xls({
+    input: "/home/nicolas/Documents/file.xlsx",  // input xls
+    output: "output.json", // output json
+    // sheet: "sheetname",  specific sheetname
+    // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
+  }, function (err, result) {
+    if (err) {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    } else {
+      data = result;
+      for (let i = 0; i < data.length; i++) {
+        const calculatedPercentage = Number(data[i].price) + (Number(data[i].price) * Number(data[i].percentage)) / 100;
+        const calculatedPriceIva = Number(calculatedPercentage) + ((Number(data[i].iva) * Number(calculatedPercentage)) / 100);
+        data[i].finalPrice = Number(calculatedPriceIva).toFixed(2);
+        data[i].creator = req.groupId;
+      };
+      Product.insertMany(data, (err, docs) => {
+        if (err) {
+          const error = new Error('Validation failed, entered data is incorrect');
+          error.statusCode = 422;
+          next(error);
+        }
+        res.status(200).json({
+          message: 'Products created.'
+        });
+      });
+    }
+  });
 };
 
 exports.updateProduct = async (req, res, next) => {

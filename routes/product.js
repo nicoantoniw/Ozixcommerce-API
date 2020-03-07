@@ -35,6 +35,11 @@ router.post(
   auth.isSeller,
   productController.addProduct
 );
+router.post(
+  '/add-massive',
+  auth.isSeller,
+  productController.addMassiveProducts
+);
 router.put(
   '/update/:productId',
   [

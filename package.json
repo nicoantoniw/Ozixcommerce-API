@@ -24,7 +24,8 @@
     "morgan": "^1.9.1",
     "multer": "^1.4.2",
     "pdfkit": "^0.10.0",
-    "uuid": "^3.3.3"
+    "uuid": "^3.3.3",
+    "xls-to-json": "^0.5.4"
   },
   "devDependencies": {
     "nodemon": "^1.19.4"
