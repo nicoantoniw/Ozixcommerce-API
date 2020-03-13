@@ -140,7 +140,7 @@ exports.addMassiveProducts = (req, res, next) => {
   let data = [];
   xls({
     input: "/home/nicolas/Documents/file.xlsx",  // input xls
-    output: "output.json", // output json
+    output: "/home/nicolas/Documents/output.json", // output json
     // sheet: "sheetname",  specific sheetname
     // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
   }, function (err, result) {
@@ -170,6 +170,8 @@ exports.addMassiveProducts = (req, res, next) => {
     }
   });
 };
+
+
 
 exports.updateProduct = async (req, res, next) => {
   const errors = validationResult(req);
@@ -297,5 +299,17 @@ exports.deleteProduct = async (req, res, next) => {
       err.statusCode = 500;
     }
     next(err);
+  }
+};
+
+exports.deleteProducts = async (req, res, next) => {
+  try {
+    await Product.deleteMany({ creator: req.groupId });
+    res.status(200).json({
+      message: 'Products deleted.'
+    });
+  }
+  catch (err) {
+    console.log(err);
   }
 };
