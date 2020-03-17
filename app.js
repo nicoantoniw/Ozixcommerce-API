@@ -66,7 +66,7 @@ mongoose
     useUnifiedTopology: true
   })
   .then(succes => {
-    app.listen(process.env.PORT || 3000);
+    app.listen(process.env.PORT || 8080);
     console.log('Database connected.');
   })
   .catch(err => console.log(err));
