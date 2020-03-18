@@ -12,13 +12,6 @@ router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/persons/:personId', auth.isUser, auth.isPrime, personController.getPerson);
 router.post(
   '/add',
-  [
-
-    body('company')
-      .trim()
-      .isString(),
-
-  ],
   auth.isUser, auth.isPrime,
   personController.addPerson
 );
@@ -48,11 +41,6 @@ router.post(
 );
 router.put(
   '/update/:personId',
-  [
-    body('company')
-      .trim()
-      .isString()
-  ],
   auth.isUser, auth.isPrime,
   personController.updatePerson
 );

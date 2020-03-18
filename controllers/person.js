@@ -365,6 +365,10 @@ exports.subtractDebt = async (req, res, next) => {
 };
 
 const getAge = date => {
+  if (date === '') {
+    const age = new Date();
+    return age;
+  }
   const today = new Date();
   const birth = new Date(date);
   const age = today.getFullYear() - birth.getFullYear();
