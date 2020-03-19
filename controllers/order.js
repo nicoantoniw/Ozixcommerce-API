@@ -114,6 +114,7 @@ exports.updateOrder = async (req, res, next) => {
         order.total = req.body.total;
         order.deposit = req.body.deposit;
         order.status = req.body.status;
+        order.details = req.body.details;
         await order.save();
         res.status(200).json({
             message: 'Order updated.',
