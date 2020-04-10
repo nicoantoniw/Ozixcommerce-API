@@ -132,9 +132,11 @@ exports.createUser = async (req, res, next) => {
       username,
       password: hashedPw,
       role,
-      group: group._id
+      group: groupId
     });
+    group.users.push(user);
     await user.save();
+    await group.save();
     res.status(200).json({ message: 'User created' });
   } catch (err) {
     if (!err.statusCode) {
@@ -142,5 +144,4 @@ exports.createUser = async (req, res, next) => {
     }
     next(err);
   }
-
 };

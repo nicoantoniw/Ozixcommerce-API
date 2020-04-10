@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const { validationResult } = require('express-validator');
 const macaddress = require('macaddress');
 const xls = require('xls-to-json');
@@ -137,10 +139,16 @@ exports.addProduct = async (req, res, next) => {
 };
 
 exports.addMassiveProducts = (req, res, next) => {
+  // const busy = 1;
+  // if (busy === 1) {
+  //   const error = new Error('Please, Try again later');
+  //   error.statusCode = 700;
+  //   throw error;
+  // }
   let data = [];
   xls({
-    input: "/home/nicolas/Documents/file.xlsx",  // input xls
-    output: "/home/nicolas/Documents/output.json", // output json
+    input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx",  // input xls
+    output: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json", // output json
     // sheet: "sheetname",  specific sheetname
     // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
   }, function (err, result) {
@@ -163,6 +171,8 @@ exports.addMassiveProducts = (req, res, next) => {
           error.statusCode = 422;
           next(error);
         }
+        // fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX Software/Ozixcommerce/app/api/assets/file.xlsx');
+        // fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX Software/Ozixcommerce/app/api/assets/output.json');
         res.status(200).json({
           message: 'Products created.'
         });
@@ -171,6 +181,48 @@ exports.addMassiveProducts = (req, res, next) => {
   });
 };
 
+// exports.addMassiveProducts = (req, res, next) => {
+//   // const busy = 1;
+//   // if (busy === 1) {
+//   //   const error = new Error('Please, Try again later');
+//   //   error.statusCode = 700;
+//   //   throw error;
+//   // }
+//   let data = [];
+//   xls({
+//     input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",  // input xls
+//     output: "/home/ubuntu/apps/Ozixcommerce-API/assets/output.json", // output json
+//     // sheet: "sheetname",  specific sheetname
+//     // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
+//   }, function (err, result) {
+//     if (err) {
+//       if (!err.statusCode) {
+//         err.statusCode = 500;
+//       }
+//       next(err);
+//     } else {
+//       data = result;
+//       for (let i = 0; i < data.length; i++) {
+//         const calculatedPercentage = Number(data[i].price) + (Number(data[i].price) * Number(data[i].percentage)) / 100;
+//         const calculatedPriceIva = Number(calculatedPercentage) + ((Number(data[i].iva) * Number(calculatedPercentage)) / 100);
+//         data[i].finalPrice = Number(calculatedPriceIva).toFixed(2);
+//         data[i].creator = req.groupId;
+//       };
+//       Product.insertMany(data, (err, docs) => {
+//         if (err) {
+//           const error = new Error('Validation failed, entered data is incorrect');
+//           error.statusCode = 422;
+//           next(error);
+//         }
+//         fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');
+//         fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/output.json');
+//         res.status(200).json({
+//           message: 'Products created.'
+//         });
+//       });
+//     }
+//   });
+// };
 
 
 exports.updateProduct = async (req, res, next) => {

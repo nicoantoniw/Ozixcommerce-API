@@ -1,1 +1,2 @@
 601 - Used ticket type A with DNI customer
+700 - Try again in a moment, please

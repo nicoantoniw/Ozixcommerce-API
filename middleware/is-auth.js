@@ -20,7 +20,8 @@ exports.isAdmin = (req, res, next) => {
     error.statusCode = 401;
     throw error;
   }
-  if (decodedToken.status === 'active' && decodedToken.role !== 'admin' || decodedToken.status !== 'active') {
+  if (decodedToken.status !== 'active' || decodedToken.role !== 'admin' &&
+    decodedToken.role !== 'super') {
     const error = new Error('Not authorized.');
     error.statusCode = 403;
     throw error;
@@ -52,9 +53,9 @@ exports.isSeller = (req, res, next) => {
   }
 
   if (
-    decodedToken.status !== 'active' && decodedToken.role !== 'seller' && decodedToken.role !== 'admin' ||
-    (decodedToken.role !== 'seller' && decodedToken.role !== 'admin') ||
-    (decodedToken.role !== 'seller' && decodedToken.role !== 'admin' && decodedToken.status === 'active')
+    decodedToken.status !== 'active' ||
+    (decodedToken.role !== 'seller' && decodedToken.role !== 'admin' &&
+      decodedToken.role !== 'super')
   ) {
     const error = new Error('Not authorized.');
     error.statusCode = 403;
@@ -86,12 +87,11 @@ exports.isUser = (req, res, next) => {
     throw error;
   }
   if (
-    decodedToken.status !== 'active' && decodedToken.role !== 'seller' &&
-    decodedToken.role !== 'admin' &&
-    decodedToken.role !== 'user' ||
+    decodedToken.status !== 'active' ||
     (decodedToken.role !== 'seller' &&
       decodedToken.role !== 'admin' &&
-      decodedToken.role !== 'user')
+      decodedToken.role !== 'user' &&
+      decodedToken.role !== 'super')
   ) {
     const error = new Error('Not authorized.');
     error.statusCode = 403;
@@ -127,6 +127,8 @@ exports.isSuper = (req, res, next) => {
     error.statusCode = 403;
     throw error;
   }
+  req.userId = decodedToken.userId;
+  req.groupId = decodedToken.groupId;
   next();
 };
 
@@ -156,5 +158,7 @@ exports.isPrime = (req, res, next) => {
     error.statusCode = 403;
     throw error;
   }
+  req.userId = decodedToken.userId;
+  req.groupId = decodedToken.groupId;
   next();
 };

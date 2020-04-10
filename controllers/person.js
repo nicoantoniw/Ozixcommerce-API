@@ -140,6 +140,7 @@ exports.addPerson = async (req, res, next) => {
     age: calculatedAge,
     type: req.body.type,
     company: req.body.company,
+    description: req.body.description,
     typeId: req.body.typeId,
     numberId: req.body.numberId,
     address: req.body.address,
@@ -186,6 +187,7 @@ exports.updatePerson = async (req, res, next) => {
     person.birth = req.body.birth;
     person.age = calculatedAge;
     person.type = req.body.type;
+    person.description = req.body.description;
     person.company = req.body.company;
     person.typeId = req.body.typeId;
     person.numberId = req.body.numberId;

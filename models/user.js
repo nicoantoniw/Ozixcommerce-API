@@ -24,12 +24,6 @@ const userSchema = new Schema({
     default: 'active',
     required: true
   },
-  sales: [
-    {
-      type: Schema.Types.ObjectId,
-      ref: 'Sales'
-    }
-  ],
   createdAt: {
     type: Date,
     default: Date.now

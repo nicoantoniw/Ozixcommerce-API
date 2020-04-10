@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const express = require('express');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
+const multer = require('multer');
 
 const authRoutes = require('./routes/auth');
 const categoryRoutes = require('./routes/category');
@@ -20,6 +21,13 @@ const orderRoutes = require('./routes/order');
 const app = express();
 const dbURI =
   'mongodb+srv://nicolas:surfinGLife30@node-database-bac9y.mongodb.net/commerce-test';
+
+const storage = multer.diskStorage({
+  destination: './assets',
+  filename: (req, file, cb) => {
+    cb(null, file.fieldname + path.extname(file.originalname));
+  }
+});
 
 app.use(helmet());
 
@@ -38,6 +46,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(
+  multer({ storage: storage }).single('file')
+);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/person', personRoutes);
 app.use('/api/mac', macRoutes);
@@ -49,6 +61,8 @@ app.use('/api/afip', afipRoutes);
 app.use('/api/purchase', purchasesRoutes);
 app.use('/api/group', groupRoutes);
 app.use('/api/order', orderRoutes);
+
+
 
 app.use((error, req, res, next) => {
   console.log(error);

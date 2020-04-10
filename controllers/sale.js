@@ -162,7 +162,7 @@ exports.getSalesByDate = async (req, res, next) => {
         totalSales: totalSales
       });
     } else {
-      const sales = await Sale.find({ createdAt: { '$gte': start, '$lt': end } })
+      const sales = await Sale.find({ createdAt: { '$gte': start, '$lt': end }, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, _id: 1 })

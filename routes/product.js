@@ -77,5 +77,10 @@ router.delete(
   auth.isSeller,
   productController.deleteProduct
 );
+router.delete(
+  '/delete-all',
+  auth.isAdmin,
+  productController.deleteProducts
+);
 
 module.exports = router;

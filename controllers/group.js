@@ -1,5 +1,24 @@
 const Group = require('../models/group');
 
+exports.getGroups = async (req, res, next) => {
+    try {
+        const groups = await Group.find();
+        if (!groups) {
+            const error = new Error('No group found');
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status(200).json({
+            groups
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
 exports.getGroup = async (req, res, next) => {
     try {
         const group = await Group.findById(
@@ -19,6 +38,26 @@ exports.getGroup = async (req, res, next) => {
         }
         next(err);
     }
+};
+
+exports.addGroup = async (req, res, next) => {
+    const name = req.body.name;
+    const plan = req.body.plan;
+
+    try {
+        const group = new Group({
+            name,
+            plan
+        });
+        await group.save();
+        res.status(200).json({ message: 'Group created' });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+
 };
 
 exports.getSalePoints = async (req, res, next) => {

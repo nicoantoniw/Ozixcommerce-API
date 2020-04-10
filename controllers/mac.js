@@ -11,13 +11,14 @@ exports.getAddress = async (req, res, next) => {
         });
         const address = await Mac.findOne({ address: macAddress });
         if (!address) {
-            res.status(200).json({
+            return res.status(200).json({
                 address: true
             });
         }
         res.status(200).json({
             address: false
         });
+
     } catch (err) {
         if (!err.statusCode) {
             err.statusCode = 500;
