@@ -404,7 +404,7 @@ exports.createTicket = async (req, res, next) => {
 
     if (ticketType === 'Factura B') {
       pdfDoc.pipe(
-        fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+        fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
       );
       pdfDoc.pipe(res);
       pdfDoc.fontSize(10).text(`${socialName}`);
@@ -441,7 +441,7 @@ exports.createTicket = async (req, res, next) => {
 
     else if (ticketType === 'Cotización') {
       pdfDoc.pipe(
-        fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+        fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
       );
       pdfDoc.pipe(res);
       pdfDoc.fontSize(10).text(`PRESUPUESTO`, { align: 'center' });
@@ -507,7 +507,7 @@ exports.createTicketA4 = (req, res, next) => {
   });
   const number = 40001;
   pdfDocA4.pipe(
-    fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+    fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
   );
   pdfDocA4.pipe(res);
   pdfDocA4.fontSize(50).text('                               A');

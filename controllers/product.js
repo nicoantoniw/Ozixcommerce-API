@@ -138,6 +138,7 @@ exports.addProduct = async (req, res, next) => {
   }
 };
 
+
 // exports.addMassiveProducts = (req, res, next) => {
 //   // const busy = 1;
 //   // if (busy === 1) {
@@ -147,8 +148,8 @@ exports.addProduct = async (req, res, next) => {
 //   // }
 //   let data = [];
 //   xls({
-//     input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx",  // input xls
-//     output: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json", // output json
+//     input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",  // input xls
+//     output: "/home/ubuntu/apps/Ozixcommerce-API/assets/output.json", // output json
 //     // sheet: "sheetname",  specific sheetname
 //     // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
 //   }, function (err, result) {
@@ -172,8 +173,8 @@ exports.addProduct = async (req, res, next) => {
 //           next(error);
 //         }
 //       });
-//       fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx');
-//       fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json');
+//       fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');
+//       fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/output.json');
 //       res.status(200).json({
 //         message: 'Products created.'
 //       });
@@ -190,8 +191,8 @@ exports.addMassiveProducts = (req, res, next) => {
   // }
   let data = [];
   xls({
-    input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",  // input xls
-    output: "/home/ubuntu/apps/Ozixcommerce-API/assets/output.json", // output json
+    input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx",  // input xls
+    output: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json", // output json
     // sheet: "sheetname",  specific sheetname
     // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
   }, function (err, result) {
@@ -203,9 +204,13 @@ exports.addMassiveProducts = (req, res, next) => {
     } else {
       data = result;
       for (let i = 0; i < data.length; i++) {
+        data[i].price = parseFloat(data[i].price);
+        data[i].percentage = parseFloat(data[i].percentage);
+        data[i].iva = parseFloat(data[i].iva);
+        data[i].stock = parseFloat(data[i].stock);
         const calculatedPercentage = Number(data[i].price) + (Number(data[i].price) * Number(data[i].percentage)) / 100;
         const calculatedPriceIva = Number(calculatedPercentage) + ((Number(data[i].iva) * Number(calculatedPercentage)) / 100);
-        data[i].finalPrice = Number(calculatedPriceIva).toFixed(2);
+        data[i].finalPrice = parseFloat(Number(calculatedPriceIva).toFixed(2));
         data[i].creator = req.groupId;
       };
       Product.insertMany(data, (err, docs) => {
@@ -215,8 +220,8 @@ exports.addMassiveProducts = (req, res, next) => {
           next(error);
         }
       });
-      fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');
-      fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/output.json');
+      fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx');
+      fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json');
       res.status(200).json({
         message: 'Products created.'
       });

@@ -37,6 +37,11 @@ exports.getLastVoucher = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
+        if (!lastVoucher) {
+            const error = new Error('Could not find any voucher');
+            error.statusCode = 404;
+            throw error;
+        }
         res.status(200).json({
             lastVoucher,
         });
@@ -47,6 +52,7 @@ exports.getLastVoucher = async (req, res, next) => {
         }
         if (!err.statusCode) {
             err.statusCode = 500;
+            console.log(err);
         }
         next(err);
     }
@@ -371,6 +377,10 @@ exports.addVoucher = async (req, res, next) => {
             ],
         };
 
+    } else {
+        const error = new Error('Nothing reached');
+        error.statusCode = 610;
+        next(error);
     }
     // let data2 = {
     //     'CantReg': 1,  // Cantidad de comprobantes a registrar
