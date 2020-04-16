@@ -308,6 +308,10 @@ exports.getSalesByTicketType = async (req, res, next) => {
 
 
 exports.addSale = async (req, res, next) => {
+  let date = new Date();
+  if (req.body.createdAt) {
+    date = new Date(req.body.createdAt);
+  }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -323,7 +327,8 @@ exports.addSale = async (req, res, next) => {
         total: req.body.total,
         creator: req.groupId,
         seller: req.body.seller,
-        customer: req.body.customer
+        customer: req.body.customer,
+        createdAt: date
       });
       let details = req.body.details;
       await details.map(async detail => {
@@ -341,7 +346,8 @@ exports.addSale = async (req, res, next) => {
         details: req.body.details,
         total: req.body.total,
         creator: req.groupId,
-        seller: req.body.seller
+        seller: req.body.seller,
+        createdAt: date
       });
       let details = req.body.details;
       await details.map(detail => {
@@ -402,75 +408,74 @@ exports.createTicket = async (req, res, next) => {
     const streetAddress = group.streetAddress;
     const zip = group.zip;
 
-    if (ticketType === 'Factura B') {
-      pdfDoc.pipe(
-        fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-      );
-      pdfDoc.pipe(res);
-      pdfDoc.fontSize(10).text(`${socialName}`);
-      pdfDoc.fontSize(10).text(`CUIT: ${cuit}`);
-      pdfDoc.fontSize(10).text(`${streetAddress}`);
-      pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`);
-      pdfDoc.fontSize(10).text(`INIC.ACT: ${activitiesDate}`);
-      if (idNumber === 0) {
-        pdfDoc.fontSize(10).text(`IVA ${category} `);
-        pdfDoc.fontSize(10).text(`A CONSUMIDOR FINAL`);
-      }
-      pdfDoc.text(' ');
-      pdfDoc.fontSize(10).text(`P. V. 00${salePoint}`);
-      pdfDoc.fontSize(10).text(`No.T. 0000${ticketNumber}`);
-      pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`);
-      pdfDoc.text(' ');
-      pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
-      pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
-      pdfDoc.fontSize(10).text(`DESCRIPCION`);
-      pdfDoc.fontSize(10).text(` `);
-      details.forEach(detail => {
-        pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
-        pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
-        pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
-      });
-      pdfDoc.fontSize(10).text(`  `);
-      pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
-      pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
-      pdfDoc.fontSize(10).text(`  `);
-      pdfDoc.fontSize(10).text(`CAE: ${cae}`);
-      pdfDoc.fontSize(10).text(`Vto. CAE: ${fchVto}`);
-      pdfDoc.end();
-    }
+    // if (ticketType === 'Factura B') {
+    //   pdfDoc.pipe(
+    //     fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+    //   );
+    //   pdfDoc.pipe(res);
+    //   pdfDoc.fontSize(10).text(`${socialName}`);
+    //   pdfDoc.fontSize(10).text(`CUIT: ${cuit}`);
+    //   pdfDoc.fontSize(10).text(`${streetAddress}`);
+    //   pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`);
+    //   pdfDoc.fontSize(10).text(`INIC.ACT: ${activitiesDate}`);
+    //   if (idNumber === 0) {
+    //     pdfDoc.fontSize(10).text(`IVA ${category} `);
+    //     pdfDoc.fontSize(10).text(`A CONSUMIDOR FINAL`);
+    //   }
+    //   pdfDoc.text(' ');
+    //   pdfDoc.fontSize(10).text(`P. V. 00${salePoint}`);
+    //   pdfDoc.fontSize(10).text(`No.T. 0000${ticketNumber}`);
+    //   pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`);
+    //   pdfDoc.text(' ');
+    //   pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
+    //   pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
+    //   pdfDoc.fontSize(10).text(`DESCRIPCION`);
+    //   pdfDoc.fontSize(10).text(` `);
+    //   details.forEach(detail => {
+    //     pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
+    //     pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
+    //     pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
+    //   });
+    //   pdfDoc.fontSize(10).text(`  `);
+    //   pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
+    //   pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
+    //   pdfDoc.fontSize(10).text(`  `);
+    //   pdfDoc.fontSize(10).text(`CAE: ${cae}`);
+    //   pdfDoc.fontSize(10).text(`Vto. CAE: ${fchVto}`);
+    //   pdfDoc.end();
+    // }
 
-    else if (ticketType === 'Cotización') {
-      pdfDoc.pipe(
-        fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-      );
-      pdfDoc.pipe(res);
-      pdfDoc.fontSize(10).text(`PRESUPUESTO`, { align: 'center' });
-      pdfDoc.fontSize(10).text(`TICKET NO FISCAL`, { align: 'center' });
-      pdfDoc.text('-------------------------------------------------', { align: 'center' });
-      pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}:${seconds}`, { align: 'center' });
-      pdfDoc.text(' ');
-      pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
-      pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
-      pdfDoc.fontSize(10).text(`DESCRIPCION`);
-      pdfDoc.fontSize(10).text(` `);
-      details.forEach(detail => {
-        pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
-        pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
-        pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
-      });
-      pdfDoc.fontSize(10).text(`  `);
-      pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
-      pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
-      pdfDoc.end();
-    } else {
-      // pdfDocA4.pipe(
-      //   fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-      // );
-      // pdfDocA4.pipe(res);
+    // else if (ticketType === 'Cotización') {
+    //   pdfDoc.pipe(
+    //     fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+    //   );
+    //   pdfDoc.pipe(res);
+    //   pdfDoc.fontSize(10).text(`PRESUPUESTO`, { align: 'center' });
+    //   pdfDoc.fontSize(10).text(`TICKET NO FISCAL`, { align: 'center' });
+    //   pdfDoc.text('-------------------------------------------------', { align: 'center' });
+    //   pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}:${seconds}`, { align: 'center' });
+    //   pdfDoc.text(' ');
+    //   pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
+    //   pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
+    //   pdfDoc.fontSize(10).text(`DESCRIPCION`);
+    //   pdfDoc.fontSize(10).text(` `);
+    //   details.forEach(detail => {
+    //     pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
+    //     pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
+    //     pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
+    //   });
+    //   pdfDoc.fontSize(10).text(`  `);
+    //   pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
+    //   pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
+    //   pdfDoc.end();
+    // } else {
+    //   // pdfDocA4.pipe(
+    //   //   fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+    //   // );
+    //   // pdfDocA4.pipe(res);
 
-      // pdfDocA4.end();
-    }
-
+    //   // pdfDocA4.end();
+    // }
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -729,7 +734,6 @@ const decreaseStock = async (productId, quantity, creator) => {
     if (!product) {
       const error = new Error('Could not find any product');
       error.statusCode = 404;
-      console.log('product not found');
     }
     const newStock = parseInt(product.stock) - Number(quantity);
     product.stock = newStock;
@@ -738,7 +742,6 @@ const decreaseStock = async (productId, quantity, creator) => {
     if (!err.statusCode) {
       err.statusCode = 500;
     }
-    console.log(err);
   }
 };
 

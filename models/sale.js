@@ -64,8 +64,7 @@ const saleSchema = new Schema({
     default: 'activo'
   },
   createdAt: {
-    type: Date,
-    default: Date.now
+    type: Date
   }
 });
 

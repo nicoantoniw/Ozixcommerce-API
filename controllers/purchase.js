@@ -267,6 +267,10 @@ exports.getPurchase = async (req, res, next) => {
 };
 
 exports.addPurchase = async (req, res, next) => {
+  let date = new Date();
+  if (req.body.createdAt) {
+    date = new Date(req.body.createdAt);
+  }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -283,7 +287,8 @@ exports.addPurchase = async (req, res, next) => {
       ivaTotal: req.body.ivaTotal,
       details: req.body.details,
       creator: req.groupId,
-      supplier: req.body.supplier
+      supplier: req.body.supplier,
+      createdAt: date
     });
     let details = req.body.details;
     await details.map(async detail => {

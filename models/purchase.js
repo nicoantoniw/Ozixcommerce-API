@@ -70,8 +70,7 @@ const purchaseSchema = new Schema({
     default: 'activo'
   },
   createdAt: {
-    type: Date,
-    default: Date.now
+    type: Date
   }
 });
 

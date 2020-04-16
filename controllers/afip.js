@@ -43,7 +43,7 @@ exports.getLastVoucher = async (req, res, next) => {
             throw error;
         }
         res.status(200).json({
-            lastVoucher,
+            lastVoucher
         });
     } catch (err) {
         if (err.message === '(602) No existen datos en nuestros registros para los parametros ingresados.') {
@@ -52,7 +52,6 @@ exports.getLastVoucher = async (req, res, next) => {
         }
         if (!err.statusCode) {
             err.statusCode = 500;
-            console.log(err);
         }
         next(err);
     }
@@ -141,7 +140,7 @@ exports.getServerStatus = async (req, res, next) => {
 };
 
 exports.addVoucher = async (req, res, next) => {
-    const date = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    let date = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     const total = req.body.total;
     let data2;
     const bi10 = req.body.bi10;
@@ -424,6 +423,7 @@ exports.addVoucher = async (req, res, next) => {
         next(error);
     }
     try {
+
         const response = await afip.ElectronicBilling.createVoucher(data2);
         res.status(200).json({
             message: 'Voucher Created',
