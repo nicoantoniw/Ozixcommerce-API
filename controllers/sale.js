@@ -9,6 +9,7 @@ const moment = require('moment');
 const Sale = require('../models/sale');
 const Product = require('../models/product');
 const Group = require('../models/group');
+const Cash = require('../models/cash');
 
 exports.getSales = async (req, res, next) => {
   try {
@@ -308,10 +309,17 @@ exports.getSalesByTicketType = async (req, res, next) => {
 
 
 exports.addSale = async (req, res, next) => {
-  let date = new Date();
+  const cashRegisterId = req.body.cashRegister;
+  let date = moment.utc().utcOffset(-3);
   if (req.body.createdAt) {
-    date = new Date(req.body.createdAt);
+    date = moment.utc(req.body.createdAt).set('hour', 15);
   }
+  const data2 = {
+    type: 'add',
+    description: 'Venta',
+    amount: req.body.total,
+    date
+  };
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -335,9 +343,18 @@ exports.addSale = async (req, res, next) => {
         await decreaseStock(detail.product, Number(detail.quantity), req.groupId);
       });
       await sale.save();
+      const cashRegister = await Cash.findById(cashRegisterId);
+      if (!cashRegister) {
+        const error = new Error('Could not find any register');
+        error.statusCode = 404;
+        throw error;
+      }
+      cashRegister.balance += data2.amount;
+      cashRegister.movements.push(data2);
+      await cashRegister.save();
       res.status(200).json({
         message: 'Sale created.',
-        sale: sale
+        sale
       });
     } else if (req.body.customer === '') {
       const sale = new Sale({
@@ -354,6 +371,15 @@ exports.addSale = async (req, res, next) => {
         decreaseStock(detail.product, detail.quantity, req.groupId);
       });
       await sale.save();
+      const cashRegister = await Cash.findById(cashRegisterId);
+      if (!cashRegister) {
+        const error = new Error('Could not find any register');
+        error.statusCode = 404;
+        throw error;
+      }
+      cashRegister.balance += data2.amount;
+      cashRegister.movements.push(data2);
+      await cashRegister.save();
       res.status(200).json({
         message: 'Sale created.',
         sale: sale
@@ -686,7 +712,7 @@ exports.deleteSale = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    await Sale.findByIdAndRemove(saleId);
+    await sale.remove();
     res.status(200).json({
       message: 'Sale deleted'
     });

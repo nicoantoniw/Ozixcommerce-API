@@ -346,7 +346,7 @@ exports.deleteProduct = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    await Product.findByIdAndRemove(productId);
+    await product.remove();
     res.status(200).json({
       message: 'Product deleted'
     });

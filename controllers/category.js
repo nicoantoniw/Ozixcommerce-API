@@ -55,7 +55,7 @@ exports.addCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const category = new Category({
     name: req.body.name,
@@ -81,7 +81,7 @@ exports.updateCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const categoryId = req.params.categoryId;
   try {
@@ -181,7 +181,7 @@ exports.deleteCategory = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    await Category.findByIdAndRemove(categoryId);
+    await category.remove();
     res.status(200).json({
       message: 'Category deleted'
     });

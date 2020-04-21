@@ -17,6 +17,7 @@ const sellerRoutes = require('./routes/seller');
 const macRoutes = require('./routes/mac');
 const groupRoutes = require('./routes/group');
 const orderRoutes = require('./routes/order');
+const cashRoutes = require('./routes/cash');
 
 const app = express();
 const dbURI =
@@ -61,6 +62,7 @@ app.use('/api/afip', afipRoutes);
 app.use('/api/purchase', purchasesRoutes);
 app.use('/api/group', groupRoutes);
 app.use('/api/order', orderRoutes);
+app.use('/api/cash', cashRoutes);
 
 
 

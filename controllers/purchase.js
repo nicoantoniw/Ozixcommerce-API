@@ -1,7 +1,9 @@
 const { validationResult } = require('express-validator');
+const moment = require('moment');
 
 const Purchase = require('../models/purchase');
 const Product = require('../models/product');
+const Cash = require('../models/cash');
 
 exports.getPurchases = async (req, res, next) => {
   try {
@@ -185,11 +187,11 @@ exports.getPurchasesByDate = async (req, res, next) => {
         throw error;
       }
       res.status(200).json({
-        purchases: purchases,
-        totalPurchases: totalPurchases
+        purchases,
+        totalPurchases
       });
     } else {
-      const purchases = await Purchase.find({ createdAt: { '$gte': start, '$lt': end } })
+      const purchases = await Purchase.find({ createdAt: { '$gte': start, '$lt': end }, creator: req.groupId })
         .populate('supplier', { company: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ createdAt: -1 });
@@ -267,10 +269,17 @@ exports.getPurchase = async (req, res, next) => {
 };
 
 exports.addPurchase = async (req, res, next) => {
-  let date = new Date();
+  const cashRegisterId = req.body.cashRegister;
+  let date = moment.utc().utcOffset(-3);
   if (req.body.createdAt) {
-    date = new Date(req.body.createdAt);
+    date = moment.utc(req.body.createdAt).set('hour', 15);
   }
+  const data2 = {
+    type: 'subtract',
+    description: 'Compra',
+    amount: req.body.total,
+    date
+  };
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -294,7 +303,21 @@ exports.addPurchase = async (req, res, next) => {
     await details.map(async detail => {
       await increaseStock(detail.product, Number(detail.quantity), Number(detail.percentage), Number(detail.newPrice), Number(detail.iva), req.groupId);
     });
+    const cashRegister = await Cash.findById(cashRegisterId);
+    if (!cashRegister) {
+      const error = new Error('Could not find any register');
+      error.statusCode = 404;
+      throw error;
+    }
+    cashRegister.balance -= data2.amount;
+    if (cashRegister.balance < 0) {
+      const error = new Error('Cash avaiable is lower than the amount required');
+      error.statusCode = 602;
+      throw error;
+    }
+    cashRegister.movements.push(data2);
     await purchase.save();
+    await cashRegister.save();
     res.status(200).json({
       message: 'Purchase created.',
       purchase: purchase
@@ -421,7 +444,7 @@ exports.deletePurchase = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    await Purchase.findByIdAndRemove(purchaseId);
+    await purchase.remove();
     res.status(200).json({
       message: 'Purchase deleted'
     });
@@ -459,7 +482,6 @@ const increaseStock = async (productId, quantity, percentage, price, iva, creato
     if (!err.statusCode) {
       err.statusCode = 500;
     }
-    console.log(err);
   }
 
 };

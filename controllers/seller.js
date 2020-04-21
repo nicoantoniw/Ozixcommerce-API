@@ -90,7 +90,7 @@ exports.addSeller = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const calculatedAge = getAge(req.body.birth);
   const seller = new Seller({
@@ -125,7 +125,7 @@ exports.updateSeller = async (req, res, next) => {
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
-    next(error)
+    next(error);
   }
   const sellerId = req.params.sellerId;
   try {
@@ -238,7 +238,7 @@ exports.deleteSeller = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    await Seller.findByIdAndRemove(sellerId);
+    await seller.remove();
     res.status(200).json({
       message: 'Seller deleted'
     });

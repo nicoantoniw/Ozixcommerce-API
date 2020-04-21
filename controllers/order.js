@@ -1,4 +1,5 @@
 const { validationResult } = require('express-validator');
+const moment = require('moment');
 
 const Order = require('../models/order');
 const Group = require('../models/group');
@@ -54,6 +55,10 @@ exports.getOrder = async (req, res, next) => {
 };
 
 exports.addOrder = async (req, res, next) => {
+    let createdAt = moment.utc().utcOffset(-3);
+
+    let deliveryDate = moment.utc(req.body.deliveryDate).set('hour', 15);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = new Error('Validation failed, entered data is incorrect');
@@ -65,7 +70,8 @@ exports.addOrder = async (req, res, next) => {
             number: req.body.number,
             description: req.body.description,
             customer: req.body.customer,
-            deliveryDate: req.body.deliveryDate,
+            deliveryDate,
+            createdAt,
             total: req.body.total,
             details: req.body.details,
             deposit: req.body.deposit,
@@ -171,7 +177,7 @@ exports.deleteOrder = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
-        await Order.findByIdAndRemove(orderId);
+        await order.remove();
         res.status(200).json({
             message: 'Order deleted'
         });

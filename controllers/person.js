@@ -277,7 +277,7 @@ exports.deletePerson = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    await Person.findByIdAndRemove(personId);
+    await person.remove();
     res.status(200).json({
       message: 'Person deleted'
     });
