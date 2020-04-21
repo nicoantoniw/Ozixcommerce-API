@@ -22,6 +22,11 @@ router.post(
     auth.isSeller,
     cashController.addMovement
 );
+router.put(
+    '/restore/:cashRegisterId',
+    auth.isSeller,
+    cashController.restoreCashRegister
+);
 router.delete(
     '/delete/:cashRegisterId',
     auth.isAdmin,

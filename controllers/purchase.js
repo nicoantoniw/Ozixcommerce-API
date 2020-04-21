@@ -270,6 +270,7 @@ exports.getPurchase = async (req, res, next) => {
 
 exports.addPurchase = async (req, res, next) => {
   const cashRegisterId = req.body.cashRegister;
+  let amount;
   let date = moment.utc().utcOffset(-3);
   if (req.body.createdAt) {
     date = moment.utc(req.body.createdAt).set('hour', 15);
@@ -309,7 +310,9 @@ exports.addPurchase = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    cashRegister.balance -= data2.amount;
+    console.log(data2.amount);
+    amount = parseFloat((Number(data2.amount)).toFixed(2));
+    cashRegister.balance -= amount;
     if (cashRegister.balance < 0) {
       const error = new Error('Cash avaiable is lower than the amount required');
       error.statusCode = 602;

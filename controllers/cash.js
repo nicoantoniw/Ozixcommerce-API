@@ -1,4 +1,5 @@
 const { validationResult } = require('express-validator');
+const moment = require('moment');
 
 const Cash = require('../models/cash');
 
@@ -71,8 +72,14 @@ exports.addCashRegister = async (req, res, next) => {
 };
 
 exports.addMovement = async (req, res, next) => {
+    let date = moment.utc().utcOffset(-3);
+    if (req.body.date) {
+        date = moment.utc(req.body.date).set('hour', 15);
+        console.log('je');
+    }
     const cashRegisterId = req.params.cashRegisterId;
     let type = 'subtract';
+    let amount;
     if (req.body.type === 'Ingreso') {
         type = 'add';
     }
@@ -80,7 +87,7 @@ exports.addMovement = async (req, res, next) => {
         type,
         description: req.body.description,
         amount: Number(req.body.amount),
-        date: req.body.date
+        date
     };
     try {
         const cashRegister = await Cash.findById(cashRegisterId);
@@ -90,9 +97,11 @@ exports.addMovement = async (req, res, next) => {
             throw error;
         }
         if (data.type === 'add') {
-            cashRegister.balance += data.amount;
+            amount = parseFloat((data.amount).toFixed(2));
+            cashRegister.balance += amount;
         } else {
-            cashRegister.balance -= data.amount;
+            amount = parseFloat((data.amount).toFixed(2));
+            cashRegister.balance -= amount;
             if (cashRegister.balance < 0) {
                 const error = new Error('Cash avaiable is lower than the amount required');
                 error.statusCode = 602;
@@ -111,6 +120,35 @@ exports.addMovement = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.restoreCashRegister = async (req, res, next) => {
+    const cashRegisterId = req.params.cashRegisterId;
+    try {
+        const cashRegister = await Cash.findById(cashRegisterId);
+        if (!cashRegister) {
+            const error = new Error('Could not find any register');
+            error.statusCode = 404;
+            throw error;
+        }
+        if (cashRegister.creator._id.toString() !== req.groupId) {
+            const error = new Error('Not authorized.');
+            error.statusCode = 403;
+            throw error;
+        }
+        cashRegister.movements = [];
+        cashRegister.balance = 0;
+        await cashRegister.save();
+        res.status(200).json({
+            message: 'Register restored'
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
 
 exports.deleteCashRegister = async (req, res, next) => {
     const cashRegisterId = req.params.cashRegisterId;
