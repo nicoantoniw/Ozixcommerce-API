@@ -32,23 +32,40 @@ const orderSchema = new Schema({
     },
     details: [
         {
+            aggregateDiscount: {
+                type: Number,
+                required: true,
+                default: 0
+            },
             product: {
                 type: String
             },
             quantity: {
                 type: Number
             },
-            aggregateDiscount: {
-                type: Number,
-                required: true,
-                default: 0
-            },
             price: {
                 type: Number,
                 required: true
-            }
+            },
+            totalIva: {
+                type: Number,
+                required: true
+            },
+            subtotal: {
+                type: Number,
+                required: true
+            },
+
         }
     ],
+    bi10: { type: Number, required: false },
+    iva10: { type: Number, required: false },
+    bi21: { type: Number, required: false },
+    iva21: { type: Number, required: false },
+    bi27: { type: Number, required: false },
+    iva27: { type: Number, required: false },
+    totalNoIva: { type: Number, required: false },
+    totalIva: { type: Number, required: false },
     creator: {
         type: Schema.Types.ObjectId,
         ref: 'Group',

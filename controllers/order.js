@@ -56,9 +56,7 @@ exports.getOrder = async (req, res, next) => {
 
 exports.addOrder = async (req, res, next) => {
     let createdAt = moment.utc().utcOffset(-3);
-
     let deliveryDate = moment.utc(req.body.deliveryDate).set('hour', 15);
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = new Error('Validation failed, entered data is incorrect');
@@ -72,6 +70,14 @@ exports.addOrder = async (req, res, next) => {
             customer: req.body.customer,
             deliveryDate,
             createdAt,
+            totalIva: req.body.totalIva,
+            bi10: req.body.bi10,
+            iva10: req.body.iva10,
+            bi21: req.body.bi21,
+            iva21: req.body.iva21,
+            bi27: req.body.bi27,
+            iva27: req.body.iva27,
+            totalNoIva: req.body.totalNoIva,
             total: req.body.total,
             details: req.body.details,
             deposit: req.body.deposit,

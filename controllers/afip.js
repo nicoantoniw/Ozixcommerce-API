@@ -31,24 +31,17 @@ exports.getLastVoucher = async (req, res, next) => {
     const salePoint = req.query.salePoint;
     const ticketType = req.query.ticketType;
     try {
-        const lastVoucher = await afip.ElectronicBilling.getLastVoucher(salePoint, ticketType); //Devuelve el número del último comprobante creado para el punto de venta 1 y el tipo de comprobante 6 (Factura B)
-        if (lastVoucher === null) {
-            const error = new Error('Could not find any voucher');
-            error.statusCode = 404;
-            throw error;
-        }
-        if (!lastVoucher) {
-            const error = new Error('Could not find any voucher');
-            error.statusCode = 404;
-            throw error;
+        let lastVoucher = await afip.ElectronicBilling.getLastVoucher(salePoint, ticketType); //Devuelve el número del último comprobante creado para el punto de venta 1 y el tipo de comprobante 6 (Factura B)
+        if (lastVoucher === null || !lastVoucher) {
+            lastVoucher = 0;
         }
         res.status(200).json({
             lastVoucher
         });
     } catch (err) {
         if (err.message === '(602) No existen datos en nuestros registros para los parametros ingresados.') {
-            err.statusCode = 404;
-            err.message = 'No voucher found.';
+            err.statusCode = 615;
+            err.message = 'No data with selected parameters.';
         }
         if (!err.statusCode) {
             err.statusCode = 500;
@@ -376,6 +369,26 @@ exports.addVoucher = async (req, res, next) => {
             ],
         };
 
+    } else if (bi10 === 0 && bi21 === 0 && bi27 === 0) {
+        data2 = {
+            CantReg: 1,  // Cantidad de comprobantes a registrar
+            PtoVta: req.body.PtoVta,  // Punto de venta
+            CbteTipo: (req.body.CbteTipo),  // Tipo de comprobante (ver tipos disponibles) 
+            Concepto: (req.body.Concepto),  // Concepto del Comprobante: (1)Productos, (2)Servicios, (3)Productos y Servicios
+            DocTipo: (req.body.DocTipo), // Tipo de documento del comprador (99 consumidor final, ver tipos disponibles)
+            DocNro: parseInt(req.body.DocNro),  // Número de documento del comprador (0 consumidor final)
+            CbteDesde: parseInt(req.body.CbteDesde) + 1,  // Número de comprobante o numero del primer comprobante en caso de ser mas de uno
+            CbteHasta: parseInt(req.body.CbteHasta) + 1,  // Número de comprobante o numero del último comprobante en caso de ser mas de uno
+            CbteFch: parseInt(date.replace(/-/g, '')), // (Opcional) Fecha del comprobante (yyyymmdd) o fecha actual si es nulo
+            ImpTotal: total, // Importe total del comprobante
+            ImpTotConc: (req.body.ImpTotConc),   // Importe neto no gravado
+            ImpNeto: totalNoIva, // Importe neto gravado
+            ImpOpEx: (req.body.ImpOpEx),   // Importe exento de IVA
+            ImpIVA: 0,  //Importe total de IVA
+            ImpTrib: (req.body.ImpTrib),   //Importe total de tributos
+            MonId: req.body.MonId, //Tipo de moneda usada en el comprobante (ver tipos disponibles)('PES' para pesos argentinos) 
+            MonCotiz: (req.body.MonCotiz), // Cotización de la moneda usada (1 para pesos argentinos) 
+        };
     } else {
         const error = new Error('Nothing reached');
         error.statusCode = 610;
@@ -417,8 +430,13 @@ exports.addVoucher = async (req, res, next) => {
     //         }
     //     ],
     // };
-    if (data2.CbteTipo === 1 && data2.DocTipo !== 80 || data2.CbteTipo === 2 && data2.DocTipo !== 80 || data2.CbteTipo === 3 && data2.DocTipo !== 80) {
-        const error = new Error('id type should be 80 with Tickets type A or C');
+    if (data2.CbteTipo === 1 && data2.DocTipo !== 80 || data2.CbteTipo === 2 && data2.DocTipo !== 80 ||
+        data2.CbteTipo === 3 && data2.DocTipo !== 80
+        //  ||
+        //  data2.CbteTipo === 11 && data2.DocTipo !== 80 ||
+        // data2.CbteTipo === 12 && data2.DocTipo !== 80 || data2.CbteTipo === 13 && data2.DocTipo !== 80
+    ) {
+        const error = new Error('id type should be 80 with Ticket type A or C');
         error.statusCode = 601;
         next(error);
     }

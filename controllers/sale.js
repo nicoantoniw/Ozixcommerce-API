@@ -350,7 +350,6 @@ exports.addSale = async (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-      console.log(data2.amount);
       amount = parseFloat((Number(data2.amount)).toFixed(2));
       cashRegister.balance += amount;
       cashRegister.movements.push(data2);
@@ -505,6 +504,9 @@ exports.createTicket = async (req, res, next) => {
 
     //   // pdfDocA4.end();
     // }
+    res.status(200).json({
+      message: 'ok'
+    });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
