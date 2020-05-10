@@ -1,5 +1,6 @@
 601 - Used ticket type A with DNI customer
 602 - Cash avaiable is lower than the amount required when subtracting money from register
+604 - Some fields in the file are not correct
 610 - nothing reached in bi, in addafipsale
 615 - No existen datos en nuestros registros para los parametros ingresados (in getLastVoucher)
 700 - Try again in a moment, please

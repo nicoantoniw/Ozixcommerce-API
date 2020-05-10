@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const moment = require('moment');
 
 const Cash = require('../models/cash');
+const Group = require('../models/group');
 
 exports.getCashRegisters = async (req, res, next) => {
     try {
@@ -52,11 +53,45 @@ exports.getCashRegister = async (req, res, next) => {
     }
 };
 exports.addCashRegister = async (req, res, next) => {
-    const cashRegister = new Cash({
-        name: req.body.name,
-        movements: [],
-        creator: req.groupId
-    });
+    let cashRegister;
+    let group = await Group.findById(req.groupId);
+    if (req.body.cuit === '') {
+        cashRegister = new Cash({
+            name: group.name,
+            movements: [],
+            creator: req.groupId,
+            province: group.province,
+            city: group.city,
+            streetAddress: group.streetAddress,
+            zip: group.zip,
+            apartment: group.apartment,
+            category: group.category,
+            personeria: group.personeria,
+            cuit: group.cuit,
+            activitiesDate: group.activitiesDate,
+            socialName: group.socialName,
+            brutosNumber: group.brutosNumber,
+            salePoint: req.body.salePoint
+        });
+    } else {
+        cashRegister = new Cash({
+            name: req.body.name,
+            movements: [],
+            creator: req.groupId,
+            province: req.body.province,
+            city: req.body.city,
+            streetAddress: req.body.streetAddress,
+            zip: req.body.zip,
+            apartment: req.body.apartment,
+            category: req.body.category,
+            personeria: req.body.personeria,
+            cuit: req.body.cuit,
+            activitiesDate: req.body.activitiesDate,
+            socialName: req.body.socialName,
+            brutosNumber: req.body.brutosNumber,
+            salePoint: req.body.salePoint
+        });
+    }
     try {
         await cashRegister.save();
         res.status(200).json({
@@ -75,7 +110,6 @@ exports.addMovement = async (req, res, next) => {
     let date = moment.utc().utcOffset(-3);
     if (req.body.date) {
         date = moment.utc(req.body.date).set('hour', 15);
-        console.log('je');
     }
     const cashRegisterId = req.params.cashRegisterId;
     let type = 'subtract';

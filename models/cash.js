@@ -9,6 +9,43 @@ const cashSchema = new Schema({
         type: Number,
         default: 0
     },
+    cuit: {
+        type: Number,
+        required: true
+    },
+    province: {
+        type: String
+    },
+    city: {
+        type: String
+    },
+    streetAddress: {
+        type: String
+    },
+    zip: {
+        type: String
+    },
+    apartment: {
+        type: String
+    },
+    category: {
+        type: String
+    },
+    personeria: {
+        type: String
+    },
+    activitiesDate: {
+        type: String
+    },
+    socialName: {
+        type: String
+    },
+    brutosNumber: {
+        type: String
+    },
+    salePoint: {
+        type: String
+    },
     movements: [
         {
             type: {
@@ -22,6 +59,11 @@ const cashSchema = new Schema({
             },
             amount: {
                 type: Number
+            },
+            sale: {
+                type: Schema.Types.ObjectId,
+                ref: 'Sale',
+                required: false
             }
         }
     ],

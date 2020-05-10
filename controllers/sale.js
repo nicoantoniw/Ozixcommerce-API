@@ -337,6 +337,7 @@ exports.addSale = async (req, res, next) => {
         creator: req.groupId,
         seller: req.body.seller,
         customer: req.body.customer,
+        cashRegister: cashRegisterId,
         createdAt: date
       });
       let details = req.body.details;
@@ -350,6 +351,7 @@ exports.addSale = async (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      data2.sale = sale._id;
       amount = parseFloat((Number(data2.amount)).toFixed(2));
       cashRegister.balance += amount;
       cashRegister.movements.push(data2);
@@ -366,6 +368,7 @@ exports.addSale = async (req, res, next) => {
         total: req.body.total,
         creator: req.groupId,
         seller: req.body.seller,
+        cashRegister: cashRegisterId,
         createdAt: date
       });
       let details = req.body.details;
@@ -379,6 +382,7 @@ exports.addSale = async (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      data2.sale = sale._id;
       cashRegister.balance += data2.amount;
       cashRegister.movements.push(data2);
       await cashRegister.save();
@@ -396,45 +400,45 @@ exports.addSale = async (req, res, next) => {
 };
 
 exports.createTicket = async (req, res, next) => {
-  const cae = req.body.CAE;
-  const fchVto = req.body.CAEFchVto;
-  const idType = req.body.DocTipo;
-  const idNumber = req.body.DocNro;
-  const ticketType = req.body.ticketType;
-  const ticketNumber = req.body.CbteDesd;
-  const ticketDate = req.body.CbteFch;
-  const total = req.body.ImpTotal;
-  const totalNoTax = req.body.ImpNeto;
-  const iva = req.body.ImpIVA;
-  const salePoint = req.body.PtoVta;
-  const details = req.body.details;
-  const pdfDoc = new PDFDocument();
-  let date = new Date();
-  let day = date.getDate();
-  let month = date.getMonth() + 1;
-  let year = date.getFullYear();
-  if (day < 10) {
-    day = `0${day}`;
-  }
-  if (month === 13) {
-    month = 1;
-    year = year + 1;
-  }
-  if (month < 10) {
-    month = `0${month}`;
-  }
-  const hour = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
   try {
-    const group = await Group.findById(req.groupId);
-    const category = group.category;
-    const cuit = group.cuit;
-    const activitiesDate = group.activitiesDate;
-    const socialName = group.socialName;
-    const city = group.city;
-    const streetAddress = group.streetAddress;
-    const zip = group.zip;
+    const cae = req.body.CAE;
+    const fchVto = req.body.CAEFchVto;
+    const idType = req.body.DocTipo;
+    const idNumber = req.body.DocNro;
+    const ticketType = req.body.ticketType;
+    const ticketNumber = req.body.CbteDesd;
+    const ticketDate = req.body.CbteFch;
+    const total = req.body.ImpTotal;
+    const totalNoTax = req.body.ImpNeto;
+    const iva = req.body.ImpIVA;
+    const details = req.body.details;
+    const pdfDoc = new PDFDocument();
+    let date = new Date();
+    let day = date.getDate();
+    let month = date.getMonth() + 1;
+    let year = date.getFullYear();
+    if (day < 10) {
+      day = `0${day}`;
+    }
+    if (month === 13) {
+      month = 1;
+      year = year + 1;
+    }
+    if (month < 10) {
+      month = `0${month}`;
+    }
+    const hour = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    const cashRegister = await Cash.findById(req.body.cashRegister);
+    const salePoint = cashRegister.salePoint;
+    const category = cashRegister.category;
+    const cuit = cashRegister.cuit;
+    const activitiesDate = cashRegister.activitiesDate;
+    const socialName = cashRegister.socialName;
+    const city = cashRegister.city;
+    const streetAddress = cashRegister.streetAddress;
+    const zip = cashRegister.zip;
 
     // if (ticketType === 'Factura B') {
     //   pdfDoc.pipe(
@@ -705,6 +709,7 @@ exports.deactivateSale = async (req, res, next) => {
 
 exports.deleteSale = async (req, res, next) => {
   const saleId = req.params.saleId;
+  let index1;
   try {
     const sale = await Sale.findById(saleId);
     if (!sale) {
@@ -717,6 +722,16 @@ exports.deleteSale = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
+    const cashRegister = await Cash.findById(sale.cashRegister);
+    cashRegister.movements.forEach((movement, index) => {
+      if (!movement.sale) {
+      } else if ((movement.sale).toString() === (sale._id).toString()) {
+        index1 = index;
+      }
+    });
+    cashRegister.movements.splice(index1, 1);
+    cashRegister.balance -= sale.total;
+    await cashRegister.save();
     await sale.remove();
     res.status(200).json({
       message: 'Sale deleted'

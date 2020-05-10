@@ -18,11 +18,7 @@ router.post(
     body('name')
       .isString()
       .trim()
-      .isLength({ min: 2, max: 40 }),
-    body('description')
-      .isString()
-      .trim()
-      .isLength({ max: 100 })
+      .isLength({ min: 2, max: 40 })
   ],
   auth.isSeller,
   categoryController.addCategory
@@ -33,12 +29,7 @@ router.put(
     body('name')
       .isString()
       .trim()
-      .isLength({ min: 2, max: 20 }),
-
-    body('description')
-      .isString()
-      .trim()
-      .isLength({ max: 100 })
+      .isLength({ min: 2, max: 20 })
   ],
   auth.isSeller,
   categoryController.updateCategory
@@ -59,4 +50,4 @@ router.delete(
   categoryController.deleteCategory
 );
 
-module.exports = router
+module.exports = router;

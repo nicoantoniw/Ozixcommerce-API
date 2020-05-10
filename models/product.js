@@ -38,7 +38,22 @@ const productSchema = new Schema({
   },
   stock: {
     type: Number,
-    required: true
+    required: false
+  },
+  discount: {
+    type: Number,
+    required: false
+  },
+  discounts: {
+    type: [{
+      type: Number
+    }],
+    default: []
+  },
+  totalDiscounts: {
+    type: Number,
+    default: 0,
+    required: false
   },
   status: {
     type: String,

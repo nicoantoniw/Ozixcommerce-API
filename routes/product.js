@@ -7,6 +7,7 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/products', auth.isUser, productController.getProducts);
+router.get('/products-perfumerialiliana', productController.getProductsPerfumeriaLiliana);
 router.get('/products/:productId', auth.isUser, productController.getProduct);
 router.get(
   '/products/category/:categoryId',
@@ -22,12 +23,6 @@ router.post(
     body('code')
       .trim()
       .isAlphanumeric(),
-    body('price')
-      .trim()
-      .isNumeric(),
-    body('percentage')
-      .trim()
-      .isNumeric(),
     body('stock')
       .trim()
       .isNumeric()

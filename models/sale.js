@@ -17,6 +17,11 @@ const saleSchema = new Schema({
     ref: 'Person',
     required: false
   },
+  cashRegister: {
+    type: Schema.Types.ObjectId,
+    ref: 'Cash',
+    required: true
+  },
   ticketType: {
     type: String,
     required: true

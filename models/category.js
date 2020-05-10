@@ -7,7 +7,8 @@ const categorySchema = new Schema({
     required: true
   },
   description: {
-    type: String
+    type: String,
+    required: false
   },
   status: {
     type: String,

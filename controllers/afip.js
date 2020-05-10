@@ -1,7 +1,5 @@
 const Afip = require('@afipsdk/afip.js');
 
-const afip = new Afip({ CUIT: 20376203698 });
-
 exports.getVoucher = async (req, res, next) => {
     const ticketNumber = req.query.ticketNumber;
     try {
@@ -30,6 +28,7 @@ exports.getVoucher = async (req, res, next) => {
 exports.getLastVoucher = async (req, res, next) => {
     const salePoint = req.query.salePoint;
     const ticketType = req.query.ticketType;
+    const afip = new Afip({ CUIT: req.query.cuit });
     try {
         let lastVoucher = await afip.ElectronicBilling.getLastVoucher(salePoint, ticketType); //Devuelve el número del último comprobante creado para el punto de venta 1 y el tipo de comprobante 6 (Factura B)
         if (lastVoucher === null || !lastVoucher) {
@@ -133,6 +132,7 @@ exports.getServerStatus = async (req, res, next) => {
 };
 
 exports.addVoucher = async (req, res, next) => {
+    const afip = new Afip({ CUIT: req.body.cuit });
     let date = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     const total = req.body.total;
     let data2;
