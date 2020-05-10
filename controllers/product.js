@@ -277,7 +277,7 @@ exports.addMassiveProducts = async (req, res, next) => {
     let data2 = [];
     let calculatedFinalPrice = 0;
     xls({
-      input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx",  // input xls
+      input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",  // input xls
       output: null, // output json
       // output: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json", // output json
       // sheet: "sheetname",  specific sheetname
@@ -335,7 +335,7 @@ exports.addMassiveProducts = async (req, res, next) => {
           });
         }
 
-        fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx');
+        fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');;
       }
     });
     res.status(200).json({
