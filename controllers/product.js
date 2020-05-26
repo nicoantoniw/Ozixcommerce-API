@@ -1,9 +1,12 @@
 const fs = require('fs');
 
 const { validationResult } = require('express-validator');
-const macaddress = require('macaddress');
 const xls = require('xls-to-json');
-const exec = require('child_process').exec;
+const aws = require('aws-sdk');
+const multerS3 = require('multer-s3');
+const multer = require('multer');
+const path = require('path');
+const url = require('url');
 
 const Product = require('../models/product');
 const Group = require('../models/group');
@@ -82,8 +85,6 @@ exports.getProduct = async (req, res, next) => {
           }
 
         ]
-
-
     })
       .populate('category', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 });
@@ -93,7 +94,7 @@ exports.getProduct = async (req, res, next) => {
       throw error;
     }
     res.status(200).json({
-      product: product
+      product
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -158,111 +159,64 @@ exports.addProduct = async (req, res, next) => {
 };
 
 
-// exports.addMassiveProducts = async (req, res, next) => {
-//   try {
-//     const products = await Product.find({ creator: req.groupId });
-//     // const busy = 1;
-//     // if (busy === 1) {
-//     //   const error = new Error('Please, Try again later');
-//     //   error.statusCode = 700;
-//     //   throw error;
-//     // }
-//     let data = [];
-//     xls({
-//       input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",  // input xls
-//       output: "/home/ubuntu/apps/Ozixcommerce-API/assets/output.json", // output json
-//       // sheet: "sheetname",  specific sheetname
-//       // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
-//     }, function (err, result) {
-//       if (err) {
-//         if (!err.statusCode) {
-//           err.statusCode = 500;
-//         }
-//         next(err);
-//       } else {
-//         data = result;
-//         for (let i = 0; i < data.length; i++) {
-//           const calculatedPercentage = Number(data[i].price) + (Number(data[i].price) * Number(data[i].percentage)) / 100;
-//           const calculatedPriceIva = Number(calculatedPercentage) + ((Number(data[i].iva) * Number(calculatedPercentage)) / 100);
-//           data[i].finalPrice = Number(calculatedPriceIva).toFixed(2);
-//           data[i].creator = req.groupId;
-//         };
-//         Product.insertMany(data, (err, docs) => {
-//           if (err) {
-//             const error = new Error('Validation failed, entered data is incorrect');
-//             error.statusCode = 422;
-//             next(error);
-//           }
-//         });
-//         fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');
-//         fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/output.json');
-//         res.status(200).json({
-//           message: 'Products created.'
-//         });
-//       }
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// };
+exports.addImage = async (req, res, next) => {
+  const productId = req.params.productId;
+  let data;
+  const s3 = new aws.S3({
+    accessKeyId: 'AKIAUEN42P7LBOUCJDJF',
+    secretAccessKey: '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',
+    Bucket: 'perfumeriaslilianaimages'
+  });
+  const ext = req.file.originalname.split('.').pop();
+  const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+  // const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.${ext}`);
+  if (ext === 'jpg') {
+    ext2 = 'jpeg';
+  } else {
+    ext2 = 'png';
+  }
+  const params = {
+    Bucket: 'perfumeriaslilianaimages',
+    acl: 'public-read',
+    Key: `${Date.now()}-${req.file.originalname}`,
+    Body: file,
+    ContentType: `image/${ext2}`
+  };
+  console.log(ext2);
+  try {
+    const product = await Product.findById(productId);
+    s3.upload(params, (err, data) => {
+      if (err) {
+        throw err;
+      }
+      product.image = data.Location;
+      product.save().then(success => {
+        fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+        // fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.${ext}`);
+        console.log('asdsadf');
+        res.status(200).json({
+          message: 'Image uploaded'
+        });
+      }).catch(err => console.log(err));
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-// exports.addMassiveProducts = async (req, res, next) => {
-//   try {
-//     const products = await Product.find({ creator: req.groupId });
-//     // const busy = 1;
-//     // if (busy === 1) {
-//     //   const error = new Error('Please, Try again later');
-//     //   error.statusCode = 700;
-//     //   throw error;
-//     // }
-//     let data = [];
-//     xls({
-//       input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx",  // input xls
-//       output: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json", // output json
-//       // sheet: "sheetname",  specific sheetname
-//       // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
-//     }, function (err, result) {
-//       if (err) {
-//         if (!err.statusCode) {
-//           err.statusCode = 500;
-//         }
-//         next(err);
-//       } else {
-//         data = result;
-//         for (let i = 0; i < data.length; i++) {
-//           data[i].price = parseFloat(data[i].price);
-//           data[i].percentage = parseFloat(data[i].percentage);
-//           data[i].iva = parseFloat(data[i].iva);
-//           data[i].stock = parseFloat(data[i].stock);
-//           const calculatedPercentage = Number(data[i].price) + (Number(data[i].price) * Number(data[i].percentage)) / 100;
-//           const calculatedPriceIva = Number(calculatedPercentage) + ((Number(data[i].iva) * Number(calculatedPercentage)) / 100);
-//           data[i].finalPrice = parseFloat(Number(calculatedPriceIva).toFixed(2));
-//           data[i].creator = req.groupId;
-//         };
-//         Product.insertMany(data, (err, docs) => {
-//           if (err) {
-//             const error = new Error('Validation failed, entered data is incorrect');
-//             error.statusCode = 422;
-//             next(error);
-//           }
-//         });
-//         fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx');
-//         fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json');
-//         res.status(200).json({
-//           message: 'Products created.'
-//         });
-//       }
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// };
+function checkFileType(file, cb) {
+  // Allowed ext
+  const filetypes = /jpeg|jpg|png/;
+  // Check ext
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  // Check mime
+  const mimetype = filetypes.test(file.mimetype);
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb('Error: Images Only!');
+  }
+}
 
 exports.addMassiveProducts = async (req, res, next) => {
   try {
@@ -278,8 +232,8 @@ exports.addMassiveProducts = async (req, res, next) => {
     let calculatedFinalPrice = 0;
     xls({
       input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",  // input xls
+      // input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx"
       output: null, // output json
-      // output: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/output.json", // output json
       // sheet: "sheetname",  specific sheetname
       // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
     }, function (err, result) {
@@ -331,11 +285,13 @@ exports.addMassiveProducts = async (req, res, next) => {
               const error = new Error('Some fields in the file are not correct');
               error.statusCode = 604;
               next(error);
+              console.log(err);
             }
           });
         }
 
-        fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');;
+        fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');
+        // fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx');
       }
     });
     res.status(200).json({
@@ -505,32 +461,5 @@ exports.deleteProducts = async (req, res, next) => {
   }
   catch (err) {
     console.log(err);
-  }
-};
-
-exports.getProductsPerfumeriaLiliana = async (req, res, next) => {
-  try {
-    const totalItems = await Product.find({
-      creator: '5ea9c4a058eb5371b70d4dc6'
-    }).countDocuments();
-    const products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6' })
-      .populate('category', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-
-    if (totalItems === 0) {
-      const error = new Error('No products found');
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json({
-      products: products,
-      totalItems: totalItems
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
   }
 };

@@ -171,6 +171,18 @@ exports.restoreCashRegister = async (req, res, next) => {
         }
         cashRegister.movements = [];
         cashRegister.balance = 0;
+        cashRegister.cuit = 0;
+        cashRegister.province = '';
+        cashRegister.city = '';
+        cashRegister.streetAddress = '';
+        cashRegister.zip = '';
+        cashRegister.apartment = '';
+        cashRegister.category = '';
+        cashRegister.personeria = '';
+        cashRegister.activitiesDate = '';
+        cashRegister.socialName = '';
+        cashRegister.brutosNumber = '';
+        cashRegister.salePoint = '';
         await cashRegister.save();
         res.status(200).json({
             message: 'Register restored'

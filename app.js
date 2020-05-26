@@ -18,6 +18,8 @@ const macRoutes = require('./routes/mac');
 const groupRoutes = require('./routes/group');
 const orderRoutes = require('./routes/order');
 const cashRoutes = require('./routes/cash');
+const websiteUserRoutes = require('./routes/websiteUser');
+const websiteAdminRoutes = require('./routes/websiteAdmin');
 
 const app = express();
 const dbURI =
@@ -63,6 +65,8 @@ app.use('/api/purchase', purchasesRoutes);
 app.use('/api/group', groupRoutes);
 app.use('/api/order', orderRoutes);
 app.use('/api/cash', cashRoutes);
+app.use('/api/website/user', websiteUserRoutes);
+app.use('/api/website/admin', websiteAdminRoutes);
 
 
 

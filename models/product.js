@@ -20,6 +20,21 @@ const productSchema = new Schema({
   image: {
     type: String
   },
+  websiteStatus: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  websiteFeaturedStatus: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  websitePromotionsStatus: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   price: {
     type: Number,
     required: true

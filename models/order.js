@@ -9,7 +9,7 @@ const orderSchema = new Schema({
     customer: {
         type: Schema.Types.ObjectId,
         ref: 'Person',
-        required: true
+        required: false
     },
     description: {
         type: String
@@ -23,7 +23,7 @@ const orderSchema = new Schema({
     },
     deposit: {
         type: Number,
-        required: true
+        required: false
     },
     status: {
         type: String,

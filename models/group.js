@@ -9,12 +9,18 @@ const groupSchema = new Schema({
   users: [
     {
       type: Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'User',
+    }
+  ],
+  websiteUsers: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'WebsiteUser',
     }
   ],
   plan: {
     type: String,
-    required: true
+    required: false
   },
   province: {
     type: String

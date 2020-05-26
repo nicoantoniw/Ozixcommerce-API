@@ -7,7 +7,6 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/products', auth.isUser, productController.getProducts);
-router.get('/products-perfumerialiliana', productController.getProductsPerfumeriaLiliana);
 router.get('/products/:productId', auth.isUser, productController.getProduct);
 router.get(
   '/products/category/:categoryId',
@@ -29,6 +28,11 @@ router.post(
   ],
   auth.isSeller,
   productController.addProduct
+);
+router.post(
+  '/add-image/:productId',
+  auth.isAdmin,
+  productController.addImage
 );
 router.post(
   '/add-massive',

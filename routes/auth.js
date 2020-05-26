@@ -8,7 +8,6 @@ const router = express.Router();
 
 router.post('/login', authController.login);
 router.post('/user', auth.isSuper, authController.createUser);
-router.get('/status', auth.isAdmin, authController.getUserStatus);
 router.patch(
   '/activate/:userStatusId',
   auth.isAdmin,
@@ -19,5 +18,7 @@ router.patch(
   auth.isAdmin,
   authController.deactivateUserStatus
 );
+router.post('/website-login', authController.websiteLogin);
+router.post('/website-signup', authController.websiteSignup);
 
 module.exports = router;
