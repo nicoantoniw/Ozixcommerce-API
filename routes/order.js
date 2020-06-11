@@ -9,8 +9,12 @@ const router = express.Router();
 router.get('/orders', auth.isUser, orderController.getOrders);
 router.get('/orders/:orderId', auth.isUser, orderController.getOrder);
 router.post(
-    '/add',
-    auth.isSeller,
+    '/add', auth.isSeller,
+    orderController.addOrder
+);
+router.post(
+    '/add-from-website',
+    auth.isWebsiteUser,
     orderController.addOrder
 );
 router.put(
@@ -21,7 +25,7 @@ router.put(
 );
 router.patch(
     '/status/:orderId',
-    auth.isSeller,
+    // auth.isSeller,
     orderController.changeOrderStatus
 );
 router.delete(

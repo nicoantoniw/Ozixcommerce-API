@@ -65,6 +65,16 @@ const websiteUserSchema = new Schema({
             required: true
         }
     },
+    lastOrder: {
+        type: Schema.Types.ObjectId,
+        ref: 'Order',
+        required: false
+    },
+    clientId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Person',
+        required: false
+    },
     group: {
         type: Schema.Types.ObjectId,
         ref: 'Group',

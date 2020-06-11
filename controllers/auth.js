@@ -6,6 +6,7 @@ const User = require('../models/user');
 const WebsiteUser = require('../models/websiteUser');
 const Group = require('../models/group');
 const Mac = require('../models/mac');
+const Person = require('../models/person');
 
 exports.login = async (req, res, next) => {
   const username = req.body.username;
@@ -183,7 +184,8 @@ exports.websiteLogin = async (req, res, next) => {
         {
           email: user.email,
           userId: user._id.toString(),
-          groupId: user.group._id.toString()
+          groupId: user.group._id.toString(),
+          clientId: user.clientId
         },
         'secretwordnamedzoerottweiler',
         { expiresIn: '6h' }
@@ -192,8 +194,8 @@ exports.websiteLogin = async (req, res, next) => {
         token,
         userId: user._id.toString(),
         email: user.email,
-        groupId: user.group._id.toString()
-
+        groupId: user.group._id.toString(),
+        clientId: user.clientId
       });
     }
   } catch (err) {
@@ -211,6 +213,10 @@ exports.websiteSignup = async (req, res, next) => {
   const surname = req.body.surname;
   const id = req.body.id;
   const phone = req.body.phone;
+  const address = req.body.address;
+  const province = req.body.province;
+  const city = req.body.city;
+  const zip = req.body.zip;
   let regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   const result = regex.test(email);
   if (!result) {
@@ -238,11 +244,28 @@ exports.websiteSignup = async (req, res, next) => {
       cart: {
         items: [],
         total: 0
-      }
+      },
+      address,
+      province,
+      city,
+      zip
     });
     group.websiteUsers.push(user);
-    await user.save();
+
+    const person = new Person({
+      name: `${name} ${surname}`,
+      type: 'customer',
+      description: 'Cliente de pagina web',
+      numberId: id,
+      address: `${address} ${province} ${city} ${zip}`,
+      phoneNumber: phone,
+      email: email,
+      creator: '5ea9c4a058eb5371b70d4dc6'
+    });
     await group.save();
+    await person.save();
+    user.clientId = person._id;
+    await user.save();
     res.status(200).json({ message: 'User Created' });
   } catch (err) {
     if (!err.statusCode) {

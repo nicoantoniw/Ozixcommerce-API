@@ -401,6 +401,9 @@ exports.addSale = async (req, res, next) => {
 
 exports.createTicket = async (req, res, next) => {
   try {
+    return res.status(200).json({
+      message: 'ok'
+    });
     const cae = req.body.CAE;
     const fchVto = req.body.CAEFchVto;
     const idType = req.body.DocTipo;

@@ -133,6 +133,7 @@ exports.addPerson = async (req, res, next) => {
     error.statusCode = 422;
     next(error);
   }
+  let creator = req.groupId;
   const calculatedAge = getAge(req.body.birth);
   const person = new Person({
     name: req.body.name,
@@ -146,7 +147,7 @@ exports.addPerson = async (req, res, next) => {
     address: req.body.address,
     phoneNumber: req.body.phoneNumber,
     email: req.body.email,
-    creator: req.groupId
+    creator
   });
   try {
     await person.save();

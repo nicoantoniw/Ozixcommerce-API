@@ -184,6 +184,8 @@ exports.isWebsiteUser = (req, res, next) => {
     throw error;
   }
   req.userId = decodedToken.userId;
+  req.email = decodedToken.email;
   req.groupId = decodedToken.groupId;
+  req.clientId = decodedToken.clientId;
   next();
 };

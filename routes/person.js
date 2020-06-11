@@ -12,7 +12,7 @@ router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/persons/:personId', auth.isUser, auth.isPrime, personController.getPerson);
 router.post(
   '/add',
-  auth.isUser, auth.isPrime,
+  auth.isUser, auth.isPrime, auth.isWebsiteUser,
   personController.addPerson
 );
 router.post(

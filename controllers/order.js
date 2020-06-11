@@ -63,6 +63,10 @@ exports.addOrder = async (req, res, next) => {
         error.statusCode = 422;
         next(error);
     }
+    let creator = req.groupId;
+    if (req.body.creator) {
+        creator = req.body.creator;
+    };
     try {
         const order = new Order({
             number: req.body.number,
@@ -82,7 +86,7 @@ exports.addOrder = async (req, res, next) => {
             details: req.body.details,
             deposit: req.body.deposit,
             status: req.body.status,
-            creator: req.groupId
+            creator: creator
         });
         await order.save();
         res.status(200).json({
@@ -121,7 +125,9 @@ exports.updateOrder = async (req, res, next) => {
             throw error;
         }
         order.description = req.body.description;
-        order.customer = req.body.customer;
+        if (req.body.customer) {
+            order.customer = req.body.customer;
+        }
         order.deliveryDate = req.body.deliveryDate;
         order.total = req.body.total;
         order.deposit = req.body.deposit;
@@ -144,23 +150,30 @@ exports.changeOrderStatus = async (req, res, next) => {
     const orderId = req.params.orderId;
     const status = req.body.status;
     try {
-        const order = await Order.findById(orderId);
-        if (!order) {
-            const error = new Error('Could not find any order');
-            error.statusCode = 404;
-            throw error;
+        if (status === 'delete') {
+            await Order.findByIdAndDelete(orderId);
+            res.status(200).json({
+                message: 'Order has been deleted'
+            });
+        } else {
+            const order = await Order.findById(orderId);
+            if (!order) {
+                const error = new Error('Could not find any order');
+                error.statusCode = 404;
+                throw error;
+            }
+            // if (order.creator._id.toString() !== req.groupId) {
+            //     const error = new Error('Not authorized');
+            //     error.statusCode = 403;
+            //     throw error;
+            // }
+            order.status = status;
+            await order.save();
+            res.status(200).json({
+                message: 'Order has been updated',
+                order
+            });
         }
-        if (order.creator._id.toString() !== req.groupId) {
-            const error = new Error('Not authorized');
-            error.statusCode = 403;
-            throw error;
-        }
-        order.status = status;
-        await order.save();
-        res.status(200).json({
-            message: 'Order has been updated',
-            order
-        });
     } catch (err) {
         if (!err.statusCode) {
             err.statusCode = 500;
