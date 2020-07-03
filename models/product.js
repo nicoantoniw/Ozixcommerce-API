@@ -6,6 +6,10 @@ const productSchema = new Schema({
     type: String,
     required: true
   },
+  brand: {
+    type: String,
+    required: false
+  },
   category: {
     type: Schema.Types.ObjectId,
     ref: 'Category'
@@ -19,21 +23,6 @@ const productSchema = new Schema({
   },
   image: {
     type: String
-  },
-  websiteStatus: {
-    type: Number,
-    required: false,
-    default: 0
-  },
-  websiteFeaturedStatus: {
-    type: Number,
-    required: false,
-    default: 0
-  },
-  websitePromotionsStatus: {
-    type: Number,
-    required: false,
-    default: 0
   },
   price: {
     type: Number,
@@ -55,10 +44,6 @@ const productSchema = new Schema({
     type: Number,
     required: false
   },
-  discount: {
-    type: Number,
-    required: false
-  },
   discounts: {
     type: [{
       type: Number
@@ -69,6 +54,68 @@ const productSchema = new Schema({
     type: Number,
     default: 0,
     required: false
+  },
+  options: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Option'
+  }],
+  hasVariants: {
+    type: Boolean,
+    default: false
+  },
+  variants: [{
+    name: {
+      type: String
+    },
+    values: [{
+      value: {
+        type: String
+      }
+    }],
+    stock: {
+      type: Number,
+      required: false
+    },
+    code: {
+      type: String,
+    },
+    price: {
+      type: Number,
+      required: false
+    },
+    percentage: {
+      type: Number,
+    },
+    discounts: {
+      type: [{
+        type: Number
+      }],
+      default: []
+    },
+    totalDiscounts: {
+      type: Number,
+      default: 0,
+      required: false
+    },
+    finalPrice: {
+      type: Number,
+    },
+  }
+  ],
+  websiteStatus: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  websiteFeaturedStatus: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  websitePromotionsStatus: {
+    type: Number,
+    required: false,
+    default: 0
   },
   status: {
     type: String,

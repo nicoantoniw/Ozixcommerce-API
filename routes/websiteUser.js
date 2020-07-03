@@ -25,12 +25,16 @@ router.post(
     websiteUserController.addLastOrder
 );
 router.post(
-    '/send-email', auth.isWebsiteUser,
+    '/send-email',
     websiteUserController.sendEmail
 );
 router.post(
     '/change-password', auth.isWebsiteUser,
     websiteUserController.changePassword
+);
+router.put(
+    '/restore-password',
+    websiteUserController.restorePassword
 );
 router.put(
     '/update', auth.isWebsiteUser,

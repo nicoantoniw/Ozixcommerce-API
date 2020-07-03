@@ -13,6 +13,21 @@ router.get(
   auth.isUser,
   productController.getProductsByCategory
 );
+router.get(
+  '/options/:productId',
+  auth.isAdmin,
+  productController.getProductOptions
+);
+router.get(
+  '/variants/:productId',
+  auth.isAdmin,
+  productController.getProductVariants
+);
+router.get(
+  '/variants/:productId/:variantId',
+  auth.isWebsiteUser,
+  productController.getProductVariant
+);
 router.post(
   '/add',
   [
@@ -39,6 +54,11 @@ router.post(
   auth.isSeller,
   productController.addMassiveProducts
 );
+router.post(
+  '/variants/add/:productId',
+  auth.isAdmin,
+  productController.addVariant
+);
 router.put(
   '/update/:productId',
   [
@@ -61,6 +81,8 @@ router.put(
   auth.isSeller,
   productController.updateProduct
 );
+router.put('/options/:productId', auth.isAdmin, productController.updateOptions);
+router.put('/variants/update/:productId', auth.isAdmin, productController.updateVariant);
 router.patch(
   '/activate/:productId',
   auth.isSeller,
@@ -75,6 +97,11 @@ router.delete(
   '/delete/:productId',
   auth.isSeller,
   productController.deleteProduct
+);
+router.delete(
+  '/variants/delete/:productId/:variant',
+  auth.isAdmin,
+  productController.deleteVariant
 );
 router.delete(
   '/delete-all',

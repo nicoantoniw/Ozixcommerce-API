@@ -3,6 +3,7 @@ const mercadopago = require('mercadopago');
 const nodemailer = require('nodemailer');
 const sendGridTransport = require('nodemailer-sendgrid-transport');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const WebsiteUser = require('../models/websiteUser');
 const Product = require('../models/product');
@@ -150,11 +151,12 @@ exports.addItem = async (req, res, next) => {
         image: req.body.image,
         name: req.body.name
     };
+    if (req.body.hasVariants) {
+        data.variant = req.body.variant;
+    }
     const finalPrice = data.quantity * data.price;
     data.price = finalPrice;
     let cartProduct;
-    let cartQuantity;
-    let cartPrice;
     let exists;
     try {
         const websiteUser = await WebsiteUser.findById(websiteUserId);
@@ -166,8 +168,6 @@ exports.addItem = async (req, res, next) => {
         const cart = websiteUser.cart;
         for (let index = 0; index < cart.items.length; index++) {
             cartProduct = cart.items[index].product;
-            // cartQuantity = cart.items[index].quantity;
-            // cartPrice = cart.items[index].price;
             if (cartProduct.toString() === data.product) {
                 cart.items[index].quantity += data.quantity;
                 cart.items[index].price += data.price;
@@ -265,12 +265,11 @@ exports.addMercadopagoSale = (req, res, next) => {
         'back_urls': {
             'success': 'http://localhost:8080/payment/success',
             'failure': 'http://localhost:8080/payment/error',
-            'pending': 'http://localhost:8080/orders',
+            'pending': 'http://localhost:8080/compras',
         },
         "auto_return": 'approved'
     };
     const cartItems = req.body.items;
-    console.log(req.body.items);
     cartItems.forEach(item => {
         const data = {
             title: item.name,
@@ -387,17 +386,42 @@ exports.changePassword = async (req, res, next) => {
         next(err);
     }
 };
+exports.restorePassword = async (req, res, next) => {
+    const email = req.body.email;
+    const password = crypto.randomBytes(6).toString('hex');
+    try {
+        const user = await WebsiteUser.findOne({ email: email });
+        if (!user) {
+            const error = new Error('No user found');
+            error.statusCode = 404;
+            throw error;
+        }
+        const newPassword = await bcrypt.hash(password, 12);
+        user.password = newPassword;
+        await user.save();
+        res.status(200).json({
+            message: 'Password changed',
+            password
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
 
 exports.sendEmail = (req, res, next) => {
     const subject = (req.body.subject).toString();
     const html = req.body.html;
+    const sender = req.body.sender;
     const receiver = req.body.receiver;
     res.status(200).json({
         message: 'Email sent'
     });
     return transporter.sendMail({
         to: receiver,
-        from: 'mailer@ozixmedia.com',
+        from: sender,
         subject: subject,
         html: html
     }).catch(err => {

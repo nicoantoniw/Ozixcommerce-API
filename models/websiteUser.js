@@ -51,6 +51,7 @@ const websiteUserSchema = new Schema({
                     ref: 'Product',
                     required: true
                 },
+                variant: { type: String },
                 quantity: { type: Number, required: true },
                 name: { type: String, required: true },
                 image: { type: String, required: false },
