@@ -12,7 +12,7 @@ exports.getWebsiteProducts = async (req, res, next) => {
         const products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1 })
             .populate('category', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 });
-        // .sort({ finalPrice: -1 });
+        // .sort({ sellingPrice: -1 });
 
         if (totalItems === 0) {
             const error = new Error('No products found');
@@ -58,7 +58,7 @@ exports.getCategoryProducts = async (req, res, next) => {
                 .populate('category', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .limit(6).skip(skip)
-                .sort({ finalPrice: sort });
+                .sort({ sellingPrice: sort });
         }
         if (totalItems === 0) {
             const error = new Error('No products found');

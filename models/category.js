@@ -13,7 +13,7 @@ const categorySchema = new Schema({
   status: {
     type: String,
     required: true,
-    default: 'activo'
+    default: 'active'
   },
   creator: {
     type: Schema.Types.ObjectId,

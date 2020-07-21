@@ -477,9 +477,9 @@ const increaseStock = async (productId, quantity, percentage, price, iva, creato
     }
     product.iva = iva;
 
-    const calculatedPercentage = Number(product.price) + (Number(product.price) * Number(product.percentage)) / 100;
-    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(product.iva) * Number(calculatedPercentage)) / 100);
-    product.finalPrice = Number(calculatedPriceIva).toFixed(2);
+    const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
+    product.sellingPrice = Number(calculatedPriceIva).toFixed(2);
     await product.save();
   } catch (err) {
     if (!err.statusCode) {

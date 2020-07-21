@@ -34,7 +34,7 @@ router.post(
     body('name')
       .isString()
       .trim(),
-    body('code')
+    body('sku')
       .trim()
       .isAlphanumeric(),
     body('stock')
@@ -65,15 +65,13 @@ router.put(
     body('name')
       .isString()
       .trim(),
-    body('code')
+    body('sku')
       .trim()
       .isAlphanumeric(),
     body('price')
       .trim()
       .isFloat(),
-    body('percentage')
-      .trim()
-      .isNumeric(),
+
     body('stock')
       .trim()
       .isNumeric()

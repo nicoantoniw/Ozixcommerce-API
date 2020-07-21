@@ -1,7 +1,5 @@
 const { validationResult } = require('express-validator');
-const mercadopago = require('mercadopago');
-const nodemailer = require('nodemailer');
-const sendGridTransport = require('nodemailer-sendgrid-transport');
+const AWS = require('aws-sdk');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
@@ -9,11 +7,11 @@ const WebsiteUser = require('../models/websiteUser');
 const Product = require('../models/product');
 const Order = require('../models/order');
 
-const transporter = nodemailer.createTransport(sendGridTransport({
-    auth: {
-        api_key: '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'
-    }
-}));
+AWS.config.update({
+    region: 'sa-east-1',
+    accessKeyId: 'AKIAIO7VWTQE6SOGBPCA',
+    secretAccessKey: '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'
+});
 
 exports.getWebsiteUser = async (req, res, next) => {
     try {
@@ -99,7 +97,7 @@ exports.getProductsPerfumeriaLiliana = async (req, res, next) => {
 
 exports.getProductPerfumeriaLiliana = async (req, res, next) => {
     const productId = req.params.productId;
-    const code = req.params.code;
+    const sku = req.params.sku;
     try {
         const product = await Product.findOne({
             _id: productId, creator: '5ea9c4a058eb5371b70d4dc6'
@@ -154,8 +152,8 @@ exports.addItem = async (req, res, next) => {
     if (req.body.hasVariants) {
         data.variant = req.body.variant;
     }
-    const finalPrice = data.quantity * data.price;
-    data.price = finalPrice;
+    const sellingPrice = data.quantity * data.price;
+    data.price = sellingPrice;
     let cartProduct;
     let exists;
     try {
@@ -411,25 +409,60 @@ exports.restorePassword = async (req, res, next) => {
     }
 };
 
+
 exports.sendEmail = (req, res, next) => {
     const subject = (req.body.subject).toString();
     const html = req.body.html;
     const sender = req.body.sender;
     const receiver = req.body.receiver;
-    res.status(200).json({
-        message: 'Email sent'
-    });
-    return transporter.sendMail({
+    const message = {
         to: receiver,
         from: sender,
         subject: subject,
         html: html
-    }).catch(err => {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    });
+    };
+    const params = {
+        Destination: { /* required */
+            CcAddresses: [
+                receiver
+            ],
+            ToAddresses: [
+                receiver
+            ]
+        },
+        Message: { /* required */
+            Body: { /* required */
+                Html: {
+                    Charset: "UTF-8",
+                    Data: html
+                },
+                Text: {
+                    Charset: "UTF-8",
+                    Data: "TEXT_FORMAT_BODY"
+                }
+            },
+            Subject: {
+                Charset: 'UTF-8',
+                Data: subject
+            }
+        },
+        Source: sender,
+        ReplyToAddresses: [
+            sender
+        ],
+    };
+
+    const sendPromise = new AWS.SES({ apiVersion: '2010-12-01' }).sendEmail(params).promise();
+
+    sendPromise.then(
+        function (data) {
+            res.status(200).json({
+                message: data.MessageId
+            });
+        }).catch(
+            function (err) {
+                console.error(err, err.stack);
+            });
 };
 
 

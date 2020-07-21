@@ -3,10 +3,7 @@ const fs = require('fs');
 const { validationResult } = require('express-validator');
 const xls = require('xls-to-json');
 const aws = require('aws-sdk');
-const multerS3 = require('multer-s3');
-const multer = require('multer');
 const path = require('path');
-const url = require('url');
 
 const Product = require('../models/product');
 const Option = require('../models/option');
@@ -71,7 +68,7 @@ exports.getProductsByCategory = async (req, res, next) => {
 
 exports.getProduct = async (req, res, next) => {
   const productId = req.params.productId;
-  const code = req.params.code;
+  const sku = req.params.sku;
   try {
     const product = await Product.findOne({
       $or:
@@ -81,7 +78,11 @@ exports.getProduct = async (req, res, next) => {
             creator: req.groupId
           },
           {
-            code: code,
+            _id: productId,
+            creator: req.groupId
+          },
+          {
+            sku: sku,
             creator: req.groupId
           }
 
@@ -114,36 +115,38 @@ exports.addProduct = async (req, res, next) => {
     next(error);
   }
   try {
-    const calculatedPercentage = Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage)) / 100;
-    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(req.body.iva) * Number(calculatedPercentage)) / 100);
     const product = new Product({
       name: req.body.name,
       brand: req.body.brand,
-      code: req.body.code,
+      sku: req.body.sku,
       description: req.body.description,
       category: req.body.category,
+      locations: req.body.locations,
       price: Number(req.body.price),
       percentage: Number(req.body.percentage),
-      finalPrice: Number(calculatedPriceIva).toFixed(2),
-      iva: Number(req.body.iva),
+      sellingPrice: 0,
       stock: req.body.stock,
       creator: req.groupId
     });
     if (req.body.calculatedPriceFlag) {
-
       product.totalDiscounts = 0;
       product.discounts = [];
+      product.price = req.body.price;
+      product.percentage = req.body.percentage;
+      product.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
     }
-    if (req.body.finalPriceFlag) {
-      product.price = 0;
-      product.percentage = 0;
+    const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
+    if (req.body.sellingPriceFlag) {
+      product.price = req.body.price;
+      product.percentage = calculatedPercentage;
       product.discounts = [];
       product.totalDiscounts = 0;
-      product.finalPrice = Number(req.body.finalPrice).toFixed(2);
+      product.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
     }
     if (req.body.discountFlag) {
-      discount = Number(product.finalPrice * req.body.discount / 100).toFixed(2);
-      product.finalPrice -= discount;
+      discount = Number(product.sellingPrice * req.body.discount / 100).toFixed(2);
+      product.sellingPrice -= discount;
       product.discounts.push(req.body.discount);
       product.totalDiscounts += discount;
     }
@@ -185,10 +188,10 @@ exports.addMassiveProducts = async (req, res, next) => {
     // }
     let data = [];
     let data2 = [];
-    let calculatedFinalPrice = 0;
+    let calculatedsellingPrice = 0;
     xls({
       input: "/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx",
-      // input: "/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx",
+      // input: "/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.xlsx",
       output: null, // output json
       // sheet: "sheetname",  specific sheetname
       // rowsToSkip: 5  number of rows to skip at the top of the sheet; defaults to 0
@@ -201,30 +204,23 @@ exports.addMassiveProducts = async (req, res, next) => {
       } else {
         data = result;
         for (let i = 0; i < data.length; i++) {
-          data[i].price = parseFloat(data[i].costo);
-          data[i].percentage = parseFloat(data[i].porcentaje);
-          data[i].iva = parseFloat(data[i].iva);
+          data[i].price = parseFloat(data[i].cost);
+          data[i].percentage = parseFloat(data[i].percentage);
           data[i].stock = parseFloat(data[i].stock);
-          data[i].finalPrice = parseFloat(data[i].publico);
-          data[i].code = parseFloat(data[i].codigo);
-          data[i].name = data[i].nombre;
-          data[i].brand = data[i].marca;
-          data[i].description = data[i].descripcion;
-          if (data[i].publico == 0) {
-            const calculatedPercentage = Number(data[i].costo) + (Number(data[i].costo) * Number(data[i].porcentaje)) / 100;
-            const calculatedPriceIva = Number(calculatedPercentage) + ((Number(data[i].iva) * Number(calculatedPercentage)) / 100);
-            calculatedFinalPrice = parseFloat(Number(calculatedPriceIva).toFixed(2));
+          data[i].sellingPrice = parseFloat(data[i].sellingPrice);
+          data[i].sku = parseFloat(data[i].sku);
+          if (data[i].sellingPrice == 0) {
+            data[i].sellingPrice = parseFloat((req.body.price + req.body.price * req.body.percentage / 100).toFixed(2));
           }
-          if (calculatedFinalPrice !== 0) {
-            data[i].finalPrice = calculatedFinalPrice;
+          if (data[i].percentage == 0) {
+            data[i].percentage = parseFloat(Number(req.body.sellingPrice) * 100 / Number(req.body.price)).toFixed(2);
           }
           data[i].creator = req.groupId;
           products.forEach(product => {
-            if (product.code === data[i].codigo || product.name === data[i].nombre) {
-              product.finalPrice = data[i].finalPrice;
+            if (product.sku === data[i].codigo || product.name === data[i].nombre) {
+              product.sellingPrice = data[i].sellingPrice;
               product.stock = data[i].stock;
               product.brand = data[i].marca;
-              product.iva = data[i].iva;
               product.price = data[i].price;
               product.percentage = data[i].percentage;
               data2.push(product);
@@ -235,7 +231,7 @@ exports.addMassiveProducts = async (req, res, next) => {
         };
         data = data.filter(product => {
           for (let i = 0; i < data2.length; i++) {
-            if (data2[i].code == product.code || data2[i].name == product.name) {
+            if (data2[i].sku == product.sku || data2[i].name == product.name) {
               return false;
             }
           }
@@ -253,7 +249,7 @@ exports.addMassiveProducts = async (req, res, next) => {
         }
 
         fs.unlinkSync('/home/ubuntu/apps/Ozixcommerce-API/assets/file.xlsx');
-        // fs.unlinkSync('/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.xlsx');
+        // fs.unlinkSync('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.xlsx');
       }
     });
     res.status(200).json({
@@ -291,32 +287,35 @@ exports.updateProduct = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    const calculatedPercentage = Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage)) / 100;
-    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(req.body.iva) * Number(calculatedPercentage)) / 100);
     product.name = req.body.name;
     product.brand = req.body.brand;
-    product.code = req.body.code;
+    product.sku = req.body.sku;
     product.description = req.body.description;
-    product.iva = Number(req.body.iva);
     product.stock = req.body.stock;
+    product.locations = req.body.locations;
     product.category = req.body.category;
+    product.price = req.body.price;
+    product.sellingPrice = req.body.sellingPrice;
+
     if (req.body.calculatedPriceFlag) {
       product.totalDiscounts = 0;
       product.discounts = [];
       product.price = req.body.price;
       product.percentage = req.body.percentage;
-      product.finalPrice = Number(calculatedPriceIva).toFixed(2);
+      product.sellingPrice = parseFloat((req.body.price + req.body.price * req.body.percentage / 100).toFixed(2));
     }
-    if (req.body.finalPriceFlag) {
-      product.price = 0;
-      product.percentage = 0;
+    const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
+    if (req.body.sellingPriceFlag) {
+      product.price = req.body.price;
+      product.percentage = calculatedPercentage;
       product.discounts = [];
       product.totalDiscounts = 0;
-      product.finalPrice = Number(req.body.finalPrice).toFixed(2);
+      product.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
     }
     if (req.body.discountFlag) {
-      discount = Number(product.finalPrice * req.body.discount / 100).toFixed(2);
-      product.finalPrice -= discount;
+      discount = Number(product.sellingPrice * req.body.discount / 100).toFixed(2);
+      product.sellingPrice -= discount;
       product.discounts.push(req.body.discount);
       product.totalDiscounts += discount;
     }
@@ -343,7 +342,7 @@ exports.addImage = async (req, res, next) => {
   });
   const ext = req.file.originalname.split('.').pop();
   const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
-  // const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.${ext}`);
+  // const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
   if (ext === 'jpg') {
     ext2 = 'jpeg';
   } else {
@@ -365,7 +364,7 @@ exports.addImage = async (req, res, next) => {
       product.image = data.Location;
       product.save().then(success => {
         fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
-        // fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/OZIX-Software/Ozixcommerce/app/api/assets/file.${ext}`);
+        // fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
         res.status(200).json({
           message: 'Image uploaded'
         });
@@ -602,34 +601,33 @@ exports.addVariant = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    const calculatedPercentage = Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage)) / 100;
-    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(product.iva) * Number(calculatedPercentage)) / 100);
     const variant = {
       name: name,
       values: req.body.values,
       stock: req.body.stock,
-      code: req.body.code,
+      sku: req.body.sku,
       price: req.body.price,
-      iva: product.iva,
       percentage: req.body.percentage,
-      finalPrice: Number(calculatedPriceIva).toFixed(2),
+      sellingPrice: 0,
       discounts: [],
       totalDiscounts: 0
     };
+    const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
     if (req.body.calculatedPriceFlag) {
-      variant.totalDiscounts = 0;
+      variant.price = req.body.price;
+      variant.percentage = req.body.percentage;
+      variant.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
+    } else {
+      variant.price = Number(req.body.price);
+      variant.percentage = calculatedPercentage;
       variant.discounts = [];
-    }
-    if (req.body.finalPriceFlag) {
-      variant.price = 0;
-      variant.percentage = 0;
-      variant.discounts = [];
       variant.totalDiscounts = 0;
-      variant.finalPrice = Number(req.body.finalPrice).toFixed(2);
+      variant.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
     }
     if (req.body.discountFlag) {
-      discount = Number(variant.finalPrice * req.body.discount / 100).toFixed(2);
-      variant.finalPrice -= discount;
+      discount = Number(variant.sellingPrice * req.body.discount / 100).toFixed(2);
+      variant.sellingPrice -= discount;
       variant.discounts.push(req.body.discount);
       variant.totalDiscounts += discount;
     }
@@ -650,7 +648,6 @@ exports.addVariant = async (req, res, next) => {
 
 exports.updateVariant = async (req, res, next) => {
   let discount;
-  let name = '';
   try {
     const product = await Product.findById(req.params.productId);
     if (!product) {
@@ -663,35 +660,36 @@ exports.updateVariant = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    const calculatedPercentage = Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage)) / 100;
-    const calculatedPriceIva = Number(calculatedPercentage) + ((Number(product.iva) * Number(calculatedPercentage)) / 100);
+
     product.variants.forEach(variant => {
-      if (variant.code == req.body.code) {
+      if (variant.sku == req.body.sku) {
         variant.name = '';
         req.body.values.forEach(value => {
           variant.name += `${value.value} `;
         });
         variant.values = req.body.values;
         variant.stock = req.body.stock;
-        variant.code = req.body.code;
+        variant.sku = req.body.sku;
         if (req.body.calculatedPriceFlag) {
           variant.totalDiscounts = 0;
           variant.discounts = [];
           variant.price = req.body.price;
           variant.percentage = req.body.percentage;
-          variant.finalPrice = Number(calculatedPriceIva).toFixed(2);
+          variant.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
         }
-        if (req.body.finalPriceFlag) {
-          variant.price = 0;
-          variant.percentage = 0;
+        const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+        const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
+        if (req.body.sellingPriceFlag) {
+          variant.price = req.body.price;
+          variant.percentage = calculatedPercentage;
           variant.discounts = [];
           variant.totalDiscounts = 0;
-          variant.finalPrice = Number(req.body.finalPrice).toFixed(2);
+          variant.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
         }
         if (req.body.discountFlag) {
-          discount = Number(Number(variant.finalPrice) * Number(req.body.discount) / 100).toFixed(2);
-          variant.finalPrice -= Number(discount);
-          variant.finalPrice = (parseFloat(variant.finalPrice.toFixed(2)));
+          discount = Number(Number(variant.sellingPrice) * Number(req.body.discount) / 100).toFixed(2);
+          variant.sellingPrice -= Number(discount);
+          variant.sellingPrice = (parseFloat(variant.sellingPrice.toFixed(2)));
           variant.discounts.push(Number(req.body.discount));
           variant.totalDiscounts = Number(variant.totalDiscounts);
           let num = variant.totalDiscounts;
@@ -735,6 +733,9 @@ exports.deleteVariant = async (req, res, next) => {
       }
     });
     product.variants.splice(indexo, 1);
+    if (product.variants.length < 1) {
+      product.hasVariants = false;
+    }
     await product.save();
     res.status(200).json({
       message: 'Product deleted'

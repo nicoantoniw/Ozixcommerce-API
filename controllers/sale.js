@@ -245,14 +245,16 @@ exports.getSalesBySeller = async (req, res, next) => {
   }
 };
 
-exports.getSalesByTicketType = async (req, res, next) => {
-  const ticketType = req.params.ticketType;
+
+
+exports.getSalesByCustomer = async (req, res, next) => {
+  const customerId = req.params.customerId;
   try {
     const totalSales = await Sale.find({
       creator: req.groupId,
-      ticketType: ticketType
+      customer: customerId
     }).countDocuments();
-    const sales = await Sale.find({ creator: req.groupId, ticketType: ticketType })
+    const sales = await Sale.find({ creator: req.groupId, customer: customerId })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
@@ -275,37 +277,6 @@ exports.getSalesByTicketType = async (req, res, next) => {
     next(err);
   }
 };
-
-// exports.getSalesByCustomer = async (req, res, next) => {
-//   const customerId = req.params.customerId;
-//   try {
-//     const totalSales = await Sale.find({
-//       creator: req.groupId,
-//       customer: customerId
-//     }).countDocuments();
-//     const sales = await Sale.find({ creator: req.groupId, customer: customerId })
-//       .populate('seller', { name: 1, _id: 1 })
-//       .populate('creator', { name: 1, _id: 1 })
-//       .populate('customer', { name: 1, _id: 1 })
-//       .sort({ createdAt: -1 });
-
-//     if (totalSales === 0) {
-//       const error = new Error('No sales found');
-//       error.statusCode = 404;
-//       throw error;
-//     }
-
-//     res.status(200).json({
-//       sales: sales,
-//       totalSales: totalSales
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// };
 
 
 exports.addSale = async (req, res, next) => {
@@ -399,128 +370,6 @@ exports.addSale = async (req, res, next) => {
   }
 };
 
-exports.createTicket = async (req, res, next) => {
-  try {
-    return res.status(200).json({
-      message: 'ok'
-    });
-    const cae = req.body.CAE;
-    const fchVto = req.body.CAEFchVto;
-    const idType = req.body.DocTipo;
-    const idNumber = req.body.DocNro;
-    const ticketType = req.body.ticketType;
-    const ticketNumber = req.body.CbteDesd;
-    const ticketDate = req.body.CbteFch;
-    const total = req.body.ImpTotal;
-    const totalNoTax = req.body.ImpNeto;
-    const iva = req.body.ImpIVA;
-    const details = req.body.details;
-    const pdfDoc = new PDFDocument();
-    let date = new Date();
-    let day = date.getDate();
-    let month = date.getMonth() + 1;
-    let year = date.getFullYear();
-    if (day < 10) {
-      day = `0${day}`;
-    }
-    if (month === 13) {
-      month = 1;
-      year = year + 1;
-    }
-    if (month < 10) {
-      month = `0${month}`;
-    }
-    const hour = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const cashRegister = await Cash.findById(req.body.cashRegister);
-    const salePoint = cashRegister.salePoint;
-    const category = cashRegister.category;
-    const cuit = cashRegister.cuit;
-    const activitiesDate = cashRegister.activitiesDate;
-    const socialName = cashRegister.socialName;
-    const city = cashRegister.city;
-    const streetAddress = cashRegister.streetAddress;
-    const zip = cashRegister.zip;
-
-    // if (ticketType === 'Factura B') {
-    //   pdfDoc.pipe(
-    //     fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-    //   );
-    //   pdfDoc.pipe(res);
-    //   pdfDoc.fontSize(10).text(`${socialName}`);
-    //   pdfDoc.fontSize(10).text(`CUIT: ${cuit}`);
-    //   pdfDoc.fontSize(10).text(`${streetAddress}`);
-    //   pdfDoc.fontSize(10).text(`CP(${zip}) - ${city}`);
-    //   pdfDoc.fontSize(10).text(`INIC.ACT: ${activitiesDate}`);
-    //   if (idNumber === 0) {
-    //     pdfDoc.fontSize(10).text(`IVA ${category} `);
-    //     pdfDoc.fontSize(10).text(`A CONSUMIDOR FINAL`);
-    //   }
-    //   pdfDoc.text(' ');
-    //   pdfDoc.fontSize(10).text(`P. V. 00${salePoint}`);
-    //   pdfDoc.fontSize(10).text(`No.T. 0000${ticketNumber}`);
-    //   pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}`);
-    //   pdfDoc.text(' ');
-    //   pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
-    //   pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
-    //   pdfDoc.fontSize(10).text(`DESCRIPCION`);
-    //   pdfDoc.fontSize(10).text(` `);
-    //   details.forEach(detail => {
-    //     pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
-    //     pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
-    //     pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
-    //   });
-    //   pdfDoc.fontSize(10).text(`  `);
-    //   pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
-    //   pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
-    //   pdfDoc.fontSize(10).text(`  `);
-    //   pdfDoc.fontSize(10).text(`CAE: ${cae}`);
-    //   pdfDoc.fontSize(10).text(`Vto. CAE: ${fchVto}`);
-    //   pdfDoc.end();
-    // }
-
-    // else if (ticketType === 'Cotización') {
-    //   pdfDoc.pipe(
-    //     fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-    //   );
-    //   pdfDoc.pipe(res);
-    //   pdfDoc.fontSize(10).text(`PRESUPUESTO`, { align: 'center' });
-    //   pdfDoc.fontSize(10).text(`TICKET NO FISCAL`, { align: 'center' });
-    //   pdfDoc.text('-------------------------------------------------', { align: 'center' });
-    //   pdfDoc.fontSize(10).text(`${day}/${month}/${year}        ${hour}:${minutes}:${seconds}`, { align: 'center' });
-    //   pdfDoc.text(' ');
-    //   pdfDoc.fontSize(10).text(`CANT./PRECIO UNIT`, { lineGap: -10, align: 'left' });
-    //   pdfDoc.fontSize(10).text(`IMPORTE`, { align: 'right' });
-    //   pdfDoc.fontSize(10).text(`DESCRIPCION`);
-    //   pdfDoc.fontSize(10).text(` `);
-    //   details.forEach(detail => {
-    //     pdfDoc.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
-    //     pdfDoc.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
-    //     pdfDoc.fontSize(10).text(`$${detail.price}`, { align: 'right' });
-    //   });
-    //   pdfDoc.fontSize(10).text(`  `);
-    //   pdfDoc.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'left' });
-    //   pdfDoc.fontSize(10).text(`$${total}`, { align: 'right' });
-    //   pdfDoc.end();
-    // } else {
-    //   // pdfDocA4.pipe(
-    //   //   fs.createWriteStream(path.join('assets', 'tickets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
-    //   // );
-    //   // pdfDocA4.pipe(res);
-
-    //   // pdfDocA4.end();
-    // }
-    res.status(200).json({
-      message: 'ok'
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
 exports.createTicketA4 = (req, res, next) => {
   let date = new Date();
   let day = date.getDate();

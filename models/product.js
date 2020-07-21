@@ -14,7 +14,7 @@ const productSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Category'
   },
-  code: {
+  sku: {
     type: String,
     required: true
   },
@@ -32,17 +32,9 @@ const productSchema = new Schema({
     type: Number,
     required: true
   },
-  finalPrice: {
+  sellingPrice: {
     type: Number,
     required: true
-  },
-  iva: {
-    type: Number,
-    required: true
-  },
-  stock: {
-    type: Number,
-    required: false
   },
   discounts: {
     type: [{
@@ -55,6 +47,21 @@ const productSchema = new Schema({
     default: 0,
     required: false
   },
+  stock: {
+    type: Number,
+    required: false
+  },
+  locations: [
+    {
+      location: {
+        type: Schema.Types.ObjectId,
+        ref: 'Location'
+      },
+      quantity: {
+        type: Number
+      }
+    }
+  ],
   options: [{
     type: Schema.Types.ObjectId,
     ref: 'Option'
@@ -72,11 +79,7 @@ const productSchema = new Schema({
         type: String
       }
     }],
-    stock: {
-      type: Number,
-      required: false
-    },
-    code: {
+    sku: {
       type: String,
     },
     price: {
@@ -97,9 +100,24 @@ const productSchema = new Schema({
       default: 0,
       required: false
     },
-    finalPrice: {
+    sellingPrice: {
       type: Number,
     },
+    stock: {
+      type: Number,
+      required: false
+    },
+    locations: [
+      {
+        location: {
+          type: Schema.Types.ObjectId,
+          ref: 'Location'
+        },
+        quantity: {
+          type: Number
+        }
+      }
+    ],
   }
   ],
   websiteStatus: {
@@ -119,7 +137,7 @@ const productSchema = new Schema({
   },
   status: {
     type: String,
-    default: 'activo',
+    default: 'active',
     required: true
   },
   creator: {
