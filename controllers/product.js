@@ -7,6 +7,7 @@ const path = require('path');
 
 const Product = require('../models/product');
 const Option = require('../models/option');
+const Location = require('../models/location');
 const Group = require('../models/group');
 
 exports.getProducts = async (req, res, next) => {
@@ -27,36 +28,6 @@ exports.getProducts = async (req, res, next) => {
     res.status(200).json({
       products: products,
       totalItems: totalItems
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.getProductsByCategory = async (req, res, next) => {
-  const categoryId = req.params.categoryId;
-  try {
-    const totalProducts = await Product.find({
-      creator: req.groupId,
-      category: categoryId
-    }).countDocuments();
-    const products = await Product.find({
-      category: categoryId,
-      creator: req.groupId
-    })
-      .populate('creator', { name: 1, _id: 1 })
-      .populate('category', { name: 1, _id: 1 });
-    if (totalProducts === 0) {
-      const error = new Error('No products found');
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json({
-      products: products,
-      totalProducts: totalProducts
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -106,8 +77,42 @@ exports.getProduct = async (req, res, next) => {
   }
 };
 
+exports.getProductsByCategory = async (req, res, next) => {
+  const categoryId = req.params.categoryId;
+  try {
+    const totalProducts = await Product.find({
+      creator: req.groupId,
+      category: categoryId
+    }).countDocuments();
+    const products = await Product.find({
+      category: categoryId,
+      creator: req.groupId
+    })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('category', { name: 1, _id: 1 });
+    if (totalProducts === 0) {
+      const error = new Error('No products found');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      products: products,
+      totalProducts: totalProducts
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+
+
 exports.addProduct = async (req, res, next) => {
   let discount = req.body.discount;
+  const locations = req.body.locations;
+  let totalStock = 0;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -115,19 +120,25 @@ exports.addProduct = async (req, res, next) => {
     next(error);
   }
   try {
+    for (let index = 0; index < locations.length; index++) {
+      totalStock += Number(locations[index].quantity);
+    }
     const product = new Product({
       name: req.body.name,
       brand: req.body.brand,
       sku: req.body.sku,
       description: req.body.description,
       category: req.body.category,
-      locations: req.body.locations,
+      locations,
       price: Number(req.body.price),
       percentage: Number(req.body.percentage),
       sellingPrice: 0,
       stock: req.body.stock,
       creator: req.groupId
     });
+    if (totalStock > product.stock) {
+      product.stock = totalStock;
+    }
     if (req.body.calculatedPriceFlag) {
       product.totalDiscounts = 0;
       product.discounts = [];
@@ -136,7 +147,7 @@ exports.addProduct = async (req, res, next) => {
       product.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
     }
     const difference = Number(req.body.sellingPrice) - Number(req.body.price);
-    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
+    const calculatedPercentage = parseFloat(((difference / Number(req.body.price)) * 100).toFixed(2));
     if (req.body.sellingPriceFlag) {
       product.price = req.body.price;
       product.percentage = calculatedPercentage;
@@ -266,11 +277,18 @@ exports.addMassiveProducts = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   const productId = req.params.productId;
   let discount = 0;
+  let totalStock = 0;
+  const locations = req.body.locations;
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error('Validation failed, entered data is incorrect');
-    error.statusCode = 422;
-    next(error);
+  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly) {
+    for (let index = 0; index < locations.length; index++) {
+      totalStock += Number(locations[index].quantity);
+    }
+    if (!errors.isEmpty()) {
+      const error = new Error('Validation failed, entered data is incorrect');
+      error.statusCode = 422;
+      next(error);
+    }
   }
   try {
     const product = await Product.findById(productId).populate('creator', {
@@ -287,37 +305,57 @@ exports.updateProduct = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    product.name = req.body.name;
-    product.brand = req.body.brand;
-    product.sku = req.body.sku;
-    product.description = req.body.description;
-    product.stock = req.body.stock;
-    product.locations = req.body.locations;
-    product.category = req.body.category;
-    product.price = req.body.price;
-    product.sellingPrice = req.body.sellingPrice;
+    if (req.body.updateLocationsOnly) {
+      product.locations.push({
+        location: req.body.location,
+        name: req.body.name,
+        quantity: req.body.quantity
+      });
+      for (let index = 0; index < product.locations.length; index++) {
+        totalStock += Number(product.locations[index].quantity);
+      }
+      if (product.stock < totalStock) {
+        product.stock = totalStock;
+      }
+    } else if (req.body.deleteLocationsOnly) {
+      index = product.locations.indexOf(req.body.item);
+      product.locations.splice(index, 1);
+    } else {
+      product.name = req.body.name;
+      product.brand = req.body.brand;
+      product.sku = req.body.sku;
+      product.description = req.body.description;
+      product.stock = Number(req.body.stock);
+      if (product.stock < totalStock) {
+        product.stock = totalStock;
+      }
+      product.locations = locations;
+      product.category = req.body.category;
+      product.price = req.body.price;
+      product.sellingPrice = req.body.sellingPrice;
 
-    if (req.body.calculatedPriceFlag) {
-      product.totalDiscounts = 0;
-      product.discounts = [];
-      product.price = req.body.price;
-      product.percentage = req.body.percentage;
-      product.sellingPrice = parseFloat((req.body.price + req.body.price * req.body.percentage / 100).toFixed(2));
-    }
-    const difference = Number(req.body.sellingPrice) - Number(req.body.price);
-    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
-    if (req.body.sellingPriceFlag) {
-      product.price = req.body.price;
-      product.percentage = calculatedPercentage;
-      product.discounts = [];
-      product.totalDiscounts = 0;
-      product.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
-    }
-    if (req.body.discountFlag) {
-      discount = Number(product.sellingPrice * req.body.discount / 100).toFixed(2);
-      product.sellingPrice -= discount;
-      product.discounts.push(req.body.discount);
-      product.totalDiscounts += discount;
+      if (req.body.calculatedPriceFlag) {
+        product.totalDiscounts = 0;
+        product.discounts = [];
+        product.price = req.body.price;
+        product.percentage = req.body.percentage;
+        product.sellingPrice = parseFloat((req.body.price + req.body.price * req.body.percentage / 100).toFixed(2));
+      }
+      const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+      const calculatedPercentage = parseFloat(((difference / Number(req.body.price)) * 100).toFixed(2));
+      if (req.body.sellingPriceFlag) {
+        product.price = req.body.price;
+        product.percentage = calculatedPercentage;
+        product.discounts = [];
+        product.totalDiscounts = 0;
+        product.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
+      }
+      if (req.body.discountFlag) {
+        discount = Number(product.sellingPrice * req.body.discount / 100).toFixed(2);
+        product.sellingPrice -= discount;
+        product.discounts.push(req.body.discount);
+        product.totalDiscounts += discount;
+      }
     }
     await product.save();
     res.status(200).json({
@@ -334,22 +372,23 @@ exports.updateProduct = async (req, res, next) => {
 
 exports.addImage = async (req, res, next) => {
   const productId = req.params.productId;
+  const variantSku = req.query.variantSku;
   let data;
   const s3 = new aws.S3({
     accessKeyId: 'AKIAUEN42P7LBOUCJDJF',
     secretAccessKey: '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',
-    Bucket: 'perfumeriaslilianaimages'
+    Bucket: 'ozixcommerce.com-images'
   });
   const ext = req.file.originalname.split('.').pop();
-  const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
-  // const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
+  // const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+  const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
   if (ext === 'jpg') {
     ext2 = 'jpeg';
   } else {
     ext2 = 'png';
   }
   const params = {
-    Bucket: 'perfumeriaslilianaimages',
+    Bucket: 'ozixcommerce.com-images',
     acl: 'public-read',
     Key: `${Date.now()}-${req.file.originalname}`,
     Body: file,
@@ -361,20 +400,28 @@ exports.addImage = async (req, res, next) => {
       if (err) {
         throw err;
       }
-      product.image = data.Location;
+      if (variantSku) {
+        product.variants.forEach(variant => {
+          if (variant.sku == variantSku) {
+            variant.image = data.Location;
+          }
+        });
+      } else {
+        product.image = data.Location;
+      }
       product.save().then(success => {
-        fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
-        // fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
+        // fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+        fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
         res.status(200).json({
           message: 'Image uploaded'
         });
       }).catch(err => console.log(err));
     });
   } catch (error) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
+    if (!error.statusCode) {
+      error.statusCode = 500;
     }
-    next(err);
+    next(error);
   }
 };
 
@@ -586,9 +633,13 @@ exports.getProductVariant = async (req, res, next) => {
 exports.addVariant = async (req, res, next) => {
   let discount;
   let name = '';
-  req.body.values.forEach(value => {
-    name += `${value.value} `;
-  });
+  const locations = req.body.locations;
+  let totalStock = 0;
+  let totalStock2 = Number(req.body.stock);
+  for (let index = 0; index < locations.length; index++) {
+    totalStock += Number(locations[index].quantity);
+  }
+
   try {
     const product = await Product.findById(req.params.productId);
     if (!product) {
@@ -601,19 +652,27 @@ exports.addVariant = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
+    name = product.name;
+    req.body.values.forEach(value => {
+      name += ` - ${value.value} `;
+    });
     const variant = {
       name: name,
       values: req.body.values,
       stock: req.body.stock,
       sku: req.body.sku,
       price: req.body.price,
+      locations,
       percentage: req.body.percentage,
       sellingPrice: 0,
       discounts: [],
       totalDiscounts: 0
     };
+    if (totalStock > variant.stock) {
+      variant.stock = totalStock;
+    }
     const difference = Number(req.body.sellingPrice) - Number(req.body.price);
-    const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
+    const calculatedPercentage = parseFloat(((difference / Number(req.body.price)) * 100).toFixed(2));
     if (req.body.calculatedPriceFlag) {
       variant.price = req.body.price;
       variant.percentage = req.body.percentage;
@@ -632,6 +691,12 @@ exports.addVariant = async (req, res, next) => {
       variant.totalDiscounts += discount;
     }
     product.hasVariants = true;
+    product.variants.forEach(variant => {
+      totalStock2 += variant.stock;
+    });
+    if (totalStock2 > product.stock) {
+      product.stock = totalStock2;
+    }
     product.variants.push(variant);
     await product.save();
     res.status(200).json({
@@ -648,6 +713,16 @@ exports.addVariant = async (req, res, next) => {
 
 exports.updateVariant = async (req, res, next) => {
   let discount;
+  let name = '';
+  let totalStock = 0;
+  let totalStock2 = 0;
+  let index;
+  const locations = req.body.locations;
+  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly) {
+    for (let index = 0; index < locations.length; index++) {
+      totalStock += Number(locations[index].quantity);
+    }
+  }
   try {
     const product = await Product.findById(req.params.productId);
     if (!product) {
@@ -660,44 +735,70 @@ exports.updateVariant = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-
     product.variants.forEach(variant => {
+      totalStock2 += variant.stock;
       if (variant.sku == req.body.sku) {
-        variant.name = '';
-        req.body.values.forEach(value => {
-          variant.name += `${value.value} `;
-        });
-        variant.values = req.body.values;
-        variant.stock = req.body.stock;
-        variant.sku = req.body.sku;
-        if (req.body.calculatedPriceFlag) {
-          variant.totalDiscounts = 0;
-          variant.discounts = [];
-          variant.price = req.body.price;
-          variant.percentage = req.body.percentage;
-          variant.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
-        }
-        const difference = Number(req.body.sellingPrice) - Number(req.body.price);
-        const calculatedPercentage = parseFloat((difference / Number(req.body.price)) * 100);
-        if (req.body.sellingPriceFlag) {
-          variant.price = req.body.price;
-          variant.percentage = calculatedPercentage;
-          variant.discounts = [];
-          variant.totalDiscounts = 0;
-          variant.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
-        }
-        if (req.body.discountFlag) {
-          discount = Number(Number(variant.sellingPrice) * Number(req.body.discount) / 100).toFixed(2);
-          variant.sellingPrice -= Number(discount);
-          variant.sellingPrice = (parseFloat(variant.sellingPrice.toFixed(2)));
-          variant.discounts.push(Number(req.body.discount));
-          variant.totalDiscounts = Number(variant.totalDiscounts);
-          let num = variant.totalDiscounts;
-          num += Number(discount);
-          variant.totalDiscounts = parseFloat(num.toFixed(2));
+        if (req.body.updateLocationsOnly) {
+          variant.locations.push({
+            location: req.body.location,
+            name: req.body.name,
+            quantity: req.body.quantity
+          });
+          for (let index = 0; index < variant.locations.length; index++) {
+            totalStock += Number(variant.locations[index].quantity);
+          }
+          if (variant.stock < totalStock) {
+            variant.stock = totalStock;
+          }
+        } else if (req.body.deleteLocationsOnly) {
+          index = variant.locations.indexOf(req.body.item);
+          variant.locations.splice(index, 1);
+        } else {
+          name = product.name;
+          req.body.values.forEach(value => {
+            name += ` - ${value.value} `;
+          });
+          variant.name = name;
+          variant.values = req.body.values;
+          variant.stock = req.body.stock;
+          if (variant.stock < totalStock) {
+            variant.stock = totalStock;
+          }
+          variant.sku = req.body.sku;
+          variant.locations = locations;
+
+          if (req.body.calculatedPriceFlag) {
+            variant.totalDiscounts = 0;
+            variant.discounts = [];
+            variant.price = req.body.price;
+            variant.percentage = req.body.percentage;
+            variant.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
+          }
+          const difference = Number(req.body.sellingPrice) - Number(req.body.price);
+          const calculatedPercentage = parseFloat(((difference / Number(req.body.price)) * 100).toFixed(2));
+          if (req.body.calculatedPriceFlag) {
+            variant.price = req.body.price;
+            variant.percentage = req.body.percentage;
+            variant.sellingPrice = parseFloat((Number(req.body.price) + (Number(req.body.price) * Number(req.body.percentage) / 100)).toFixed(2));
+          } else {
+            variant.price = Number(req.body.price);
+            variant.percentage = calculatedPercentage;
+            variant.discounts = [];
+            variant.totalDiscounts = 0;
+            variant.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
+          }
+          if (req.body.discountFlag) {
+            discount = Number(variant.sellingPrice * req.body.discount / 100).toFixed(2);
+            variant.sellingPrice -= discount;
+            variant.discounts.push(req.body.discount);
+            variant.totalDiscounts += discount;
+          }
         }
       }
     });
+    if (totalStock2 > product.stock) {
+      product.stock = totalStock2;
+    }
     await product.save();
     res.status(200).json({
       message: 'Variant created',

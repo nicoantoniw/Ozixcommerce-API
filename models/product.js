@@ -57,6 +57,9 @@ const productSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Location'
       },
+      name: {
+        type: String
+      },
       quantity: {
         type: Number
       }
@@ -107,17 +110,31 @@ const productSchema = new Schema({
       type: Number,
       required: false
     },
+    hasImage: {
+      type: Boolean,
+      default: false
+    },
+    image: {
+      type: String,
+    },
     locations: [
       {
         location: {
           type: Schema.Types.ObjectId,
           ref: 'Location'
         },
+        name: {
+          type: String
+        },
         quantity: {
           type: Number
         }
       }
     ],
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
   }
   ],
   websiteStatus: {

@@ -9,7 +9,7 @@ exports.getLocations = async (req, res, next) => {
         }).countDocuments();
         const locations = await Location.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
-            .sort({ createdAt: -1 });
+            .sort({ name: 1 });
 
         if (totalLocations === 0) {
             const error = new Error('No locations found');
