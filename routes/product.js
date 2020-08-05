@@ -13,11 +13,7 @@ router.get(
   auth.isUser,
   productController.getProductsByCategory
 );
-router.get(
-  '/options/:productId',
-  auth.isAdmin,
-  productController.getProductOptions
-);
+
 router.get(
   '/variants/:productId',
   auth.isAdmin,
@@ -79,7 +75,6 @@ router.put(
   auth.isSeller,
   productController.updateProduct
 );
-router.put('/options/:productId', auth.isAdmin, productController.updateOptions);
 router.put('/variants/update/:productId', auth.isAdmin, productController.updateVariant);
 router.patch(
   '/activate/:productId',

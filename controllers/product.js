@@ -111,8 +111,6 @@ exports.getProductsByCategory = async (req, res, next) => {
 
 exports.addProduct = async (req, res, next) => {
   let discount = req.body.discount;
-  const locations = req.body.locations;
-  let totalStock = 0;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -120,25 +118,18 @@ exports.addProduct = async (req, res, next) => {
     next(error);
   }
   try {
-    for (let index = 0; index < locations.length; index++) {
-      totalStock += Number(locations[index].quantity);
-    }
     const product = new Product({
       name: req.body.name,
       brand: req.body.brand,
       sku: req.body.sku,
       description: req.body.description,
       category: req.body.category,
-      locations,
       price: Number(req.body.price),
       percentage: Number(req.body.percentage),
       sellingPrice: 0,
       stock: req.body.stock,
       creator: req.groupId
     });
-    if (totalStock > product.stock) {
-      product.stock = totalStock;
-    }
     if (req.body.calculatedPriceFlag) {
       product.totalDiscounts = 0;
       product.discounts = [];
@@ -314,26 +305,43 @@ exports.updateProduct = async (req, res, next) => {
       for (let index = 0; index < product.locations.length; index++) {
         totalStock += Number(product.locations[index].quantity);
       }
-      if (product.stock < totalStock) {
+      if (product.stock <= totalStock) {
         product.stock = totalStock;
+        product.unassignedStock = 0;
+      } else {
+        product.unassignedStock = product.stock - totalStock;
       }
     } else if (req.body.deleteLocationsOnly) {
-      index = product.locations.indexOf(req.body.item);
-      product.locations.splice(index, 1);
+      product.locations.forEach(location => {
+        if (location._id == req.body.item._id) {
+          index = product.locations.indexOf(location);
+          product.unassignedStock += location.quantity;
+          product.locations.splice(index, 1);
+        }
+      });
     } else {
       product.name = req.body.name;
       product.brand = req.body.brand;
+      product.category = req.body.category;
       product.sku = req.body.sku;
       product.description = req.body.description;
       product.stock = Number(req.body.stock);
-      if (product.stock < totalStock) {
-        product.stock = totalStock;
-      }
       product.locations = locations;
-      product.category = req.body.category;
       product.price = req.body.price;
       product.sellingPrice = req.body.sellingPrice;
 
+      if (product.stock < totalStock) {
+        product.stock = totalStock;
+        product.unassignedStock = 0;
+      } else {
+        product.unassignedStock = product.stock - totalStock;
+      }
+      if (product.variants.length > 0) {
+        product.variants.forEach(variant => {
+          variant.category = product.category;
+          variant.brand = product.brand;
+        });
+      }
       if (req.body.calculatedPriceFlag) {
         product.totalDiscounts = 0;
         product.discounts = [];
@@ -519,73 +527,11 @@ exports.deleteProducts = async (req, res, next) => {
   }
 };
 
-exports.getProductOptions = async (req, res, next) => {
-  const productId = req.params.productId;
-  const options = [];
-  try {
-    const product = await Product.findById(productId)
-      .populate('category', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-    if (!product) {
-      const error = new Error('No product found');
-      error.statusCode = 404;
-      throw error;
-    }
-    for (let index = 0; index < product.options.length; index++) {
-      const optionId = product.options[index];
-      const option = await Option.findById(optionId);
-      options.push(option);
-    }
-    res.status(200).json({
-      options
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.updateOptions = async (req, res, next) => {
-  const options = [];
-  let option;
-  try {
-    const product = await Product.findById(req.params.productId);
-    if (!product) {
-      const error = new Error('Could not find any product');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (product.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    for (let index = 0; index < req.body.options.length; index++) {
-      const x = req.body.options[index];
-      option = await Option.findOne({ name: x.option, creator: req.groupId });
-      options.push(option._id);
-    }
-    product.options = options;
-    await product.save();
-    res.status(200).json({
-      message: 'Options updated'
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
 
 exports.getProductVariants = async (req, res, next) => {
   const productId = req.params.productId;
   try {
-    const product = await Product.findById(productId)
-      .sort({ createdAt: -1 });
+    const product = await Product.findById(productId);
     if (!product) {
       const error = new Error('No product found');
       error.statusCode = 404;
@@ -607,8 +553,7 @@ exports.getProductVariant = async (req, res, next) => {
   const productId = req.params.productId;
   let variant;
   try {
-    const product = await Product.findById(productId)
-      .sort({ createdAt: -1 });
+    const product = await Product.findById(productId);
     if (!product) {
       const error = new Error('No product found');
       error.statusCode = 404;
@@ -658,6 +603,9 @@ exports.addVariant = async (req, res, next) => {
     });
     const variant = {
       name: name,
+      brand: product.brand,
+      productId: product._id,
+      cateogry: product.category,
       values: req.body.values,
       stock: req.body.stock,
       sku: req.body.sku,
@@ -736,8 +684,9 @@ exports.updateVariant = async (req, res, next) => {
       throw error;
     }
     product.variants.forEach(variant => {
-      totalStock2 += variant.stock;
+      totalStock2 += (variant.stock);
       if (variant.sku == req.body.sku) {
+        totalStock2 -= variant.stock;
         if (req.body.updateLocationsOnly) {
           variant.locations.push({
             location: req.body.location,
@@ -749,10 +698,18 @@ exports.updateVariant = async (req, res, next) => {
           }
           if (variant.stock < totalStock) {
             variant.stock = totalStock;
+            variant.unassignedStock = 0;
+          } else {
+            variant.unassignedStock = variant.stock - totalStock;
           }
         } else if (req.body.deleteLocationsOnly) {
-          index = variant.locations.indexOf(req.body.item);
-          variant.locations.splice(index, 1);
+          variant.locations.forEach(location => {
+            if (location._id == req.body.item._id) {
+              index = variant.locations.indexOf(location);
+              variant.unassignedStock += location.quantity;
+              variant.locations.splice(index, 1);
+            }
+          });
         } else {
           name = product.name;
           req.body.values.forEach(value => {
@@ -761,8 +718,12 @@ exports.updateVariant = async (req, res, next) => {
           variant.name = name;
           variant.values = req.body.values;
           variant.stock = req.body.stock;
+          totalStock2 += variant.stock;
           if (variant.stock < totalStock) {
             variant.stock = totalStock;
+            variant.unassignedStock = 0;
+          } else {
+            variant.unassignedStock = variant.stock - totalStock;
           }
           variant.sku = req.body.sku;
           variant.locations = locations;
@@ -796,9 +757,7 @@ exports.updateVariant = async (req, res, next) => {
         }
       }
     });
-    if (totalStock2 > product.stock) {
-      product.stock = totalStock2;
-    }
+    product.stock = totalStock2;
     await product.save();
     res.status(200).json({
       message: 'Variant created',
@@ -848,3 +807,4 @@ exports.deleteVariant = async (req, res, next) => {
     next(err);
   }
 };
+

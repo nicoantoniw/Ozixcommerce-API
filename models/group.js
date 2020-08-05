@@ -40,28 +40,7 @@ const groupSchema = new Schema({
   category: {
     type: String
   },
-  personeria: {
-    type: String
-  },
-  cuit: {
-    type: String
-  },
-  activitiesDate: {
-    type: String
-  },
-  socialName: {
-    type: String
-  },
-  brutosNumber: {
-    type: String
-  },
   phone: {
-    type: String
-  },
-  salePoint: [{
-    type: String
-  }],
-  defaultSalePoint: {
     type: String
   },
   status: {

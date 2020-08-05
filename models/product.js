@@ -51,6 +51,10 @@ const productSchema = new Schema({
     type: Number,
     required: false
   },
+  unassignedStock: {
+    type: Number,
+    default: 0
+  },
   locations: [
     {
       location: {
@@ -65,17 +69,29 @@ const productSchema = new Schema({
       }
     }
   ],
-  options: [{
-    type: Schema.Types.ObjectId,
-    ref: 'Option'
-  }],
   hasVariants: {
     type: Boolean,
     default: false
   },
   variants: [{
+    isVariant: {
+      type: Boolean,
+      default: true
+    },
+    productId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Product'
+    },
     name: {
       type: String
+    },
+    brand: {
+      type: String,
+      required: false
+    },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category'
     },
     values: [{
       value: {
@@ -109,6 +125,10 @@ const productSchema = new Schema({
     stock: {
       type: Number,
       required: false
+    },
+    unassignedStock: {
+      type: Number,
+      default: 0
     },
     hasImage: {
       type: Boolean,

@@ -11,6 +11,7 @@ const categoryRoutes = require('./routes/category');
 const productRoutes = require('./routes/product');
 const optionRoutes = require('./routes/option');
 const locationRoutes = require('./routes/location');
+const transferRoutes = require('./routes/transfer');
 const saleRoutes = require('./routes/sale');
 const purchasesRoutes = require('./routes/purchase');
 const personRoutes = require('./routes/person');
@@ -24,7 +25,7 @@ const websiteAdminRoutes = require('./routes/websiteAdmin');
 
 const app = express();
 const dbURI =
-  'mongodb+srv://nicolas:surfinGLife30@node-database-bac9y.mongodb.net/commerce-test';
+  'mongodb+srv://nicolas:NWbY85NcQXQ6bQh@test-database.48eqo.mongodb.net/test-database';
 
 const storage = multer.diskStorage({
   destination: './assets',
@@ -62,6 +63,7 @@ app.use('/api/category', categoryRoutes);
 app.use('/api/option', optionRoutes);
 app.use('/api/product', productRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/transfer', transferRoutes);
 app.use('/api/sale', saleRoutes);
 app.use('/api/purchase', purchasesRoutes);
 app.use('/api/group', groupRoutes);
@@ -88,7 +90,7 @@ mongoose
     useUnifiedTopology: true
   })
   .then(succes => {
-    app.listen(process.env.PORT || 8080);
+    app.listen(process.env.PORT || 3000);
     console.log('Database connected.');
   })
   .catch(err => console.log(err));
