@@ -28,10 +28,10 @@ const transferSchema = new Schema({
             },
         }
     ],
-    dateSent: {
+    dateDispatched: {
         type: Date
     },
-    dateRecieved: {
+    dateReceived: {
         type: Date
     },
     creator: {

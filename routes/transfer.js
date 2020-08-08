@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/transfers', auth.isUser, transferController.getTransfers);
 router.get(
-    '/cash-registers/:transferId',
+    '/transfers/:transferId',
     auth.isUser,
     transferController.getTransfer
 );

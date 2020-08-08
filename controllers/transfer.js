@@ -3,6 +3,7 @@ const moment = require('moment');
 
 const Transfer = require('../models/transfer');
 const Product = require('../models/product');
+const Location = require('../models/location');
 const Group = require('../models/group');
 
 exports.getTransfers = async (req, res, next) => {
@@ -12,8 +13,10 @@ exports.getTransfers = async (req, res, next) => {
         }).countDocuments();
         const transfers = await Transfer.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('products.product', { name: 1, _id: 1 })
-            .sort({ createdAt: 1 });
+            .populate('items.product', { name: 1, _id: 1 })
+            .populate('origin', { name: 1, _id: 1 })
+            .populate('destination', { name: 1, _id: 1 })
+            .sort({ createdAt: -1 });
 
         if (totalTransfers === 0) {
             const error = new Error('No transfers found');
@@ -35,7 +38,12 @@ exports.getTransfers = async (req, res, next) => {
 exports.getTransfer = async (req, res, next) => {
     const transferId = req.params.transferId;
     try {
-        const transfer = await Transfer.findById(transferId).populate('creator', { name: 1, _id: 1 });
+        const transfer = await Transfer.findById(transferId)
+            .populate('creator', { name: 1, _id: 1 })
+            .populate('creator', { name: 1, _id: 1 })
+            .populate('items.product', { name: 1, _id: 1 })
+            .populate('origin', { name: 1, _id: 1 })
+            .populate('destination', { name: 1, _id: 1 });
         if (!transfer) {
             const error = new Error('No transfer found');
             error.statusCode = 404;
@@ -57,8 +65,6 @@ exports.addTransfer = async (req, res, next) => {
         origin: req.body.origin,
         destination: req.body.destination,
         items: req.body.items,
-        dateSent: req.body.dateSent,
-        dateRecieved: req.body.dateRecieved,
         creator: req.groupId
     });
     try {
@@ -141,23 +147,23 @@ exports.updateTransfer = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
-        transfer.description = req.body.description;
-        transfer.origin = req.body.origin;
-        transfer.destination = req.body.destination;
-        transfer.items = req.body.items;
-        transfer.dateSent = req.body.dateSent;
-        transfer.dateRecieved = req.body.dateRecieved;
-        transfer.items.forEach(item => {
-            if (!item.isVariant) {
-                item.sku = false;
+        if (req.body.status) {
+            transfer.status = req.body.status;
+            if (req.body.dateDispatched) {
+                transfer.dateDispatched = req.body.dateDispatched;
             }
-            if (status === 'transit') {
-                transferStock(transfer.items, transfer.origin, false, item.quantity, false, req.groupId);
-            } else if (status === 'completed') {
-                transferStock(transfer.items, false, transfer.destination, false, item.quantity, req.groupId);
+            transfer.dateReceived = req.body.dateReceived;
+            if (req.body.status === 'in transit') {
+                transferStock(transfer.items, transfer.origin, false, req.groupId);
+            } else if (req.body.status === 'completed') {
+                transferStock(transfer.items, false, transfer.destination, req.groupId);
             }
-        });
-
+        } else {
+            transfer.description = req.body.description;
+            transfer.origin = req.body.origin;
+            transfer.destination = req.body.destination;
+            transfer.items = req.body.items;
+        }
         await transfer.save();
         res.status(200).json({
             message: 'Transfer updated'
@@ -184,6 +190,32 @@ exports.deleteTransfer = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
+        for (let i = 0; i < transfer.items.length; i++) {
+            const item = transfer.items[i];
+            const product = await Product.findById(item.product).populate('locations.location');
+            if (!product) {
+                const error = new Error('Could not find any product');
+                error.statusCode = 404;
+                throw error;
+            }
+            for (let y = 0; y < product.locations.length; y++) {
+                const location = product.locations[y];
+                if (transfer.status === 'in transit') {
+                    if (transfer.origin.toString() === location.location._id.toString()) {
+                        location.quantity += Number(item.quantity);
+                    }
+                }
+                if (transfer.status === 'completed') {
+                    if (transfer.origin.toString() === location.location._id.toString()) {
+                        location.quantity += Number(item.quantity);
+                    }
+                    if (transfer.destination.toString() === location.location._id.toString()) {
+                        location.quantity -= Number(item.quantity);
+                    }
+                }
+            }
+            await product.save();
+        }
         await transfer.remove();
         res.status(200).json({
             message: 'Transfer deleted'
@@ -196,17 +228,18 @@ exports.deleteTransfer = async (req, res, next) => {
     }
 };
 
-const transferStock = async (items, fromLocation, toLocation, groupId) => {
+const transferStock = async (items, origin, destination, groupId) => {
     let productId;
+    let notthere = true;
     try {
         for (let index = 0; index < items.length; index++) {
             const item = items[index];
             if (item.isVariant) {
                 productId = item.productId;
             } else {
-                productId = item._id;
+                productId = item.product;
             }
-            const product = await Product.findById(productId);
+            const product = await Product.findById(productId).populate('locations.location');
             if (!product) {
                 const error = new Error('Could not find any product');
                 error.statusCode = 404;
@@ -218,32 +251,51 @@ const transferStock = async (items, fromLocation, toLocation, groupId) => {
                 throw error;
             }
             if (item.isVariant) {
-                product.variants.forEach((variant) => {
+                for (let q = 0; q < product.variants.length; q++) {
+                    const variant = product.variants[q];
                     if (variant.sku == item.sku) {
                         variant.locations.forEach(location => {
-                            if (fromLocation == location._id) {
-                                location.quantity = Number(fromLocationStock);
-                            } else if (toLocation == location._id) {
-                                location.quantity += Number(toLocationStock);
+                            if (origin.toString() === location.location._id.toString()) {
+                                location.quantity -= Number(item.quantity);
+                            } else if (destination.toString() === location.location._id.toString()) {
+                                location.quantity += Number(item.quantity);
+                                notthere = false;
                             }
                         });
+                        if (notthere && destination) {
+                            const location = await Location.findById(destination);
+                            variant.locations.push({
+                                location: location._id,
+                                name: location.name,
+                                quantity: item.quantity
+                            });
+                        }
                     }
-                });
+                };
             } else {
                 product.locations.forEach(location => {
-                    if (fromLocation == location._id) {
-                        location.quantity = Number(fromLocationStock);
-                    } else if (toLocation == location._id) {
-                        location.quantity += Number(toLocationStock);
+                    if (origin.toString() === location.location._id.toString()) {
+                        location.quantity -= Number(item.quantity);
+                    } else if (destination.toString() === location.location._id.toString()) {
+                        location.quantity += Number(item.quantity);
+                        notthere = false;
                     }
                 });
+                if (notthere && destination) {
+                    const location = await Location.findById(destination);
+                    product.locations.push({
+                        location: location._id,
+                        name: location.name,
+                        quantity: item.quantity
+                    });
+                }
             }
+            await product.save();
         }
-        await product.save();
     } catch (err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
-        next(err);
+        throw (err);
     }
 };
