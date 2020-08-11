@@ -41,7 +41,7 @@ exports.getTransfer = async (req, res, next) => {
         const transfer = await Transfer.findById(transferId)
             .populate('creator', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('items.product', { name: 1, _id: 1 })
+            .populate('items.product', { name: 1, _id: 1, variants: 1 })
             .populate('origin', { name: 1, _id: 1 })
             .populate('destination', { name: 1, _id: 1 });
         if (!transfer) {
@@ -68,11 +68,6 @@ exports.addTransfer = async (req, res, next) => {
         creator: req.groupId
     });
     try {
-        if (req.body.status === 'transit') {
-            transferStock(transfer.items, transfer.origin, false, req.groupId);
-        } else if (req.body.status === 'completed') {
-            transferStock(transfer.items, false, transfer.destination, req.groupId);
-        }
         await transfer.save();
         res.status(200).json({
             message: 'Transfer created.',
@@ -90,7 +85,7 @@ exports.transferUnassignedStock = async (req, res, next) => {
     const productId = req.params.productId;
     const stock = req.body.stock;
     const locationId = req.body.locationId;
-    const variantSku = req.params.variantSku;
+    const variantSku = req.body.variantSku;
     try {
         const product = await Product.findById(productId);
         if (!product) {
@@ -153,9 +148,9 @@ exports.updateTransfer = async (req, res, next) => {
                 transfer.dateDispatched = req.body.dateDispatched;
             }
             transfer.dateReceived = req.body.dateReceived;
-            if (req.body.status === 'in transit') {
+            if (req.body.status === 'In Transit') {
                 transferStock(transfer.items, transfer.origin, false, req.groupId);
-            } else if (req.body.status === 'completed') {
+            } else if (req.body.status === 'Completed') {
                 transferStock(transfer.items, false, transfer.destination, req.groupId);
             }
         } else {
@@ -200,12 +195,12 @@ exports.deleteTransfer = async (req, res, next) => {
             }
             for (let y = 0; y < product.locations.length; y++) {
                 const location = product.locations[y];
-                if (transfer.status === 'in transit') {
+                if (transfer.status === 'In Transit') {
                     if (transfer.origin.toString() === location.location._id.toString()) {
                         location.quantity += Number(item.quantity);
                     }
                 }
-                if (transfer.status === 'completed') {
+                if (transfer.status === 'Completed') {
                     if (transfer.origin.toString() === location.location._id.toString()) {
                         location.quantity += Number(item.quantity);
                     }
@@ -230,15 +225,13 @@ exports.deleteTransfer = async (req, res, next) => {
 
 const transferStock = async (items, origin, destination, groupId) => {
     let productId;
-    let notthere = true;
+    let notthere;
     try {
         for (let index = 0; index < items.length; index++) {
+            notthere = true;
             const item = items[index];
-            if (item.isVariant) {
-                productId = item.productId;
-            } else {
-                productId = item.product;
-            }
+            console.log(item);
+            productId = item.product;
             const product = await Product.findById(productId).populate('locations.location');
             if (!product) {
                 const error = new Error('Could not find any product');
@@ -250,10 +243,10 @@ const transferStock = async (items, origin, destination, groupId) => {
                 error.statusCode = 403;
                 throw error;
             }
-            if (item.isVariant) {
+            if (item.variantSku) {
                 for (let q = 0; q < product.variants.length; q++) {
                     const variant = product.variants[q];
-                    if (variant.sku == item.sku) {
+                    if (variant.sku == item.variantSku) {
                         variant.locations.forEach(location => {
                             if (origin.toString() === location.location._id.toString()) {
                                 location.quantity -= Number(item.quantity);

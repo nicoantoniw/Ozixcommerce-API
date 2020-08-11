@@ -15,7 +15,7 @@ const transferSchema = new Schema({
     },
     status: {
         type: String,
-        default: 'pending'
+        default: 'Pending'
     },
     items: [
         {
@@ -26,6 +26,10 @@ const transferSchema = new Schema({
             quantity: {
                 type: Number
             },
+            variantSku: {
+                type: String,
+                required: false
+            }
         }
     ],
     dateDispatched: {
