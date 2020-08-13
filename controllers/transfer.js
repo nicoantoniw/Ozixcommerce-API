@@ -193,19 +193,44 @@ exports.deleteTransfer = async (req, res, next) => {
                 error.statusCode = 404;
                 throw error;
             }
-            for (let y = 0; y < product.locations.length; y++) {
-                const location = product.locations[y];
-                if (transfer.status === 'In Transit') {
-                    if (transfer.origin.toString() === location.location._id.toString()) {
-                        location.quantity += Number(item.quantity);
+            if (item.variantSku) {
+                for (let q = 0; q < product.variants.length; q++) {
+                    const variant = product.variants[q];
+                    if (variant.sku == item.variantSku) {
+                        for (let w = 0; w < variant.locations.length; w++) {
+                            const location = variant.locations[w];
+                            if (transfer.status === 'In Transit') {
+                                if (transfer.origin.toString() === location.location._id.toString()) {
+                                    location.quantity += Number(item.quantity);
+                                }
+                            }
+                            if (transfer.status === 'Completed') {
+                                if (transfer.origin.toString() === location.location._id.toString()) {
+                                    location.quantity += Number(item.quantity);
+                                }
+                                if (transfer.destination.toString() === location.location._id.toString()) {
+                                    location.quantity -= Number(item.quantity);
+                                }
+                            }
+                        }
+
                     }
-                }
-                if (transfer.status === 'Completed') {
-                    if (transfer.origin.toString() === location.location._id.toString()) {
-                        location.quantity += Number(item.quantity);
+                };
+            } else {
+                for (let y = 0; y < product.locations.length; y++) {
+                    const location = product.locations[y];
+                    if (transfer.status === 'In Transit') {
+                        if (transfer.origin.toString() === location.location._id.toString()) {
+                            location.quantity += Number(item.quantity);
+                        }
                     }
-                    if (transfer.destination.toString() === location.location._id.toString()) {
-                        location.quantity -= Number(item.quantity);
+                    if (transfer.status === 'Completed') {
+                        if (transfer.origin.toString() === location.location._id.toString()) {
+                            location.quantity += Number(item.quantity);
+                        }
+                        if (transfer.destination.toString() === location.location._id.toString()) {
+                            location.quantity -= Number(item.quantity);
+                        }
                     }
                 }
             }
