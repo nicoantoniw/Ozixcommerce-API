@@ -6,31 +6,31 @@ const PDFDocument = require('pdfkit');
 const moment = require('moment');
 
 
-const Sale = require('../models/sale');
+const Invoice = require('../models/invoice');
 const Product = require('../models/product');
 const Group = require('../models/group');
-const Cash = require('../models/cash');
+const Account = require('../models/account');
 
-exports.getSales = async (req, res, next) => {
+exports.getInvoices = async (req, res, next) => {
   try {
-    const totalSales = await Sale.find({
+    const totalInvoices = await Invoice.find({
       creator: req.groupId
     }).countDocuments();
-    const sales = await Sale.find({ creator: req.groupId })
+    const invoices = await Invoice.find({ creator: req.groupId })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
 
-    if (totalSales === 0) {
-      const error = new Error('No sales found');
+    if (totalInvoices === 0) {
+      const error = new Error('No invoices found');
       error.statusCode = 404;
       throw error;
     }
 
     res.status(200).json({
-      sales: sales,
-      totalSales: totalSales
+      invoices,
+      totalInvoices
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -40,7 +40,7 @@ exports.getSales = async (req, res, next) => {
   }
 };
 
-exports.getSalesByDate = async (req, res, next) => {
+exports.getInvoicesByDate = async (req, res, next) => {
   let day = req.query.day;
   let month = req.query.month;
   let year = req.query.year;
@@ -142,41 +142,41 @@ exports.getSalesByDate = async (req, res, next) => {
     end = `${year}-${month}-${day}T23:59:59`;
   }
   try {
-    const totalSales = await Sale.find({
+    const totalInvoices = await Invoice.find({
       creator: req.groupId,
       createdAt: { '$gte': start, '$lt': end }
     }).countDocuments();
     if (seller !== '') {
-      const sales = await Sale.find({ createdAt: { '$gte': start, '$lt': end }, seller: seller, creator: req.groupId })
+      const invoices = await Invoice.find({ createdAt: { '$gte': start, '$lt': end }, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, _id: 1 })
         .sort({ createdAt: -1 });
 
-      if (totalSales === 0) {
-        const error = new Error('No sales found');
+      if (totalInvoices === 0) {
+        const error = new Error('No invoices found');
         error.statusCode = 404;
         throw error;
       }
       res.status(200).json({
-        sales: sales,
-        totalSales: totalSales
+        invoices,
+        totalInvoices
       });
     } else {
-      const sales = await Sale.find({ createdAt: { '$gte': start, '$lt': end }, creator: req.groupId })
+      const invoices = await invoice.find({ createdAt: { '$gte': start, '$lt': end }, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, _id: 1 })
         .sort({ createdAt: -1 });
 
-      if (totalSales === 0) {
-        const error = new Error('No sales found');
+      if (totalinvoices === 0) {
+        const error = new Error('No invoices found');
         error.statusCode = 404;
         throw error;
       }
       res.status(200).json({
-        sales: sales,
-        totalSales: totalSales
+        invoices: invoices,
+        totalinvoices: totalinvoices
       });
     }
 
@@ -189,23 +189,20 @@ exports.getSalesByDate = async (req, res, next) => {
 };
 
 
-exports.getSale = async (req, res, next) => {
-  const saleId = req.params.saleId;
+exports.getInvoice = async (req, res, next) => {
+  const invoiceId = req.params.invoiceId;
   try {
-    const sale = await Sale.findOne({
-      _id: saleId,
-      creator: req.groupId
-    })
+    const invoice = await Invoice.findById(invoiceId)
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 });
-    if (!sale) {
-      const error = new Error('No sale found');
+    if (!invoice) {
+      const error = new Error('No invoice found');
       error.statusCode = 404;
       throw error;
     }
     res.status(200).json({
-      sale: sale
+      invoice
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -214,28 +211,28 @@ exports.getSale = async (req, res, next) => {
     next(err);
   }
 };
-exports.getSalesBySeller = async (req, res, next) => {
+exports.getInvoicesBySeller = async (req, res, next) => {
   const sellerId = req.params.sellerId;
   try {
-    const totalSales = await Sale.find({
+    const totalInvoices = await invoice.find({
       creator: req.groupId,
       seller: sellerId
     }).countDocuments();
-    const sales = await Sale.find({ creator: req.groupId, seller: sellerId })
+    const invoices = await Invoice.find({ creator: req.groupId, seller: sellerId })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
 
-    if (totalSales === 0) {
-      const error = new Error('No sales found');
+    if (totalInvoices === 0) {
+      const error = new Error('No invoices found');
       error.statusCode = 404;
       throw error;
     }
 
     res.status(200).json({
-      sales: sales,
-      totalSales: totalSales
+      invoices,
+      totalInvoices
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -247,28 +244,28 @@ exports.getSalesBySeller = async (req, res, next) => {
 
 
 
-exports.getSalesByCustomer = async (req, res, next) => {
+exports.getInvoicesByCustomer = async (req, res, next) => {
   const customerId = req.params.customerId;
   try {
-    const totalSales = await Sale.find({
+    const totalInvoices = await Invoice.find({
       creator: req.groupId,
       customer: customerId
     }).countDocuments();
-    const sales = await Sale.find({ creator: req.groupId, customer: customerId })
+    const invoices = await Invoice.find({ creator: req.groupId, customer: customerId })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
 
-    if (totalSales === 0) {
-      const error = new Error('No sales found');
+    if (totalInvoices === 0) {
+      const error = new Error('No invoices found');
       error.statusCode = 404;
       throw error;
     }
 
     res.status(200).json({
-      sales: sales,
-      totalSales: totalSales
+      invoices,
+      totalInvoices
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -279,19 +276,8 @@ exports.getSalesByCustomer = async (req, res, next) => {
 };
 
 
-exports.addSale = async (req, res, next) => {
-  const cashRegisterId = req.body.cashRegister;
+exports.addInvoice = async (req, res, next) => {
   let amount;
-  let date = moment.utc().utcOffset(-3);
-  if (req.body.createdAt) {
-    date = moment.utc(req.body.createdAt).set('hour', 15);
-  }
-  const data2 = {
-    type: 'add',
-    description: 'Venta',
-    amount: req.body.total,
-    date
-  };
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -299,69 +285,39 @@ exports.addSale = async (req, res, next) => {
     next(error);
   }
   try {
-    if (req.body.customer !== '') {
-      const sale = new Sale({
-        ticketType: req.body.ticketType,
-        ticketNumber: req.body.ticketNumber,
-        details: req.body.details,
-        total: req.body.total,
-        creator: req.groupId,
-        seller: req.body.seller,
-        customer: req.body.customer,
-        cashRegister: cashRegisterId,
-        createdAt: date
-      });
-      let details = req.body.details;
-      await details.map(async detail => {
-        await decreaseStock(detail.product, Number(detail.quantity), req.groupId);
-      });
-      await sale.save();
-      const cashRegister = await Cash.findById(cashRegisterId);
-      if (!cashRegister) {
-        const error = new Error('Could not find any register');
-        error.statusCode = 404;
-        throw error;
-      }
-      data2.sale = sale._id;
-      amount = parseFloat((Number(data2.amount)).toFixed(2));
-      cashRegister.balance += amount;
-      cashRegister.movements.push(data2);
-      await cashRegister.save();
-      res.status(200).json({
-        message: 'Sale created.',
-        sale
-      });
-    } else if (req.body.customer === '') {
-      const sale = new Sale({
-        ticketType: req.body.ticketType,
-        ticketNumber: req.body.ticketNumber,
-        details: req.body.details,
-        total: req.body.total,
-        creator: req.groupId,
-        seller: req.body.seller,
-        cashRegister: cashRegisterId,
-        createdAt: date
-      });
-      let details = req.body.details;
-      await details.map(detail => {
-        decreaseStock(detail.product, detail.quantity, req.groupId);
-      });
-      await sale.save();
-      const cashRegister = await Cash.findById(cashRegisterId);
-      if (!cashRegister) {
-        const error = new Error('Could not find any register');
-        error.statusCode = 404;
-        throw error;
-      }
-      data2.sale = sale._id;
-      cashRegister.balance += data2.amount;
-      cashRegister.movements.push(data2);
-      await cashRegister.save();
-      res.status(200).json({
-        message: 'Sale created.',
-        sale: sale
-      });
+    const invoice = new Invoice({
+      number: req.body.invoice.number,
+      details: req.body.invoice.details,
+      total: req.body.invoice.total,
+      subtotal: req.body.invoice.subtotal,
+      taxes: req.body.invoice.taxes,
+      discounts: Number(req.body.invoice.discounts),
+      creator: req.groupId,
+      seller: req.body.invoice.seller,
+      customer: req.body.invoice.customer,
+      dueDate: req.body.invoice.dueDate,
+      createdAt: req.body.invoice.createdAt
+    });
+    for (let i = 0; i < invoice.details.length; i++) {
+      const detail = invoice.details[i];
+      decreaseStock(detail.product, Number(detail.quantity), detail.location);
     }
+    await invoice.save();
+    // const cashRegister = await Cash.findById(cashRegisterId);
+    // if (!cashRegister) {
+    //   const error = new Error('Could not find any register');
+    //   error.statusCode = 404;
+    //   throw error;
+    // }
+    // data2.invoice = invoice._id;
+    // amount = parseFloat((Number(data2.amount)).toFixed(2));
+    // cashRegister.balance += amount;
+    // cashRegister.movements.push(data2);
+    // await cashRegister.save();
+    res.status(200).json({
+      message: 'invoice created.',
+      invoice
+    });
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -370,7 +326,7 @@ exports.addSale = async (req, res, next) => {
   }
 };
 
-exports.createTicketA4 = (req, res, next) => {
+exports.createPDF = (req, res, next) => {
   let date = new Date();
   let day = date.getDate();
   let month = date.getMonth() + 1;
@@ -456,25 +412,25 @@ exports.createTicketA4 = (req, res, next) => {
   pdfDocA4.end();
 };
 
-exports.updateSale = async (req, res, next) => {
+exports.updateInvoice = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
     error.statusCode = 422;
     next(error);
   }
-  const saleId = req.params.saleId;
+  const invoiceId = req.params.invoiceId;
   try {
-    const sale = await Sale.findById(saleId)
+    const invoice = await Invoice.findById(invoiceId)
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 });
-    if (!sale) {
-      const error = new Error('Could not find any sale');
+    if (!invoice) {
+      const error = new Error('Could not find any invoice');
       error.statusCode = 404;
       throw error;
     }
-    if (sale.creator._id.toString() !== req.groupId) {
+    if (invoice.creator._id.toString() !== req.groupId) {
       const error = new Error('Not authorized');
       error.statusCode = 403;
       throw error;
@@ -484,16 +440,16 @@ exports.updateSale = async (req, res, next) => {
       quantity: req.body.quantity,
       price: req.body.price
     };
-    sale.ticketType = req.body.ticketType;
-    sale.ticketNumber = req.body.ticketNumber;
-    sale.total = req.body.total;
-    sale.aggregateDiscount = req.body.aggregateDiscount;
-    sale.details = details;
+    invoice.ticketType = req.body.ticketType;
+    invoice.ticketNumber = req.body.ticketNumber;
+    invoice.total = req.body.total;
+    invoice.aggregateDiscount = req.body.aggregateDiscount;
+    invoice.details = details;
 
-    await sale.save();
+    await invoice.save();
     res.status(200).json({
-      message: 'Sale updated.',
-      sale: sale
+      message: 'invoice updated.',
+      invoice
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -503,25 +459,25 @@ exports.updateSale = async (req, res, next) => {
   }
 };
 
-exports.activateSale = async (req, res, next) => {
-  const saleId = req.params.saleId;
+exports.activateInvoice = async (req, res, next) => {
+  const invoiceId = req.params.invoiceId;
   try {
-    const sale = await Sale.findById(saleId);
-    if (!sale) {
-      const error = new Error('Could not find any sale');
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) {
+      const error = new Error('Could not find any invoice');
       error.statusCode = 404;
       throw error;
     }
-    if (sale.creator._id.toString() !== req.groupId) {
+    if (invoice.creator._id.toString() !== req.groupId) {
       const error = new Error('Not authorized');
       error.statusCode = 403;
       throw error;
     }
-    sale.status = 'activo';
-    await sale.save();
+    invoice.status = 'activo';
+    await invoice.save();
     res.status(200).json({
-      message: 'Sale has been activated',
-      sale: sale
+      message: 'invoice has been activated',
+      invoice
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -531,25 +487,25 @@ exports.activateSale = async (req, res, next) => {
   }
 };
 
-exports.deactivateSale = async (req, res, next) => {
-  const saleId = req.params.saleId;
+exports.deactivateInvoice = async (req, res, next) => {
+  const invoiceId = req.params.invoiceId;
   try {
-    const sale = await Sale.findById(saleId);
-    if (!sale) {
-      const error = new Error('Could not find any sale');
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) {
+      const error = new Error('Could not find any invoice');
       error.statusCode = 404;
       throw error;
     }
-    if (sale.creator._id.toString() !== req.groupId) {
+    if (invoice.creator._id.toString() !== req.groupId) {
       const error = new Error('Not authorized');
       error.statusCode = 403;
       throw error;
     }
-    sale.status = 'inactivo';
-    await sale.save();
+    invoice.status = 'inactivo';
+    await invoice.save();
     res.status(200).json({
-      message: 'Sale has been deactivated',
-      sale: sale
+      message: 'invoice has been deactivated',
+      invoice
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -559,34 +515,34 @@ exports.deactivateSale = async (req, res, next) => {
   }
 };
 
-exports.deleteSale = async (req, res, next) => {
-  const saleId = req.params.saleId;
+exports.deleteInvoice = async (req, res, next) => {
+  const invoiceId = req.params.invoiceId;
   let index1;
   try {
-    const sale = await Sale.findById(saleId);
-    if (!sale) {
-      const error = new Error('Could not find any sale');
+    const invoice = await Invoice.findById(invoiceId);
+    if (!invoice) {
+      const error = new Error('Could not find any invoice');
       error.statusCode = 404;
       throw error;
     }
-    if (sale.creator._id.toString() !== req.groupId) {
+    if (invoice.creator._id.toString() !== req.groupId) {
       const error = new Error('Not authorized.');
       error.statusCode = 403;
       throw error;
     }
-    const cashRegister = await Cash.findById(sale.cashRegister);
-    cashRegister.movements.forEach((movement, index) => {
-      if (!movement.sale) {
-      } else if ((movement.sale).toString() === (sale._id).toString()) {
-        index1 = index;
-      }
-    });
-    cashRegister.movements.splice(index1, 1);
-    cashRegister.balance -= sale.total;
-    await cashRegister.save();
-    await sale.remove();
+    // const cashRegister = await Account.findById(invoice.account);
+    // cashRegister.movements.forEach((movement, index) => {
+    //   if (!movement.invoice) {
+    //   } else if ((movement.invoice).toString() === (invoice._id).toString()) {
+    //     index1 = index;
+    //   }
+    // });
+    // cashRegister.movements.splice(index1, 1);
+    // cashRegister.balance -= invoice.total;
+    // await cashRegister.save();
+    await invoice.remove();
     res.status(200).json({
-      message: 'Sale deleted'
+      message: 'invoice deleted'
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -596,27 +552,27 @@ exports.deleteSale = async (req, res, next) => {
   }
 };
 
-exports.getSales30Days = async (req, res, next) => {
+exports.getInvoices30Days = async (req, res, next) => {
   try {
     const start = moment().subtract(30, 'days');
     const end = moment();
-    const totalSales = await Sale.find({
+    const totalInvoices = await Invoice.find({
       creator: req.groupId, createdAt: { '$gte': start, '$lt': end }
     }).countDocuments();
-    const sales = await Sale.find({ creator: req.groupId, createdAt: { '$gte': start, '$lt': end } })
+    const invoices = await Invoice.find({ creator: req.groupId, createdAt: { '$gte': start, '$lt': end } })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
 
-    if (totalSales === 0) {
-      const error = new Error('No sales found');
+    if (totalInvoices === 0) {
+      const error = new Error('No invoices found');
       error.statusCode = 404;
       throw error;
     }
     res.status(200).json({
-      totalSales,
-      sales
+      totalinvoices,
+      invoices
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -626,16 +582,40 @@ exports.getSales30Days = async (req, res, next) => {
   }
 };
 
-const decreaseStock = async (productId, quantity, creator) => {
+const decreaseStock = async (product, quantity, location) => {
+  let productId = product._id;
+  if (product.isVariant) {
+    productId = product.productId;
+  };
   try {
-    const product = await Product.findOne({ name: productId, creator: creator });
+    let product2 = await Product.findById(product._id);
     if (!product) {
       const error = new Error('Could not find any product');
       error.statusCode = 404;
     }
-    const newStock = parseInt(product.stock) - Number(quantity);
-    product.stock = newStock;
-    await product.save();
+    if (product.isVariant) {
+      for (let i = 0; i < product2.variants.length; i++) {
+        const variant = product.variants[i];
+        if (product.sku == variant.sku) {
+          for (let y = 0; y < variant.locations.length; y++) {
+            const location2 = variant.locations[y];
+            if (location == location2._id) {
+              location2.quantity -= quantity;
+              variant.stock -= quantity;
+            }
+          }
+        }
+      }
+    } else {
+      for (let i = 0; i < product2.locations.length; i++) {
+        const location2 = product.locations[i];
+        if (location == location2._id) {
+          location2.quantity -= quantity;
+          product2.stock -= quantity;
+        }
+      }
+    }
+    await product2.save();
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;

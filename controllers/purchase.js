@@ -3,7 +3,7 @@ const moment = require('moment');
 
 const Purchase = require('../models/purchase');
 const Product = require('../models/product');
-const Cash = require('../models/cash');
+const Cash = require('../models/account');
 
 exports.getPurchases = async (req, res, next) => {
   try {

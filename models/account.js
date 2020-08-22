@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const cashSchema = new Schema({
+const accountSchema = new Schema({
     name: {
         type: String
     },
@@ -78,4 +78,4 @@ const cashSchema = new Schema({
     }
 });
 
-module.exports = mongoose.model('Cash', cashSchema);
+module.exports = mongoose.model('Account', accountSchema);

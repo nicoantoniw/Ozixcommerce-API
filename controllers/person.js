@@ -134,15 +134,11 @@ exports.addPerson = async (req, res, next) => {
     next(error);
   }
   let creator = req.groupId;
-  const calculatedAge = getAge(req.body.birth);
   const person = new Person({
     name: req.body.name,
-    birth: req.body.birth,
-    age: calculatedAge,
     type: req.body.type,
     company: req.body.company,
     description: req.body.description,
-    typeId: req.body.typeId,
     numberId: req.body.numberId,
     address: req.body.address,
     phoneNumber: req.body.phoneNumber,
@@ -183,14 +179,13 @@ exports.updatePerson = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    const calculatedAge = getAge(req.body.birth);
+
     person.name = req.body.name;
-    person.birth = req.body.birth;
-    person.age = calculatedAge;
+
+
     person.type = req.body.type;
     person.description = req.body.description;
     person.company = req.body.company;
-    person.typeId = req.body.typeId;
     person.numberId = req.body.numberId;
     person.address = req.body.address;
     person.phoneNumber = req.body.phoneNumber;
@@ -365,15 +360,4 @@ exports.subtractDebt = async (req, res, next) => {
     }
     next(err);
   }
-};
-
-const getAge = date => {
-  if (date === '') {
-    const age = new Date();
-    return age;
-  }
-  const today = new Date();
-  const birth = new Date(date);
-  const age = today.getFullYear() - birth.getFullYear();
-  return age;
 };

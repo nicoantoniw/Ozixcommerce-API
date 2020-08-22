@@ -1,7 +1,7 @@
 const { validationResult } = require('express-validator');
 const moment = require('moment');
 
-const Cash = require('../models/cash');
+const Cash = require('../models/account');
 const Group = require('../models/group');
 
 exports.getCashRegisters = async (req, res, next) => {

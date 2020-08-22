@@ -6,18 +6,7 @@ const personSchema = new Schema({
     type: String,
     required: false
   },
-  birth: {
-    type: Date,
-    required: false
-  },
   description: {
-    type: String,
-    required: false
-  },
-  age: {
-    type: Number
-  },
-  cuit: {
     type: String,
     required: false
   },
@@ -26,10 +15,6 @@ const personSchema = new Schema({
     required: false
   },
   company: {
-    type: String,
-    required: false
-  },
-  typeId: {
     type: String,
     required: false
   },

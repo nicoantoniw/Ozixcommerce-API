@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const saleSchema = new Schema({
+const invoiceSchema = new Schema({
   seller: {
     type: Schema.Types.ObjectId,
     ref: 'Seller',
@@ -17,16 +17,11 @@ const saleSchema = new Schema({
     ref: 'Person',
     required: false
   },
-  cashRegister: {
+  account: {
     type: Schema.Types.ObjectId,
-    ref: 'Cash',
-    required: true
+    ref: 'Account'
   },
-  ticketType: {
-    type: String,
-    required: true
-  },
-  ticketNumber: {
+  number: {
     type: String,
     required: true
   },
@@ -34,16 +29,32 @@ const saleSchema = new Schema({
     type: Number,
     required: true
   },
+  subtotal: {
+    type: Number,
+    required: true
+  },
+  taxes: {
+    type: Number,
+    required: true
+  },
+  discounts: {
+    type: Number,
+    required: true
+  },
   details: [
     {
-      aggregateDiscount: {
+      discount: {
         type: Number,
         required: true,
         default: 0
       },
       product: {
-        type: String,
-        required: true
+        type: Object,
+        ref: 'Product',
+      },
+      location: {
+        type: Schema.Types.ObjectId,
+        ref: 'Location',
       },
       quantity: {
         type: Number,
@@ -52,25 +63,24 @@ const saleSchema = new Schema({
       price: {
         type: Number,
         required: true
-      },
-      totalIva: {
-        type: Number,
-        required: true
-      },
-      subtotal: {
-        type: Number,
-        required: true
       }
     }
   ],
   status: {
     type: String,
     required: true,
-    default: 'activo'
+    default: 'Unpaid'
+  },
+  sent: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
+    type: Date
+  },
+  dueDate: {
     type: Date
   }
 });
 
-module.exports = mongoose.model('Sale', saleSchema);
+module.exports = mongoose.model('Invoice', invoiceSchema);
