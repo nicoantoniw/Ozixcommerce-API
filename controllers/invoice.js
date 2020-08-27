@@ -20,14 +20,13 @@ exports.getInvoices = async (req, res, next) => {
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
+      .sort({ number: -1 });
 
     if (totalInvoices === 0) {
       const error = new Error('No invoices found');
       error.statusCode = 404;
       throw error;
     }
-
     res.status(200).json({
       invoices,
       totalInvoices
@@ -40,145 +39,130 @@ exports.getInvoices = async (req, res, next) => {
   }
 };
 
-exports.getInvoicesByDate = async (req, res, next) => {
-  let day = req.query.day;
-  let month = req.query.month;
-  let year = req.query.year;
-  const seller = req.query.seller;
-  let start = 0;
-  let end = 0;
-  let leap = leapYear(year);
-  if (day === '0' && month === '0') {
-    start = `${year}-01-01T00:00:00`;
-    end = `${year}-12-31T23:59:59`;
-  } else if (day === '0' && leap) {
-    switch (month) {
-      case '01':
-        day = 31;
-        break;
-      case '02':
-        day = 29;
-        break;
-      case '03':
-        day = 31;
-        break;
-      case '04':
-        day = 30;
-        break;
-      case '05':
-        day = 31;
-        break;
-      case '06':
-        day = 30;
-        break;
-      case '07':
-        day = 31;
-        break;
-      case '08':
-        day = 31;
-        break;
-      case '09':
-        day = 30;
-        break;
-      case '10':
-        day = 31;
-        break;
-      case '11':
-        day = 30;
-        break;
-      case '12':
-        day = 31;
-        break;
-    }
-    start = `${year}-${month}-01T00:00:00`;
-    end = `${year}-${month}-${day}T23:59:59`;
-  } else if (day === '0') {
-    switch (month) {
-      case '01':
-        day = 31;
-        break;
-      case '02':
-        day = 28;
-        break;
-      case '03':
-        day = 31;
-        break;
-      case '04':
-        day = 30;
-        break;
-      case '05':
-        day = 31;
-        break;
-      case '06':
-        day = 30;
-        break;
-      case '07':
-        day = 31;
-        break;
-      case '08':
-        day = 31;
-        break;
-      case '09':
-        day = 30;
-        break;
-      case '10':
-        day = 31;
-        break;
-      case '11':
-        day = 30;
-        break;
-      case '12':
-        day = 31;
-        break;
-    }
-    start = `${year}-${month}-01T00:00:00`;
-    end = `${year}-${month}-${day}T23:59:59`;
-  } else if (day !== '0' && month === '0') {
-    const error = new Error('Entered data is incorrect');
-    error.statusCode = 422;
-    next(error);
-  } else {
-    start = `${year}-${month}-${day}T00:00:00`;
-    end = `${year}-${month}-${day}T23:59:59`;
+exports.getInvoicesByFilter = async (req, res, next) => {
+  let invoices;
+  let dateFrom;
+  let dateTo;
+
+  if (req.query.dateFrom != null) {
+    dateFrom = moment.utc(req.query.dateFrom).toISOString();
+  } if (req.query.dateTo != null) {
+    dateTo = moment.utc(req.query.dateTo).toISOString();
+  }
+  let seller = req.query.seller;
+  let customer = req.query.customer;
+  let status = req.query.status;
+  if (!seller | !customer | !status) {
+    seller = '';
+    customer = '';
+    status = '';
   }
   try {
-    const totalInvoices = await Invoice.find({
-      creator: req.groupId,
-      createdAt: { '$gte': start, '$lt': end }
-    }).countDocuments();
-    if (seller !== '') {
-      const invoices = await Invoice.find({ createdAt: { '$gte': start, '$lt': end }, seller: seller, creator: req.groupId })
+    if (dateFrom === null && dateTo === null && customer === '' && status === '' && seller != '') {
+      invoices = await Invoice.find({ seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, _id: 1 })
-        .sort({ createdAt: -1 });
-
-      if (totalInvoices === 0) {
-        const error = new Error('No invoices found');
-        error.statusCode = 404;
-        throw error;
-      }
-      res.status(200).json({
-        invoices,
-        totalInvoices
-      });
+        .sort({ number: -1 });
+    } else if (dateFrom === null && dateTo === null && seller === '' && status === '' && customer != '') {
+      invoices = await Invoice.find({ customer: customer, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom === null && dateTo === null && seller === '' && customer === '' && status != '') {
+      invoices = await Invoice.find({ status: status, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (seller === '' && customer === '' && status === '' && dateFrom != null && dateTo != null) {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (customer === '' && status === '' && dateFrom != null && dateTo != null && seller != '') {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, seller: seller, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (seller === '' && status === '' && dateFrom != null && dateTo != null && customer != '') {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (seller === '' && customer === '' && dateFrom != null && dateTo != null && status != '') {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom === null && dateTo === null && status === '' && seller != '' && customer != '') {
+      invoices = await Invoice.find({ seller: seller, customer: customer, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom === null && dateTo === null && customer === '' && seller != '' && status != '') {
+      invoices = await Invoice.find({ seller: seller, status: status, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom === null && dateTo === null && seller === '' && customer != '' && status != '') {
+      invoices = await Invoice.find({ customer: customer, status: status, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom === null && dateTo === null && seller != '' && customer != '' && status != '') {
+      invoices = await Invoice.find({ customer: customer, status: status, seller: seller, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom !== null && dateTo !== null && seller != '' && customer != '' && status === '') {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, seller: seller, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom !== null && dateTo !== null && seller != '' && customer === '' && status != '') {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, seller: seller, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom !== null && dateTo !== null && seller === '' && customer != '' && status != '') {
+      invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, customer: customer, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+    } else if (dateFrom != null && dateTo != null && customer != '' && status != '' && seller != '') {
+      invoices = await Invoice.find({ seller: seller, createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, status: status, creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
     } else {
-      const invoices = await invoice.find({ createdAt: { '$gte': start, '$lt': end }, creator: req.groupId })
+      invoices = await Invoice.find({ creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, _id: 1 })
-        .sort({ createdAt: -1 });
-
-      if (totalinvoices === 0) {
-        const error = new Error('No invoices found');
-        error.statusCode = 404;
-        throw error;
-      }
-      res.status(200).json({
-        invoices: invoices,
-        totalinvoices: totalinvoices
-      });
+        .sort({ number: -1 });
     }
+    if (invoices.length < 1) {
+      const error = new Error('No invoices found');
+      error.statusCode = 404;
+      throw error;
+    }
+    res.status(200).json({
+      invoices
+    });
 
   } catch (err) {
     if (!err.statusCode) {
@@ -187,7 +171,6 @@ exports.getInvoicesByDate = async (req, res, next) => {
     next(err);
   }
 };
-
 
 exports.getInvoice = async (req, res, next) => {
   const invoiceId = req.params.invoiceId;
@@ -211,70 +194,6 @@ exports.getInvoice = async (req, res, next) => {
     next(err);
   }
 };
-exports.getInvoicesBySeller = async (req, res, next) => {
-  const sellerId = req.params.sellerId;
-  try {
-    const totalInvoices = await invoice.find({
-      creator: req.groupId,
-      seller: sellerId
-    }).countDocuments();
-    const invoices = await Invoice.find({ creator: req.groupId, seller: sellerId })
-      .populate('seller', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-
-    if (totalInvoices === 0) {
-      const error = new Error('No invoices found');
-      error.statusCode = 404;
-      throw error;
-    }
-
-    res.status(200).json({
-      invoices,
-      totalInvoices
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-
-
-exports.getInvoicesByCustomer = async (req, res, next) => {
-  const customerId = req.params.customerId;
-  try {
-    const totalInvoices = await Invoice.find({
-      creator: req.groupId,
-      customer: customerId
-    }).countDocuments();
-    const invoices = await Invoice.find({ creator: req.groupId, customer: customerId })
-      .populate('seller', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-
-    if (totalInvoices === 0) {
-      const error = new Error('No invoices found');
-      error.statusCode = 404;
-      throw error;
-    }
-
-    res.status(200).json({
-      invoices,
-      totalInvoices
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 
 exports.addInvoice = async (req, res, next) => {
   let amount;
@@ -295,8 +214,8 @@ exports.addInvoice = async (req, res, next) => {
       creator: req.groupId,
       seller: req.body.invoice.seller,
       customer: req.body.invoice.customer,
-      dueDate: req.body.invoice.dueDate,
-      createdAt: req.body.invoice.createdAt
+      dueDate: moment.utc(req.body.invoice.dueDate),
+      createdAt: moment.utc(req.body.invoice.createdAt)
     });
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
@@ -530,6 +449,41 @@ exports.deleteInvoice = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
+    for (let i = 0; i < invoice.details.length; i++) {
+      const detail = invoice.details[i];
+      let productId = detail.product._id;
+      if (detail.product.isVariant) {
+        productId = detail.product.productId;
+      }
+      const product = await Product.findById(productId);
+      if (!product) {
+        const error = new Error('Could not find any product');
+        error.statusCode = 404;
+      }
+      if (detail.product.isVariant) {
+        for (let i = 0; i < product.variants.length; i++) {
+          const variant = product.variants[i];
+          if (detail.product.sku == variant.sku) {
+            for (let y = 0; y < variant.locations.length; y++) {
+              const location = variant.locations[y];
+              if (detail.location == location.location.toString()) {
+                location.quantity += detail.quantity;
+                variant.stock += detail.quantity;
+              }
+            }
+          }
+        }
+      } else {
+        for (let i = 0; i < product.locations.length; i++) {
+          const location = product.locations[i];
+          if (detail.location == location.location.toString()) {
+            location.quantity += detail.quantity;
+            product.stock += detail.quantity;
+          }
+        }
+      }
+      await product.save();
+    }
     // const cashRegister = await Account.findById(invoice.account);
     // cashRegister.movements.forEach((movement, index) => {
     //   if (!movement.invoice) {
@@ -541,38 +495,10 @@ exports.deleteInvoice = async (req, res, next) => {
     // cashRegister.balance -= invoice.total;
     // await cashRegister.save();
     await invoice.remove();
+    const totalInvoices = await Invoice.find().countDocuments();
     res.status(200).json({
-      message: 'invoice deleted'
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.getInvoices30Days = async (req, res, next) => {
-  try {
-    const start = moment().subtract(30, 'days');
-    const end = moment();
-    const totalInvoices = await Invoice.find({
-      creator: req.groupId, createdAt: { '$gte': start, '$lt': end }
-    }).countDocuments();
-    const invoices = await Invoice.find({ creator: req.groupId, createdAt: { '$gte': start, '$lt': end } })
-      .populate('seller', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-
-    if (totalInvoices === 0) {
-      const error = new Error('No invoices found');
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json({
-      totalinvoices,
-      invoices
+      message: 'invoice deleted',
+      totalInvoices
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -588,18 +514,18 @@ const decreaseStock = async (product, quantity, location) => {
     productId = product.productId;
   };
   try {
-    let product2 = await Product.findById(product._id);
+    let product2 = await Product.findById(productId);
     if (!product) {
       const error = new Error('Could not find any product');
       error.statusCode = 404;
     }
     if (product.isVariant) {
       for (let i = 0; i < product2.variants.length; i++) {
-        const variant = product.variants[i];
+        const variant = product2.variants[i];
         if (product.sku == variant.sku) {
           for (let y = 0; y < variant.locations.length; y++) {
             const location2 = variant.locations[y];
-            if (location == location2._id) {
+            if (location == location2.location.toString()) {
               location2.quantity -= quantity;
               variant.stock -= quantity;
             }
@@ -608,8 +534,8 @@ const decreaseStock = async (product, quantity, location) => {
       }
     } else {
       for (let i = 0; i < product2.locations.length; i++) {
-        const location2 = product.locations[i];
-        if (location == location2._id) {
+        const location2 = product2.locations[i];
+        if (location == location2.location.toString()) {
           location2.quantity -= quantity;
           product2.stock -= quantity;
         }
@@ -623,7 +549,98 @@ const decreaseStock = async (product, quantity, location) => {
   }
 };
 
-const leapYear = (year) => {
-  return ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
-};
 
+
+ // if (day === '0' && month === '0') {
+  //   start = `${year}-01-01T00:00:00`;
+  //   end = `${year}-12-31T23:59:59`;
+  // } else if (day === '0' && leap) {
+  //   switch (month) {
+  //     case '01':
+  //       day = 31;
+  //       break;
+  //     case '02':
+  //       day = 29;
+  //       break;
+  //     case '03':
+  //       day = 31;
+  //       break;
+  //     case '04':
+  //       day = 30;
+  //       break;
+  //     case '05':
+  //       day = 31;
+  //       break;
+  //     case '06':
+  //       day = 30;
+  //       break;
+  //     case '07':
+  //       day = 31;
+  //       break;
+  //     case '08':
+  //       day = 31;
+  //       break;
+  //     case '09':
+  //       day = 30;
+  //       break;
+  //     case '10':
+  //       day = 31;
+  //       break;
+  //     case '11':
+  //       day = 30;
+  //       break;
+  //     case '12':
+  //       day = 31;
+  //       break;
+  //   }
+  //   start = `${year}-${month}-01T00:00:00`;
+  //   end = `${year}-${month}-${day}T23:59:59`;
+  // } else if (day === '0') {
+  //   switch (month) {
+  //     case '01':
+  //       day = 31;
+  //       break;
+  //     case '02':
+  //       day = 28;
+  //       break;
+  //     case '03':
+  //       day = 31;
+  //       break;
+  //     case '04':
+  //       day = 30;
+  //       break;
+  //     case '05':
+  //       day = 31;
+  //       break;
+  //     case '06':
+  //       day = 30;
+  //       break;
+  //     case '07':
+  //       day = 31;
+  //       break;
+  //     case '08':
+  //       day = 31;
+  //       break;
+  //     case '09':
+  //       day = 30;
+  //       break;
+  //     case '10':
+  //       day = 31;
+  //       break;
+  //     case '11':
+  //       day = 30;
+  //       break;
+  //     case '12':
+  //       day = 31;
+  //       break;
+  //   }
+  //   start = `${year}-${month}-01T00:00:00`;
+  //   end = `${year}-${month}-${day}T23:59:59`;
+  // } else if (day !== '0' && month === '0') {
+  //   const error = new Error('Entered data is incorrect');
+  //   error.statusCode = 422;
+  //   next(error);
+  // } else {
+  //   start = `${year}-${month}-${day}T00:00:00`;
+  //   end = `${year}-${month}-${day}T23:59:59`;
+  // }

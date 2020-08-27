@@ -7,14 +7,8 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/invoices', auth.isAdmin, invoiceController.getInvoices);
-router.get('/invoices-by-date', auth.isAdmin, invoiceController.getInvoicesByDate);
+router.get('/invoices-by-filter', auth.isAdmin, invoiceController.getInvoicesByFilter);
 router.get('/invoices/:invoiceId', auth.isAdmin, invoiceController.getInvoice);
-router.get(
-  '/invoices/seller/:sellerId',
-  auth.isAdmin,
-  invoiceController.getInvoicesBySeller
-);
-router.get('/invoices30days', auth.isAdmin, invoiceController.getInvoices30Days);
 router.post('/ticketa4', invoiceController.createPDF);
 router.post(
   '/add',

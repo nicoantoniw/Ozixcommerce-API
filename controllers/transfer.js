@@ -145,9 +145,9 @@ exports.updateTransfer = async (req, res, next) => {
         if (req.body.status) {
             transfer.status = req.body.status;
             if (req.body.dateDispatched) {
-                transfer.dateDispatched = req.body.dateDispatched;
+                transfer.dateDispatched = moment.utc(req.body.dateDispatched);
             }
-            transfer.dateReceived = req.body.dateReceived;
+            transfer.dateReceived = moment.utc(req.body.dateReceived);
             if (req.body.status === 'In Transit') {
                 transferStock(transfer.items, transfer.origin, false, req.groupId);
             } else if (req.body.status === 'Completed') {
