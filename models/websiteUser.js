@@ -66,9 +66,9 @@ const websiteUserSchema = new Schema({
             required: true
         }
     },
-    lastOrder: {
+    lastQuote: {
         type: Schema.Types.ObjectId,
-        ref: 'Order',
+        ref: 'Quote',
         required: false
     },
     clientId: {

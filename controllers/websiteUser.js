@@ -5,7 +5,7 @@ const crypto = require('crypto');
 
 const WebsiteUser = require('../models/websiteUser');
 const Product = require('../models/product');
-const Order = require('../models/order');
+const Quote = require('../models/quote');
 
 AWS.config.update({
     region: 'sa-east-1',
@@ -293,25 +293,25 @@ exports.addMercadopagoSale = (req, res, next) => {
     });;
 };
 
-exports.getOrders = async (req, res, next) => {
+exports.getQuotes = async (req, res, next) => {
     let creator;
     if (req.groupId === '5eb9d8dcdb624f0a8b7822cb') {
         creator = '5ea9c4a058eb5371b70d4dc6';
     }
     try {
-        const totalOrders = await Order.find({
+        const totalQuotes = await Quote.find({
             creator: creator, customer: req.clientId
         }).countDocuments();
-        const orders = await Order.find({ creator: creator, customer: req.clientId });
+        const quotes = await Quote.find({ creator: creator, customer: req.clientId });
 
-        if (totalOrders === 0) {
-            const error = new Error('No orders found');
+        if (totalQuotes === 0) {
+            const error = new Error('No quotes found');
             error.statusCode = 404;
             throw error;
         }
         res.status(200).json({
-            totalOrders,
-            orders
+            totalQuotes,
+            quotes
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -321,17 +321,17 @@ exports.getOrders = async (req, res, next) => {
     }
 };
 
-exports.getOrder = async (req, res, next) => {
-    const orderId = req.params.orderId;
+exports.getQuote = async (req, res, next) => {
+    const quoteId = req.params.quoteId;
     try {
-        const order = await Order.findById(orderId);
-        if (!order) {
-            const error = new Error('No order found');
+        const quote = await Quote.findById(quoteId);
+        if (!quote) {
+            const error = new Error('No quote found');
             error.statusCode = 404;
             throw error;
         }
         res.status(200).json({
-            order
+            quote
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -341,15 +341,15 @@ exports.getOrder = async (req, res, next) => {
     }
 };
 
-exports.addLastOrder = async (req, res, next) => {
+exports.addLastQuote = async (req, res, next) => {
     const userId = req.userId;
-    const lastOrder = req.body.orderId;
+    const lastQuote = req.body.quoteId;
     try {
         const user = await WebsiteUser.findById(userId);
-        user.lastOrder = lastOrder;
+        user.lastQuote = lastQuote;
         await user.save();
         res.status(200).json({
-            message: 'Order saved',
+            message: 'Quote saved',
             user
         });
     } catch (err) {

@@ -10,8 +10,8 @@ router.get('/user', auth.isWebsiteUser, websiteUserController.getWebsiteUser);
 router.get('/products-perfumerialiliana', auth.isAdmin, websiteUserController.getProductsPerfumeriaLiliana);
 router.get('/products-perfumerialiliana/:productId', websiteUserController.getProductPerfumeriaLiliana);
 router.get('/cart/:websiteUserId', auth.isWebsiteUser, websiteUserController.getCart);
-router.get('/orders', auth.isWebsiteUser, websiteUserController.getOrders);
-router.get('/order/:orderId', auth.isWebsiteUser, websiteUserController.getOrder);
+router.get('/quotes', auth.isWebsiteUser, websiteUserController.getQuotes);
+router.get('/quote/:quoteId', auth.isWebsiteUser, websiteUserController.getQuote);
 router.post(
     '/add', auth.isWebsiteUser,
     websiteUserController.addItem
@@ -21,8 +21,8 @@ router.post(
     websiteUserController.addMercadopagoSale
 );
 router.post(
-    '/add-last-order', auth.isWebsiteUser,
-    websiteUserController.addLastOrder
+    '/add-last-quote', auth.isWebsiteUser,
+    websiteUserController.addLastQuote
 );
 router.post(
     '/send-email',
