@@ -253,16 +253,16 @@ exports.updateQuote = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
-        const details = {
-            product: req.body.product,
-            quantity: req.body.quantity,
-            price: req.body.price
-        };
-        quote.ticketType = req.body.ticketType;
-        quote.ticketNumber = req.body.ticketNumber;
-        quote.total = req.body.total;
-        quote.aggregateDiscount = req.body.aggregateDiscount;
-        quote.details = details;
+        quote.number = req.body.quote.number;
+        quote.details = req.body.quote.details;
+        quote.total = req.body.quote.total;
+        quote.subtotal = req.body.quote.subtotal;
+        quote.taxes = req.body.quote.taxes;
+        quote.discounts = Number(req.body.quote.discounts);
+        quote.description = req.body.quote.description;
+        quote.customer = req.body.quote.customer;
+        quote.dueDate = moment.utc(req.body.quote.dueDate);
+        quote.createdAt = moment.utc(req.body.quote.createdAt);
 
         await quote.save();
         res.status(200).json({

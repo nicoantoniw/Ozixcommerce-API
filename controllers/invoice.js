@@ -207,7 +207,7 @@ exports.addInvoice = async (req, res, next) => {
     const invoice = new Invoice({
       number: req.body.invoice.number,
       details: req.body.invoice.details,
-      total: req.body.invoice.total,
+      total: Number(req.body.invoice.total),
       subtotal: req.body.invoice.subtotal,
       taxes: req.body.invoice.taxes,
       discounts: Number(req.body.invoice.discounts),
@@ -217,6 +217,15 @@ exports.addInvoice = async (req, res, next) => {
       dueDate: moment.utc(req.body.invoice.dueDate),
       createdAt: moment.utc(req.body.invoice.createdAt)
     });
+    if (req.body.fromQuote) {
+      const invoices = await Invoice.find({ creator: req.groupId })
+        .populate('seller', { name: 1, _id: 1 })
+        .populate('creator', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, _id: 1 })
+        .sort({ number: -1 });
+      const invoice2 = invoices[0];
+      invoice.number = Number(invoice2.number) + 1;
+    }
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
       decreaseStock(detail.product, Number(detail.quantity), detail.location);
@@ -329,53 +338,6 @@ exports.createPDF = (req, res, next) => {
   pdfDocA4.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'bottom' });
   pdfDocA4.fontSize(10).text(`$652000`, { align: 'right' });
   pdfDocA4.end();
-};
-
-exports.updateInvoice = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error('Validation failed, entered data is incorrect');
-    error.statusCode = 422;
-    next(error);
-  }
-  const invoiceId = req.params.invoiceId;
-  try {
-    const invoice = await Invoice.findById(invoiceId)
-      .populate('seller', { name: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 });
-    if (!invoice) {
-      const error = new Error('Could not find any invoice');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (invoice.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    const details = {
-      product: req.body.product,
-      quantity: req.body.quantity,
-      price: req.body.price
-    };
-    invoice.ticketType = req.body.ticketType;
-    invoice.ticketNumber = req.body.ticketNumber;
-    invoice.total = req.body.total;
-    invoice.aggregateDiscount = req.body.aggregateDiscount;
-    invoice.details = details;
-
-    await invoice.save();
-    res.status(200).json({
-      message: 'invoice updated.',
-      invoice
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
 };
 
 exports.activateInvoice = async (req, res, next) => {

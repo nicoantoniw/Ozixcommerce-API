@@ -15,19 +15,6 @@ router.post(
   auth.isUser,
   invoiceController.addInvoice
 );
-router.put(
-  '/update/:invoiceId',
-  [
-    body('ticketType')
-      .isString()
-      .trim(),
-    body('ticketNumber')
-      .isString()
-      .trim(),
-  ],
-  auth.isAdmin,
-  invoiceController.updateInvoice
-);
 router.patch('/activate/:invoiceId', auth.isAdmin, invoiceController.activateInvoice);
 router.patch(
   '/deactivate/:invoiceId',

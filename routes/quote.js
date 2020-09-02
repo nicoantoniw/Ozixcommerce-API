@@ -17,14 +17,6 @@ router.post(
 );
 router.put(
     '/update/:quoteId',
-    [
-        body('ticketType')
-            .isString()
-            .trim(),
-        body('ticketNumber')
-            .isString()
-            .trim(),
-    ],
     auth.isAdmin,
     quoteController.updateQuote
 );
