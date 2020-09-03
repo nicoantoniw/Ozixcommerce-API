@@ -255,89 +255,107 @@ exports.addInvoice = async (req, res, next) => {
 };
 
 exports.createPDF = (req, res, next) => {
-  let date = new Date();
-  let day = date.getDate();
-  let month = date.getMonth() + 1;
-  let year = date.getFullYear();
-  if (day < 10) {
-    day = `0${day}`;
-  }
-  if (month === 13) {
-    month = 1;
-    year = year + 1;
-  }
-  if (month < 10) {
-    month = `0${month}`;
-  }
-  const hour = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  const pdfDocA4 = new PDFDocument({
+  const now = moment().format('LLL');
+  const doc = new PDFDocument({
     size: 'A4',
     margins: {
       top: 25,
       bottom: 20,
-      left: 20,
-      right: 30,
+      left: 25,
+      right: 30
     }
   });
-  const number = 40001;
-  pdfDocA4.pipe(
-    fs.createWriteStream(path.join('assets', `${day}-${month}-${year}::${hour}:${minutes}:${seconds}`))
+
+  // header
+  doc
+    .fontSize(20)
+    .text("ACME Inc.", 110, 57)
+    .fontSize(10)
+    .text("123 Main Street", 200, 65, { align: "right" })
+    .text("New York, NY, 10025", 200, 80, { align: "right" })
+    .moveDown();
+
+  // footer
+  doc
+    .fontSize(10)
+    .text(
+      "Payment is due within 15 days. Thank you for your business.",
+      50,
+      780,
+      { align: "center", width: 500 }
+    );
+
+  // content
+  let i;
+  const invoiceTableTop = 150;
+
+  doc.font("Helvetica-Bold");
+  generateTableRow(
+    doc,
+    invoiceTableTop,
+    "Item",
+    "Quantity",
+    "Unit Cost",
+    "Discount",
+    "Amount"
   );
-  pdfDocA4.pipe(res);
-  pdfDocA4.fontSize(50).text('                               A');
-  pdfDocA4.fontSize(12).text('                                                                                          COD. 01');
-  pdfDocA4.rect(250, 20, 75, 65).stroke();
-  //derecha
-  pdfDocA4.fontSize(20).text('FACTURA', { align: 'right' });
-  pdfDocA4.fontSize(18).text('ORIGINAL', { align: 'right' });
-  pdfDocA4.fontSize(12).text('numero comprobante', { align: 'right' });
-  pdfDocA4.fontSize(12).text('fecha emision', { align: 'right' });
-  pdfDocA4.fontSize(12).text('categoria tributaria', { align: 'right' });
-  pdfDocA4.fontSize(12).text('cuit', { align: 'right' });
-  pdfDocA4.fontSize(12).text('ingresos brutos', { align: 'right' });
-  pdfDocA4.fontSize(12).text('inicio actividades', { align: 'right' });
-  // izquierda
-  //logo
-  pdfDocA4.fontSize(12).text(' razon social');
-  pdfDocA4.fontSize(12).text(' domicilio');
-  pdfDocA4.fontSize(12).text(' localidad, provincia');
-  pdfDocA4.rect(pdfDocA4.x, 20, 560, pdfDocA4.y).stroke();
-  pdfDocA4.fontSize(12).text(' ');
-  pdfDocA4.fontSize(12).text(' ');
-  pdfDocA4.fontSize(12).text(' ');
-  pdfDocA4.fontSize(12).text('  razon social cliente');
-  pdfDocA4.fontSize(12).text('  domicilio');
-  pdfDocA4.fontSize(12).text('  localidad, provincia', { lineGap: -33 });
-  //derecha
-  pdfDocA4.fontSize(12).text('resp. iva', { align: 'center' });
-  pdfDocA4.fontSize(12).text('cuit', { align: 'center' });
-  pdfDocA4.fontSize(12).text('condicion de venta', { align: 'center' });
-  pdfDocA4.rect(pdfDocA4.x, 20, 560, pdfDocA4.y).stroke();
-  pdfDocA4.fontSize(12).text(' ');
-  pdfDocA4.fontSize(12).text(' ');
-  pdfDocA4.fontSize(12).text('      Codigo                   Descripcion                Cantidad      Precio Unit.     % Bonif   Alicuota        Total');
-  pdfDocA4.fontSize(12).text('                                                                                                                                     IVA ');
-  pdfDocA4.fontSize(10).text(`  `);
-  pdfDocA4.fontSize(10).text(`                   ${number}00`);
-  pdfDocA4.rect(20, 377, 80, 40).stroke();
-  pdfDocA4.rect(100, 377, 150, 40).stroke();
-  pdfDocA4.rect(250, 377, 65, 40).stroke();
-  pdfDocA4.rect(315, 377, 85, 40).stroke();
-  pdfDocA4.rect(400, 377, 50, 40).stroke();
-  pdfDocA4.rect(450, 377, 50, 40).stroke();
-  pdfDocA4.rect(500, 377, 80, 40).stroke();
-  details.forEach(detail => {
-    pdfDocA4.fontSize(10).text(`${detail.quantity},000 x ${detail.price / detail.quantity}`);
-    pdfDocA4.fontSize(10).text(`${detail.product}`, { lineGap: -10, align: 'left' });
-    pdfDocA4.fontSize(10).text(`$${detail.price}`, { align: 'right' });
-  });
-  pdfDocA4.rect(pdfDocA4.x, 20, 560, pdfDocA4.y).stroke();
-  pdfDocA4.fontSize(10).text(`  `);
-  pdfDocA4.fontSize(10).text(`TOTAL:`, { lineGap: -10, align: 'bottom' });
-  pdfDocA4.fontSize(10).text(`$652000`, { align: 'right' });
-  pdfDocA4.end();
+  generateHr(doc, invoiceTableTop + 20);
+  doc.font("Helvetica");
+
+
+  for (i = 0; i < req.body.invoice.details.length; i++) {
+    const detail = req.body.invoice.details[i];
+    const position = invoiceTableTop + (i + 1) * 30;
+    generateTableRow(
+      doc,
+      position,
+      detail.product.name,
+      detail.quantity,
+      `$${detail.product.sellingPrice}`,
+      detail.discount,
+      `$${detail.price}`
+    );
+    generateHr(doc, position + 20);
+  }
+
+  const subtotalPosition = invoiceTableTop + (i + 1) * 30 + 10;
+  generateTableRow(
+    doc,
+    subtotalPosition,
+    "",
+    "",
+    "Subtotal",
+    "",
+    `$${req.body.invoice.subtotal}`
+  );
+
+  const taxesPosition = subtotalPosition + 20;
+  generateTableRow(
+    doc,
+    taxesPosition,
+    "",
+    "",
+    "Taxes",
+    "",
+    `$${req.body.invoice.taxes}`
+  );
+
+  const totalPosition = taxesPosition + 20;
+  generateTableRow(
+    doc,
+    totalPosition,
+    "",
+    "",
+    "Total",
+    "",
+    `$${req.body.invoice.total}`
+  );
+
+  doc.end();
+  doc.pipe(res);
+  doc.pipe(
+    fs.createWriteStream(path.join('assets', `${now}.pdf`))
+  );
 };
 
 exports.activateInvoice = async (req, res, next) => {
@@ -358,34 +376,6 @@ exports.activateInvoice = async (req, res, next) => {
     await invoice.save();
     res.status(200).json({
       message: 'invoice has been activated',
-      invoice
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.deactivateInvoice = async (req, res, next) => {
-  const invoiceId = req.params.invoiceId;
-  try {
-    const invoice = await Invoice.findById(invoiceId);
-    if (!invoice) {
-      const error = new Error('Could not find any invoice');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (invoice.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    invoice.status = 'inactivo';
-    await invoice.save();
-    res.status(200).json({
-      message: 'invoice has been deactivated',
       invoice
     });
   } catch (err) {
@@ -509,4 +499,23 @@ const decreaseStock = async (product, quantity, location) => {
       err.statusCode = 500;
     }
   }
+};
+
+const generateTableRow = (doc, y, c1, c2, c3, c4, c5) => {
+  doc
+    .fontSize(10)
+    .text(c1, 25, y)
+    .text(c2, 250, y)
+    .text(c3, 280, y, { width: 90, align: "right" })
+    .text(c4, 370, y, { width: 90, align: "right" })
+    .text(c5, 0, y, { align: "right" });
+};
+
+const generateHr = (doc, y) => {
+  doc
+    .strokeColor("#aaaaaa")
+    .lineWidth(1)
+    .moveTo(20, y)
+    .lineTo(580, y)
+    .stroke();
 };
