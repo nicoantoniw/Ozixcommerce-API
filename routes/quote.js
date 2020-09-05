@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/quotes', auth.isAdmin, quoteController.getQuotes);
 router.get('/quotes-by-filter', auth.isAdmin, quoteController.getQuotesByFilter);
 router.get('/quotes/:quoteId', auth.isAdmin, quoteController.getQuote);
-router.post('/ticketa4', quoteController.createPDF);
+router.post('/print', quoteController.createPDF);
 router.post(
     '/add',
     auth.isUser,
