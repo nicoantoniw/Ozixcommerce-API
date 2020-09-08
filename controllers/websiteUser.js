@@ -8,7 +8,7 @@ const Product = require('../models/product');
 const Quote = require('../models/quote');
 
 AWS.config.update({
-    region: 'sa-east-1',
+    region: 'us-east-1',
     accessKeyId: 'AKIAIO7VWTQE6SOGBPCA',
     secretAccessKey: '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'
 });
