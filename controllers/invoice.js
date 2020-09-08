@@ -366,8 +366,6 @@ exports.deleteInvoice = async (req, res, next) => {
   }
 };
 
-
-
 const decreaseStock = async (product, quantity, location) => {
   let productId = product._id;
   if (product.isVariant) {
@@ -414,8 +412,10 @@ exports.createPDF = (req, res, next) => {
   const subject = req.body.subject;
   const sender = 'nicolasantoniw@gmail.com';
   const receiver = req.body.receiver;
-  const message = req.body.message;
+  const html = req.body.html;
   const sendPdf = req.body.sendPdf;
+  const deletePdf = req.query.delete;
+  const invoiceName = `INVOICE-${invoice.number}.pdf`;
   if (Number.isInteger(invoice.taxes)) {
     invoice.taxes = invoice.taxes.toFixed(2);
   }
@@ -425,7 +425,6 @@ exports.createPDF = (req, res, next) => {
   if (Number.isInteger(invoice.total)) {
     invoice.total = invoice.total.toFixed(2);
   }
-  const invoiceName = `INVOICE-${invoice.number}.pdf`;
   if (invoice.total[0] === "$") {
     invoice.total = req.body.invoice.total.substring(1);
   }
@@ -438,7 +437,7 @@ exports.createPDF = (req, res, next) => {
     },
   };
   if (sendPdf) {
-    sendInvoice(subject, sender, receiver, invoiceName);
+    sendInvoice(subject, sender, receiver, invoiceName, html);
     return res.status(200).json({
       message: 'pdf sent'
     });
@@ -863,14 +862,16 @@ exports.createPDF = (req, res, next) => {
     let pdfDoc = printer.createPdfKitDocument(docDefinition);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(`Content-Disposition`, `inline; filename= ${invoiceName}`);
-    pdfDoc.pipe(fs.createWriteStream(path.join('assets', invoiceName)));
+    if (!deletePdf) {
+      pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'invoice.pdf')));
+    }
     pdfDoc.pipe(res);
     pdfDoc.end();
   }
 };
 
-const sendInvoice = (subject, sender, receiver, filename) => {
-  const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/${filename}`);
+const sendInvoice = (subject, sender, receiver, filename, html) => {
+  const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/invoice.pdf`);
   let ses_mail = "From: <" + sender + ">\n";
   ses_mail += "To: " + receiver + "\n";
   ses_mail += "Subject: " + subject + "\n";
@@ -878,9 +879,9 @@ const sendInvoice = (subject, sender, receiver, filename) => {
   ses_mail += "Content-Type: multipart/mixed; boundary=\"NextPart\"\n\n";
   ses_mail += "--NextPart\n";
   ses_mail += "Content-Type: text/html\n\n";
-  ses_mail += "<h1 style='text-align:center'>This is the body of the email</h1>\n\n";
+  ses_mail += `${html}\n\n`;
   ses_mail += "--NextPart\n";
-  ses_mail += "Content-Type: application/octet-stream; name=\"invoice.pdf\"\n";
+  ses_mail += `Content-Type: application/octet-stream; name=\"${filename}\"\n`;
   ses_mail += "Content-Transfer-Encoding: base64\n";
   ses_mail += "Content-Disposition: attachment\n\n";
   ses_mail += data.toString("base64").replace(/([^\0]{76})/g, "$1\n") + "\n\n";
@@ -896,7 +897,7 @@ const sendInvoice = (subject, sender, receiver, filename) => {
 
   sendPromise.then(
     (data) => {
-      fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/${filename}`);
+      fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/invoice.pdf`);
       return;
     }).catch(
       (err) => {

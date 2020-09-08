@@ -30,7 +30,7 @@ exports.getGroup = async (req, res, next) => {
             throw error;
         }
         res.status(200).json({
-            group
+            name: group.name
         });
     } catch (err) {
         if (!err.statusCode) {
