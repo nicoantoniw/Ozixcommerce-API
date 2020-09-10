@@ -271,7 +271,7 @@ exports.updateProduct = async (req, res, next) => {
   let totalStock = 0;
   const locations = req.body.locations;
   const errors = validationResult(req);
-  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly) {
+  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly && !req.body.stockOnly) {
     for (let index = 0; index < locations.length; index++) {
       totalStock += Number(locations[index].quantity);
     }
@@ -319,6 +319,8 @@ exports.updateProduct = async (req, res, next) => {
           product.locations.splice(index, 1);
         }
       });
+    } else if (req.body.stockOnly) {
+      product.stock += Number(req.body.stock);
     } else {
       product.name = req.body.name;
       product.brand = req.body.brand;
@@ -666,7 +668,7 @@ exports.updateVariant = async (req, res, next) => {
   let totalStock2 = 0;
   let index;
   const locations = req.body.locations;
-  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly) {
+  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly && !req.body.stockOnly) {
     for (let index = 0; index < locations.length; index++) {
       totalStock += Number(locations[index].quantity);
     }
@@ -710,6 +712,8 @@ exports.updateVariant = async (req, res, next) => {
               variant.locations.splice(index, 1);
             }
           });
+        } else if (req.body.stockOnly) {
+          variant.stock += Number(req.body.stock);
         } else {
           name = product.name;
           req.body.values.forEach(value => {

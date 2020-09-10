@@ -950,7 +950,6 @@ const buildTableBody = (details, columns) => {
   for (let i = 0; i < details.length; i++) {
     const detail = details[i];
     const dataRow = [];
-
     if (Number.isInteger(detail.price)) {
       detail.price = detail.price.toFixed(2);
     }
