@@ -7,7 +7,6 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/suppliers', auth.isAdmin, auth.isPrime, personController.getSuppliers);
-router.get('/suppliersFP', auth.isUser, personController.getSuppliersForPurchase);
 router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/persons/:personId', auth.isUser, auth.isPrime, personController.getPerson);
 router.post(
@@ -43,16 +42,6 @@ router.put(
   '/update/:personId',
   auth.isUser, auth.isPrime,
   personController.updatePerson
-);
-router.patch(
-  '/activate/:personId',
-  auth.isUser, auth.isPrime,
-  personController.activatePerson
-);
-router.patch(
-  '/deactivate/:personId',
-  auth.isUser, auth.isPrime,
-  personController.deactivatePerson
 );
 router.delete('/delete/:personId', auth.isSeller, auth.isPrime, personController.deletePerson);
 

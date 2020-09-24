@@ -107,8 +107,6 @@ exports.getProductsByCategory = async (req, res, next) => {
   }
 };
 
-
-
 exports.addProduct = async (req, res, next) => {
   let discount = req.body.discount;
   const errors = validationResult(req);

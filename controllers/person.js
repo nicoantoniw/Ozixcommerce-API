@@ -72,37 +72,6 @@ exports.getSuppliers = async (req, res, next) => {
   }
 };
 
-exports.getSuppliersForPurchase = async (req, res, next) => {
-  try {
-    const totalSuppliers = await Person.find({
-      creator: req.groupId,
-      type: 'supplier'
-    }).countDocuments();
-    const suppliers = await Person.find({
-      creator: req.groupId,
-      type: 'supplier'
-    })
-      .populate('creator', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-
-    if (totalSuppliers === 0) {
-      const error = new Error('No suppliers found');
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json({
-      suppliers,
-      totalSuppliers
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-
 exports.getPerson = async (req, res, next) => {
   const personId = req.params.personId;
   try {
@@ -133,17 +102,20 @@ exports.addPerson = async (req, res, next) => {
     error.statusCode = 422;
     next(error);
   }
-  let creator = req.groupId;
   const person = new Person({
     name: req.body.name,
+    notes: req.body.notes,
     type: req.body.type,
     company: req.body.company,
-    description: req.body.description,
-    numberId: req.body.numberId,
-    address: req.body.address,
-    phoneNumber: req.body.phoneNumber,
+    phone: req.body.phone,
+    mobile: req.body.mobile,
+    fax: req.body.fax,
     email: req.body.email,
-    creator
+    website: req.body.website,
+    other: req.body.other,
+    billingAddress: req.body.billingAddress,
+    shippingAddress: req.body.shippingAddress,
+    creator: req.groupId
   });
   try {
     await person.save();
@@ -181,74 +153,28 @@ exports.updatePerson = async (req, res, next) => {
     }
 
     person.name = req.body.name;
-
-
+    person.notes = req.body.notes;
     person.type = req.body.type;
-    person.description = req.body.description;
     person.company = req.body.company;
-    person.numberId = req.body.numberId;
-    person.address = req.body.address;
-    person.phoneNumber = req.body.phoneNumber;
+    person.phone = req.body.phone;
+    person.mobile = req.body.mobile;
+    person.fax = req.body.fax;
     person.email = req.body.email;
+    person.website = req.body.website;
+    person.other = req.body.other;
+    person.billingAddress = req.body.billingAddress;
+    person.shippingAddress = req.body.shippingAddress;
+    person.account = req.body.account;
+    person.totalDebt = req.body.totalDebt;
+    if (person.totalDebt > 0) {
+      person.owes = person.totalDebt;
+    } else if (person.totalDebt < 0) {
+      person.youOwe = person.totalDebt * -1;
+    }
+    person.creator = req.groupId;
     await person.save();
     res.status(200).json({
       message: 'Person updated.',
-      person: person
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.activatePerson = async (req, res, next) => {
-  const personId = req.params.personId;
-  try {
-    const person = await Person.findById(personId);
-    if (!person) {
-      const error = new Error('Could not find any person');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (person.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    person.status = 'activo';
-    await person.save();
-    res.status(200).json({
-      message: 'Person has been activated',
-      person: person
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.deactivatePerson = async (req, res, next) => {
-  const personId = req.params.personId;
-  try {
-    const person = await Person.findById(personId);
-    if (!person) {
-      const error = new Error('Could not find any person');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (person.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    person.status = 'inactivo';
-    await person.save();
-    res.status(200).json({
-      message: 'Person has been deactivated',
       person: person
     });
   } catch (err) {

@@ -6,7 +6,7 @@ const personSchema = new Schema({
     type: String,
     required: false
   },
-  description: {
+  notes: {
     type: String,
     required: false
   },
@@ -18,21 +18,63 @@ const personSchema = new Schema({
     type: String,
     required: false
   },
-  numberId: {
+  phone: {
     type: String,
     required: false
   },
-  address: {
+  mobile: {
     type: String,
     required: false
   },
-  phoneNumber: {
+  fax: {
     type: String,
     required: false
   },
   email: {
     type: String,
     required: false
+  },
+  website: {
+    type: String,
+    required: false
+  },
+  other: {
+    type: String,
+    required: false
+  },
+  billingAddress: {
+    street: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    state: {
+      type: String,
+    },
+    zip: {
+      type: String,
+    },
+    country: {
+      type: String,
+    },
+  },
+  shippingAddress: {
+    street: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    state: {
+      type: String,
+    },
+    zip: {
+      type: String,
+    },
+    country: {
+      type: String,
+    },
   },
   account: [
     {
@@ -50,10 +92,15 @@ const personSchema = new Schema({
     required: false,
     default: 0
   },
-  status: {
-    type: String,
-    required: true,
-    default: 'activo'
+  owes: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  youOwe: {
+    type: Number,
+    required: false,
+    default: 0
   },
   creator: {
     type: Schema.Types.ObjectId,
