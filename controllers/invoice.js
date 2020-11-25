@@ -10,6 +10,7 @@ const Invoice = require('../models/invoice');
 const Product = require('../models/product');
 const Group = require('../models/group');
 const Account = require('../models/account');
+const Notification = require('../models/notification');
 
 AWS.config.update({
   region: 'us-east-1',
@@ -238,7 +239,15 @@ exports.addInvoice = async (req, res, next) => {
     }
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
-      decreaseStock(detail.product, Number(detail.quantity), detail.location);
+      const result = await decreaseStock(detail.product, Number(detail.quantity), detail.location);
+      if (result) {
+        const notification = new Notification({
+          description: `Product '${detail.product.name}' ran out of stock in location '${result}'`,
+          importance: 'moderate',
+          creator: req.groupId
+        });
+        await notification.save();
+      }
     }
     await invoice.save();
     // const cashRegister = await Cash.findById(cashRegisterId);
@@ -368,6 +377,7 @@ exports.deleteInvoice = async (req, res, next) => {
 
 const decreaseStock = async (product, quantity, location) => {
   let productId = product._id;
+  let notification;
   if (product.isVariant) {
     productId = product.productId;
   };
@@ -386,6 +396,9 @@ const decreaseStock = async (product, quantity, location) => {
             if (location == location2.location.toString()) {
               location2.quantity -= quantity;
               variant.stock -= quantity;
+              if (location2.quantity === 0) {
+                notification = location2.name;
+              }
             }
           }
         }
@@ -396,10 +409,14 @@ const decreaseStock = async (product, quantity, location) => {
         if (location == location2.location.toString()) {
           location2.quantity -= quantity;
           product2.stock -= quantity;
+          if (location2.quantity === 0) {
+            notification = location2.name;
+          }
         }
       }
     }
     await product2.save();
+    return notification;
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;
@@ -407,7 +424,7 @@ const decreaseStock = async (product, quantity, location) => {
   }
 };
 
-exports.createPDF = (req, res, next) => {
+exports.createPDF = async (req, res, next) => {
   const invoice = req.body.invoice;
   const subject = req.body.subject;
   const sender = 'nicolasantoniw@gmail.com';
@@ -438,9 +455,15 @@ exports.createPDF = (req, res, next) => {
   };
   if (sendPdf) {
     sendInvoice(subject, sender, receiver, invoiceName, html);
+    if (invoice.sent == 'No') {
+      const invoice2 = await Invoice.findById(invoice._id);
+      invoice2.sent = 'Yes';
+      await invoice2.save();
+    }
     return res.status(200).json({
       message: 'pdf sent'
     });
+
   } else {
     const printer = new PdfMake(fonts);
     let docDefinition;

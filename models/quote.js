@@ -65,7 +65,11 @@ const quoteSchema = new Schema({
     },
     dueDate: {
         type: Date
-    }
+    },
+    type: {
+        type: String,
+        default: 'Quote'
+    },
 });
 
 module.exports = mongoose.model('Quote', quoteSchema);

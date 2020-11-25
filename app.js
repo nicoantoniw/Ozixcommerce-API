@@ -13,6 +13,7 @@ const optionRoutes = require('./routes/option');
 const locationRoutes = require('./routes/location');
 const transferRoutes = require('./routes/transfer');
 const invoiceRoutes = require('./routes/invoice');
+const paymentRoutes = require('./routes/payment');
 const purchasesRoutes = require('./routes/purchase');
 const personRoutes = require('./routes/person');
 const sellerRoutes = require('./routes/seller');
@@ -20,6 +21,7 @@ const macRoutes = require('./routes/mac');
 const groupRoutes = require('./routes/group');
 const quoteRoutes = require('./routes/quote');
 const accountRoutes = require('./routes/account');
+const notificationRoutes = require('./routes/notification');
 const websiteUserRoutes = require('./routes/websiteUser');
 const websiteAdminRoutes = require('./routes/websiteAdmin');
 
@@ -65,10 +67,12 @@ app.use('/api/product', productRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/transfer', transferRoutes);
 app.use('/api/invoice', invoiceRoutes);
+app.use('/api/payment', paymentRoutes);
 app.use('/api/purchase', purchasesRoutes);
 app.use('/api/group', groupRoutes);
 app.use('/api/quote', quoteRoutes);
 app.use('/api/account', accountRoutes);
+app.use('/api/notification', notificationRoutes);
 app.use('/api/website/user', websiteUserRoutes);
 app.use('/api/website/admin', websiteAdminRoutes);
 

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const invoiceSchema = new Schema({
+
   seller: {
     type: Schema.Types.ObjectId,
     ref: 'Seller',
@@ -72,15 +73,19 @@ const invoiceSchema = new Schema({
     default: 'Unpaid'
   },
   sent: {
-    type: Boolean,
-    default: false
+    type: String,
+    default: 'No'
   },
   createdAt: {
     type: Date
   },
   dueDate: {
     type: Date
-  }
+  },
+  type: {
+    type: String,
+    default: 'Invoice'
+  },
 });
 
 module.exports = mongoose.model('Invoice', invoiceSchema);

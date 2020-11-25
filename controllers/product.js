@@ -378,6 +378,44 @@ exports.updateProduct = async (req, res, next) => {
   }
 };
 
+exports.salePrice = async (req, res, next) => {
+  const productId = req.params.productId;
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      const error = new Error('Could not find any product');
+      error.statusCode = 404;
+      throw error;
+    }
+    if (product.creator._id.toString() !== req.groupId) {
+      const error = new Error('Not authorized');
+      error.statusCode = 403;
+      throw error;
+    }
+    if (product.hasVariants) {
+      for (let index = 0; index < product.variants.length; index++) {
+        const variant = product.variants[index];
+        if (variant.sku == Number(req.body.sku)) {
+          variant.salePrice = req.body.salePrice;
+        }
+      }
+    } else {
+      product.salePrice = req.body.salePrice;
+    }
+    await product.save();
+    res.status(200).json({
+      message: 'Sale price updated',
+      product: product
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+
 exports.addImage = async (req, res, next) => {
   const productId = req.params.productId;
   const variantSku = req.query.variantSku;
@@ -712,6 +750,7 @@ exports.updateVariant = async (req, res, next) => {
           });
         } else if (req.body.stockOnly) {
           variant.stock += Number(req.body.stock);
+          product.stock += Number(req.body.stock);
         } else {
           name = product.name;
           req.body.values.forEach(value => {

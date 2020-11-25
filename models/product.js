@@ -36,6 +36,10 @@ const productSchema = new Schema({
     type: Number,
     required: true
   },
+  salePrice: {
+    type: Number,
+    default: 0
+  },
   discounts: {
     type: [{
       type: Number
@@ -121,6 +125,10 @@ const productSchema = new Schema({
     },
     sellingPrice: {
       type: Number,
+    },
+    salePrice: {
+      type: Number,
+      default: 0
     },
     stock: {
       type: Number,

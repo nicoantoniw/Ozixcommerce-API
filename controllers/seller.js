@@ -1,38 +1,10 @@
 const { validationResult } = require('express-validator');
 
 const Seller = require('../models/seller');
+const Invoice = require('../models/invoice');
+const Quote = require('../models/quote');
 
 exports.getSellers = async (req, res, next) => {
-  try {
-    const totalSellers = await Seller.find({
-      creator: req.groupId
-    }).countDocuments();
-    const sellers = await Seller.find({
-      creator: req.groupId
-    })
-      .populate('creator', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-    // .skip((currentPage - 1) * perPage)
-    // .limit(perPage);
-
-    if (totalSellers === 0) {
-      const error = new Error('No sellers found');
-      error.statusCode = 404;
-      throw error;
-    }
-    res.status(200).json({
-      sellers: sellers,
-      totalSellers: totalSellers
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.getSellersForSale = async (req, res, next) => {
   try {
     const totalSellers = await Seller.find({
       creator: req.groupId
@@ -92,18 +64,19 @@ exports.addSeller = async (req, res, next) => {
     error.statusCode = 422;
     next(error);
   }
-  const calculatedAge = getAge(req.body.birth);
   const seller = new Seller({
     name: req.body.name,
-    lastName: req.body.lastName,
-    birth: req.body.birth,
-    age: calculatedAge,
-    typeId: req.body.typeId,
-    numberId: req.body.numberId,
-    address: req.body.address,
-    phoneNumber: req.body.phoneNumber,
+    notes: req.body.notes,
+    phone: req.body.phone,
+    mobile: req.body.mobile,
     email: req.body.email,
+    businessID: req.body.businessID,
+    gender: req.body.gender,
+    birth: req.body.birth,
+    hireDate: req.body.hireDate,
+    releaseDate: req.body.releaseDate,
     salary: req.body.salary,
+    address: req.body.address,
     creator: req.groupId
   });
   try {
@@ -143,17 +116,18 @@ exports.updateSeller = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    const calculatedAge = getAge(req.body.birth);
     seller.name = req.body.name;
-    seller.lastName = req.body.lastName;
-    seller.birth = req.body.birth;
-    seller.age = calculatedAge;
-    seller.typeId = req.body.typeId;
-    seller.numberId = req.body.numberId;
-    seller.address = req.body.address;
-    seller.phoneNumber = req.body.phoneNumber;
+    seller.notes = req.body.notes;
+    seller.phone = req.body.phone;
+    seller.mobile = req.body.mobile;
     seller.email = req.body.email;
+    seller.businessID = req.body.businessID;
+    seller.gender = req.body.gender;
+    seller.birth = req.body.birth;
+    seller.hireDate = req.body.hireDate;
+    seller.releaseDate = req.body.releaseDate;
     seller.salary = req.body.salary;
+    seller.address = req.body.address;
 
     await seller.save();
     res.status(200).json({
@@ -241,6 +215,35 @@ exports.deleteSeller = async (req, res, next) => {
     await seller.remove();
     res.status(200).json({
       message: 'Seller deleted'
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getSellerTransactions = async (req, res, next) => {
+  const sellerId = req.params.sellerId;
+  try {
+    const invoices = await Invoice.find({ creator: req.groupId, seller: sellerId })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, email: 1, _id: 1 })
+      .sort({ number: -1 });
+    const quotes = await Quote.find({ creator: req.groupId, seller: sellerId })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ number: -1 });
+    if (invoices.length < 1 && quotes.length < 1) {
+      const error = new Error('No transactions found');
+      error.statusCode = 404;
+      throw error;
+    }
+    const transactions = invoices.concat(quotes);
+    res.status(200).json({
+      transactions
     });
   } catch (err) {
     if (!err.statusCode) {

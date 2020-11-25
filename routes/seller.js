@@ -7,33 +7,11 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/sellers', auth.isAdmin, sellerController.getSellers);
-router.get('/sellersFS', auth.isUser, sellerController.getSellersForSale);
 router.get('/sellers/:sellerId', auth.isUser, sellerController.getSeller);
+router.get('/sellers/transactions/:sellerId', auth.isUser, sellerController.getSellerTransactions);
 router.post(
   '/add',
-  [
-    body('name')
-      .isString()
-      .isLength({ max: 40 }),
-    body('lastName')
-      .isString()
-      .isLength({ max: 40 }),
-    body('typeId')
-      .trim()
-      .isString(),
-    body('numberId')
-      .trim()
-      .isNumeric(),
-    body('address')
-      .trim()
-      .isString(),
-    body('phoneNumber')
-      .trim()
-      .isNumeric(),
-    body('email')
-      .trim()
-      .isEmail()
-  ],
+
   auth.isAdmin,
   sellerController.addSeller
 );
@@ -61,28 +39,7 @@ router.post(
 );
 router.put(
   '/update/:sellerId',
-  [
-    body('name')
-      .isString()
-      .isLength({ max: 40 }),
-    body('lastName')
-      .isString()
-      .isLength({ max: 40 }),
-    body('typeId')
-      .trim()
-      .isString(),
-    body('numberId')
-      .trim()
-      .isString(),
-    body('address')
-      .isString(),
-    body('phoneNumber')
-      .trim()
-      .isNumeric(),
-    body('email')
-      .trim()
-      .isEmail()
-  ],
+
   auth.isAdmin,
   sellerController.updateSeller
 );

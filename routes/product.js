@@ -75,6 +75,11 @@ router.put(
   auth.isSeller,
   productController.updateProduct
 );
+router.put(
+  '/sale-price/:productId',
+  auth.isSeller,
+  productController.salePrice
+);
 router.put('/variants/update/:productId', auth.isAdmin, productController.updateVariant);
 router.patch(
   '/activate/:productId',

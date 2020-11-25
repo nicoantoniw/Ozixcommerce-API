@@ -1,36 +1,37 @@
 const express = require('express');
 const { body } = require('express-validator');
 
-const cashController = require('../controllers/account');
+const accountController = require('../controllers/account');
 const auth = require('../middleware/is-auth');
 
 const router = express.Router();
 
-router.get('/cash-registers', auth.isUser, cashController.getCashRegisters);
+router.get('/accounts', auth.isUser, accountController.getAccounts);
+// router.get('/accounts/transactions/:accountId', auth.isUser, accountController.getAccountTransactions);
 router.get(
-    '/cash-registers/:cashRegisterId',
+    '/accounts/:accountId',
     auth.isUser,
-    cashController.getCashRegister
+    accountController.getAccount
 );
 router.post(
     '/add',
     auth.isSeller,
-    cashController.addCashRegister
+    accountController.addAccount
 );
 router.post(
-    '/add-movement/:cashRegisterId',
+    '/add-movement/:accountId',
     auth.isSeller,
-    cashController.addMovement
+    accountController.addMovement
 );
 router.put(
-    '/restore/:cashRegisterId',
+    '/update/:accountId',
     auth.isSeller,
-    cashController.restoreCashRegister
+    accountController.updateAccount
 );
 router.delete(
-    '/delete/:cashRegisterId',
+    '/delete/:accountId',
     auth.isAdmin,
-    cashController.deleteCashRegister
+    accountController.deleteAccount
 );
 
 module.exports = router;

@@ -1,13 +1,13 @@
 const { validationResult } = require('express-validator');
+const moment = require('moment');
 
 const Person = require('../models/person');
+const Invoice = require('../models/invoice');
+const Quote = require('../models/quote');
 
 exports.getCustomers = async (req, res, next) => {
   try {
-    const totalCustomers = await Person.find({
-      creator: req.groupId,
-      type: 'customer'
-    }).countDocuments();
+    const totalCustomers = await Person.find({ creator: req.groupId, type: 'customer' }).countDocuments();
     const customers = await Person.find({
       creator: req.groupId,
       type: 'customer'
@@ -43,14 +43,8 @@ exports.getSuppliers = async (req, res, next) => {
       creator: req.groupId,
       type: 'supplier'
     }).countDocuments();
-    const suppliers = await Person.find({
-      creator: req.groupId,
-      type: 'supplier'
-    })
-      .populate('creator', {
-        name: 1,
-        _id: 1
-      })
+    const suppliers = await Person.find({ creator: req.groupId, type: 'supplier' })
+      .populate('creator', { name: 1, _id: 1 })
       .sort({ createdAt: -1 });
     // .skip((currentPage - 1) * perPage)
     // .limit(perPage);
@@ -86,6 +80,35 @@ exports.getPerson = async (req, res, next) => {
     }
     res.status(200).json({
       person: person
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getCustomerTransactions = async (req, res, next) => {
+  const customerId = req.params.personId;
+  try {
+    const invoices = await Invoice.find({ creator: req.groupId, customer: customerId })
+      .populate('seller', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, email: 1, _id: 1 })
+      .sort({ number: -1 });
+    const quotes = await Quote.find({ creator: req.groupId, customer: customerId })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, _id: 1 })
+      .sort({ number: -1 });
+    if (invoices.length < 1 && quotes.length < 1) {
+      const error = new Error('No transactions found');
+      error.statusCode = 404;
+      throw error;
+    }
+    const transactions = invoices.concat(quotes);
+    res.status(200).json({
+      transactions
     });
   } catch (err) {
     if (!err.statusCode) {

@@ -1,26 +1,27 @@
 const { validationResult } = require('express-validator');
 const moment = require('moment');
 
-const Cash = require('../models/account');
+const Account = require('../models/account');
 const Group = require('../models/group');
+const Payment = require('../models/payment');
 
-exports.getCashRegisters = async (req, res, next) => {
+exports.getAccounts = async (req, res, next) => {
     try {
-        const totalCashRegisters = await Cash.find({
+        const totalAccounts = await Account.find({
             creator: req.groupId
         }).countDocuments();
-        const cashRegisters = await Cash.find({ creator: req.groupId })
+        const accounts = await Account.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
             .sort({ createdAt: 1 });
 
-        if (totalCashRegisters === 0) {
+        if (totalAccounts === 0) {
             const error = new Error('No cash registers found');
             error.statusCode = 404;
             throw error;
         }
         res.status(200).json({
-            cashRegisters,
-            totalCashRegisters
+            accounts,
+            totalAccounts
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -30,20 +31,17 @@ exports.getCashRegisters = async (req, res, next) => {
     }
 };
 
-exports.getCashRegister = async (req, res, next) => {
-    const cashRegisterId = req.params.cashRegisterId;
+exports.getAccount = async (req, res, next) => {
+    const accountId = req.params.accountId;
     try {
-        const cashRegister = await Cash.findOne({
-            _id: cashRegisterId,
-            creator: req.groupId
-        }).populate('creator', { name: 1, _id: 1 });
-        if (!cashRegister) {
+        const account = await Account.findById(accountId).populate('creator', { name: 1, _id: 1 });
+        if (!account) {
             const error = new Error('No register found');
             error.statusCode = 404;
             throw error;
         }
         res.status(200).json({
-            cashRegister
+            account
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -52,51 +50,88 @@ exports.getCashRegister = async (req, res, next) => {
         next(err);
     }
 };
-exports.addCashRegister = async (req, res, next) => {
-    let cashRegister;
-    let group = await Group.findById(req.groupId);
-    if (req.body.cuit === '') {
-        cashRegister = new Cash({
-            name: group.name,
-            movements: [],
-            creator: req.groupId,
-            province: group.province,
-            city: group.city,
-            streetAddress: group.streetAddress,
-            zip: group.zip,
-            apartment: group.apartment,
-            category: group.category,
-            personeria: group.personeria,
-            cuit: group.cuit,
-            activitiesDate: group.activitiesDate,
-            socialName: group.socialName,
-            brutosNumber: group.brutosNumber,
-            salePoint: req.body.salePoint
-        });
-    } else {
-        cashRegister = new Cash({
-            name: req.body.name,
-            movements: [],
-            creator: req.groupId,
-            province: req.body.province,
-            city: req.body.city,
-            streetAddress: req.body.streetAddress,
-            zip: req.body.zip,
-            apartment: req.body.apartment,
-            category: req.body.category,
-            personeria: req.body.personeria,
-            cuit: req.body.cuit,
-            activitiesDate: req.body.activitiesDate,
-            socialName: req.body.socialName,
-            brutosNumber: req.body.brutosNumber,
-            salePoint: req.body.salePoint
-        });
-    }
+
+// exports.getAccountTransactions = async (req, res, next) => {
+//     const accountId = req.params.accountId;
+//     try {
+
+//         let saleReceipts = [];
+//         const payments = await Payment.find({ creator: req.groupId, account: accountId })
+//             .populate('account', { name: 1, _id: 1 })
+//             .populate('creator', { name: 1, _id: 1 })
+//             .populate('customer', { name: 1, email: 1, _id: 1 })
+//             .sort({ number: -1 });
+//         // const saleReceipts = await saleReceipt.find({ creator: req.groupId, account: accountId })
+//         //     .populate('creator', { name: 1, _id: 1 })
+//         //     .populate('customer', { name: 1, _id: 1 })
+//         //     .sort({ number: -1 });
+//         if (payments.length < 1 && saleReceipts.length < 1) {
+//             const error = new Error('No transactions found');
+//             error.statusCode = 404;
+//             throw error;
+//         }
+//         const transactions = payments.concat(saleReceipts);
+//         res.status(200).json({
+//             transactions
+//         });
+//     } catch (err) {
+//         if (!err.statusCode) {
+//             err.statusCode = 500;
+//         }
+//         next(err);
+//     }
+// };
+
+
+exports.addAccount = async (req, res, next) => {
+    let account;
+    account = new Account({
+        name: req.body.name,
+        description: req.body.description,
+        movements: [],
+        creator: req.groupId,
+        balance: req.body.balance
+    });
     try {
-        await cashRegister.save();
+        await account.save();
         res.status(200).json({
-            message: 'Cash register created.',
-            cashRegister
+            message: 'Account created.',
+            account
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
+exports.updateAccount = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const error = new Error('Validation failed, entered data is incorrect');
+        error.statusCode = 422;
+        next(error);
+    }
+    const accountId = req.params.accountId;
+    try {
+        const account = await Account.findById(accountId).populate('creator');
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        if (account.creator._id.toString() !== req.groupId) {
+            const error = new Error('Not authorized');
+            error.statusCode = 403;
+            throw error;
+        }
+        account.name = req.body.name;
+        account.description = req.body.description;
+        await account.save();
+        res.status(200).json({
+            message: 'Account updated.',
+            account
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -111,7 +146,7 @@ exports.addMovement = async (req, res, next) => {
     if (req.body.date) {
         date = moment.utc(req.body.date).set('hour', 15);
     }
-    const cashRegisterId = req.params.cashRegisterId;
+    const accountId = req.params.accountId;
     let type = 'subtract';
     let amount;
     if (req.body.type === 'Ingreso') {
@@ -124,26 +159,26 @@ exports.addMovement = async (req, res, next) => {
         date
     };
     try {
-        const cashRegister = await Cash.findById(cashRegisterId);
-        if (!cashRegister) {
+        const account = await Account.findById(accountId);
+        if (!account) {
             const error = new Error('Could not find any register');
             error.statusCode = 404;
             throw error;
         }
         if (data.type === 'add') {
             amount = parseFloat((data.amount).toFixed(2));
-            cashRegister.balance += amount;
+            account.balance += amount;
         } else {
             amount = parseFloat((data.amount).toFixed(2));
-            cashRegister.balance -= amount;
-            if (cashRegister.balance < 0) {
-                const error = new Error('Cash avaiable is lower than the amount required');
+            account.balance -= amount;
+            if (account.balance < 0) {
+                const error = new Error('Account avaiable is lower than the amount required');
                 error.statusCode = 602;
                 throw error;
             }
         }
-        cashRegister.movements.push(data);
-        await cashRegister.save();
+        account.movements.push(data);
+        await account.save();
         res.status(200).json({
             message: 'Movement created.',
         });
@@ -155,62 +190,23 @@ exports.addMovement = async (req, res, next) => {
     }
 };
 
-exports.restoreCashRegister = async (req, res, next) => {
-    const cashRegisterId = req.params.cashRegisterId;
+
+
+exports.deleteAccount = async (req, res, next) => {
+    const accountId = req.params.accountId;
     try {
-        const cashRegister = await Cash.findById(cashRegisterId);
-        if (!cashRegister) {
+        const account = await Account.findById(accountId);
+        if (!account) {
             const error = new Error('Could not find any register');
             error.statusCode = 404;
             throw error;
         }
-        if (cashRegister.creator._id.toString() !== req.groupId) {
+        if (account.creator._id.toString() !== req.groupId) {
             const error = new Error('Not authorized.');
             error.statusCode = 403;
             throw error;
         }
-        cashRegister.movements = [];
-        cashRegister.balance = 0;
-        cashRegister.cuit = 0;
-        cashRegister.province = '';
-        cashRegister.city = '';
-        cashRegister.streetAddress = '';
-        cashRegister.zip = '';
-        cashRegister.apartment = '';
-        cashRegister.category = '';
-        cashRegister.personeria = '';
-        cashRegister.activitiesDate = '';
-        cashRegister.socialName = '';
-        cashRegister.brutosNumber = '';
-        cashRegister.salePoint = '';
-        await cashRegister.save();
-        res.status(200).json({
-            message: 'Register restored'
-        });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    }
-};
-
-
-exports.deleteCashRegister = async (req, res, next) => {
-    const cashRegisterId = req.params.cashRegisterId;
-    try {
-        const cashRegister = await Cash.findById(cashRegisterId);
-        if (!cashRegister) {
-            const error = new Error('Could not find any register');
-            error.statusCode = 404;
-            throw error;
-        }
-        if (cashRegister.creator._id.toString() !== req.groupId) {
-            const error = new Error('Not authorized.');
-            error.statusCode = 403;
-            throw error;
-        }
-        await cashRegister.remove();
+        await account.remove();
         res.status(200).json({
             message: 'Register deleted'
         });

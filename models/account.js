@@ -5,46 +5,12 @@ const accountSchema = new Schema({
     name: {
         type: String
     },
+    description: {
+        type: String
+    },
     balance: {
         type: Number,
         default: 0
-    },
-    cuit: {
-        type: Number,
-        required: true
-    },
-    province: {
-        type: String
-    },
-    city: {
-        type: String
-    },
-    streetAddress: {
-        type: String
-    },
-    zip: {
-        type: String
-    },
-    apartment: {
-        type: String
-    },
-    category: {
-        type: String
-    },
-    personeria: {
-        type: String
-    },
-    activitiesDate: {
-        type: String
-    },
-    socialName: {
-        type: String
-    },
-    brutosNumber: {
-        type: String
-    },
-    salePoint: {
-        type: String
     },
     movements: [
         {
@@ -60,9 +26,9 @@ const accountSchema = new Schema({
             amount: {
                 type: Number
             },
-            sale: {
+            payment: {
                 type: Schema.Types.ObjectId,
-                ref: 'Sale',
+                ref: 'Payment',
                 required: false
             }
         }

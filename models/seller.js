@@ -6,29 +6,23 @@ const sellerSchema = new Schema({
     type: String,
     required: false
   },
-  lastName: {
+  businessID: {
     type: String,
     required: false
   },
-  birth: {
-    type: Date
-  },
-  age: {
-    type: Number
-  },
-  typeId: {
+  gender: {
     type: String,
     required: false
   },
-  numberId: {
+  notes: {
     type: String,
     required: false
   },
-  address: {
+  phone: {
     type: String,
     required: false
   },
-  phoneNumber: {
+  mobile: {
     type: String,
     required: false
   },
@@ -36,7 +30,32 @@ const sellerSchema = new Schema({
     type: String,
     required: false
   },
-  salary: Number,
+  birth: {
+    type: Date
+  },
+  hireDate: {
+    type: Date
+  },
+  releaseDate: {
+    type: Date
+  },
+  address: {
+    street: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    state: {
+      type: String,
+    },
+    zip: {
+      type: String,
+    },
+    country: {
+      type: String,
+    },
+  },
   account: [
     {
       debt: Number,
@@ -53,10 +72,20 @@ const sellerSchema = new Schema({
     required: false,
     default: 0
   },
-  status: {
-    type: String,
-    required: true,
-    default: 'activo'
+  owes: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  youOwe: {
+    type: Number,
+    required: false,
+    default: 0
+  },
+  salary: {
+    type: Number,
+    required: false,
+    default: 0
   },
   creator: {
     type: Schema.Types.ObjectId,
