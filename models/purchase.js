@@ -12,15 +12,15 @@ const purchaseSchema = new Schema({
     ref: 'Person',
     required: false
   },
+  account: {
+    type: Schema.Types.ObjectId,
+    ref: 'Account'
+  },
   description: {
     type: String,
     required: true
   },
-  ticketType: {
-    type: String,
-    required: true
-  },
-  ticketNumber: {
+  number: {
     type: String,
     required: true
   },
@@ -28,19 +28,32 @@ const purchaseSchema = new Schema({
     type: Number,
     required: true
   },
-  subTotal: {
+  subtotal: {
     type: Number,
     required: true
   },
-  ivaTotal: {
+  taxes: {
+    type: Number,
+    required: true
+  },
+  discounts: {
     type: Number,
     required: true
   },
   details: [
     {
+      discount: {
+        type: Number,
+        required: true,
+        default: 0
+      },
       product: {
-        type: String,
-        required: true
+        type: Object,
+        ref: 'Product',
+      },
+      location: {
+        type: Schema.Types.ObjectId,
+        ref: 'Location',
       },
       quantity: {
         type: Number,
@@ -49,25 +62,21 @@ const purchaseSchema = new Schema({
       price: {
         type: Number,
         required: true
-      },
-      subtotal: {
-        type: Number,
-        required: true
-      },
-      unitaryPrice: {
-        type: Number,
-        required: true
-      },
-      ivaCalculated: {
-        type: Number,
-        required: true
-      },
+      }
     }
   ],
   status: {
     type: String,
     required: true,
-    default: 'activo'
+    default: 'Approved'
+  },
+  sent: {
+    type: String,
+    default: 'No'
+  },
+  type: {
+    type: String,
+    default: 'Purchase Order'
   },
   createdAt: {
     type: Date

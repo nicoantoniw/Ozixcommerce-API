@@ -3,6 +3,7 @@ const moment = require('moment');
 
 const Person = require('../models/person');
 const Invoice = require('../models/invoice');
+const Purchase = require('../models/purchase');
 const Quote = require('../models/quote');
 
 exports.getCustomers = async (req, res, next) => {
@@ -93,7 +94,7 @@ exports.getCustomerTransactions = async (req, res, next) => {
   const customerId = req.params.personId;
   try {
     const invoices = await Invoice.find({ creator: req.groupId, customer: customerId })
-      .populate('seller', { name: 1, _id: 1 })
+      .populate('person', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .populate('customer', { name: 1, email: 1, _id: 1 })
       .sort({ number: -1 });
@@ -107,6 +108,31 @@ exports.getCustomerTransactions = async (req, res, next) => {
       throw error;
     }
     const transactions = invoices.concat(quotes);
+    res.status(200).json({
+      transactions
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.getSupplierTransactions = async (req, res, next) => {
+  const supplierId = req.params.personId;
+  try {
+    const purchases = await Purchase.find({ creator: req.groupId, supplier: supplierId })
+      .populate('person', { name: 1, _id: 1 })
+      .populate('creator', { name: 1, _id: 1 })
+      .populate('supplier', { name: 1, email: 1, _id: 1 })
+      .sort({ number: -1 });
+    if (purchases.length < 1) {
+      const error = new Error('No transactions found');
+      error.statusCode = 404;
+      throw error;
+    }
+    const transactions = purchases;
     res.status(200).json({
       transactions
     });
@@ -225,6 +251,25 @@ exports.deletePerson = async (req, res, next) => {
     await person.remove();
     res.status(200).json({
       message: 'Person deleted'
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deletePersons = async (req, res, next) => {
+  const persons = req.body.persons;
+  try {
+    for (let index = 0; index < persons.length; index++) {
+      const element = persons[index];
+      const person = await Person.findById(element._id);
+      await person.remove();
+    }
+    res.status(200).json({
+      message: 'Persons deleted.',
     });
   } catch (err) {
     if (!err.statusCode) {

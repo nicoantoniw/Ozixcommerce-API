@@ -192,3 +192,22 @@ exports.deleteCategory = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.deleteCategories = async (req, res, next) => {
+  const categories = req.body.categories;
+  try {
+    for (let index = 0; index < categories.length; index++) {
+      const element = categories[index];
+      const category = await Category.findById(element._id);
+      await category.remove();
+    }
+    res.status(200).json({
+      message: 'Categories deleted.',
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};

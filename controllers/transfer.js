@@ -248,6 +248,86 @@ exports.deleteTransfer = async (req, res, next) => {
     }
 };
 
+exports.deleteTransfers = async (req, res, next) => {
+    const transfers = req.body.transfers;
+    try {
+        for (let index = 0; index < transfers.length; index++) {
+            const element = transfers[index];
+            const transfer = await Transfer.findById(element._id);
+            if (!transfer) {
+                const error = new Error('Could not find any transfer');
+                error.statusCode = 404;
+                throw error;
+            }
+            if (transfer.creator._id.toString() !== req.groupId) {
+                const error = new Error('Not authorized.');
+                error.statusCode = 403;
+                throw error;
+            }
+            for (let i = 0; i < transfer.items.length; i++) {
+                const item = transfer.items[i];
+                const product = await Product.findById(item.product).populate('locations.location');
+                if (!product) {
+                    const error = new Error('Could not find any product');
+                    error.statusCode = 404;
+                    throw error;
+                }
+                if (item.variantSku) {
+                    for (let q = 0; q < product.variants.length; q++) {
+                        const variant = product.variants[q];
+                        if (variant.sku == item.variantSku) {
+                            for (let w = 0; w < variant.locations.length; w++) {
+                                const location = variant.locations[w];
+                                if (transfer.status === 'In Transit') {
+                                    if (transfer.origin.toString() === location.location._id.toString()) {
+                                        location.quantity += Number(item.quantity);
+                                    }
+                                }
+                                if (transfer.status === 'Completed') {
+                                    if (transfer.origin.toString() === location.location._id.toString()) {
+                                        location.quantity += Number(item.quantity);
+                                    }
+                                    if (transfer.destination.toString() === location.location._id.toString()) {
+                                        location.quantity -= Number(item.quantity);
+                                    }
+                                }
+                            }
+
+                        }
+                    };
+                } else {
+                    for (let y = 0; y < product.locations.length; y++) {
+                        const location = product.locations[y];
+                        if (transfer.status === 'In Transit') {
+                            if (transfer.origin.toString() === location.location._id.toString()) {
+                                location.quantity += Number(item.quantity);
+                            }
+                        }
+                        if (transfer.status === 'Completed') {
+                            if (transfer.origin.toString() === location.location._id.toString()) {
+                                location.quantity += Number(item.quantity);
+                            }
+                            if (transfer.destination.toString() === location.location._id.toString()) {
+                                location.quantity -= Number(item.quantity);
+                            }
+                        }
+                    }
+                }
+                await product.save();
+            }
+            await transfer.remove();
+        }
+        res.status(200).json({
+            message: 'Transfer deleted'
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
 const transferStock = async (items, origin, destination, groupId) => {
     let productId;
     let notthere;

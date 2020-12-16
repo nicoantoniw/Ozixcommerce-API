@@ -217,3 +217,22 @@ exports.deleteAccount = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.deleteAccounts = async (req, res, next) => {
+    const accounts = req.body.accounts;
+    try {
+        for (let index = 0; index < accounts.length; index++) {
+            const element = accounts[index];
+            const account = await Account.findById(element._id);
+            await account.remove();
+        }
+        res.status(200).json({
+            message: 'Accounts deleted.',
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};

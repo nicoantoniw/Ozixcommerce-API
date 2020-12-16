@@ -14,65 +14,14 @@ router.get(
 );
 router.get('/purchases-by-date', auth.isAdmin, purchaseController.getPurchasesByDate);
 router.get(
-  '/purchases/ticket/:ticketType',
-  auth.isAdmin,
-  purchaseController.getPurchasesByTicketType
-);
-router.get(
   '/purchases/supplier/:supplierId',
   auth.isAdmin, auth.isPrime,
   purchaseController.getPurchasesBySupplier
 );
 router.post(
   '/add',
-  [
-    body('description')
-      .isString()
-      .trim(),
-    body('ticketType')
-      .isString()
-      .trim(),
-    body('ticketNumber')
-      .isString()
-      .trim(),
-    body('total')
-      .isFloat()
-      .trim()
-  ],
-  auth.isAdmin, auth.isPrime,
+  auth.isAdmin, auth.isAdmin,
   purchaseController.addPurchase
-);
-// router.put(
-//   '/update/:purchaseId',
-//   [
-//     body('description')
-//       .isString()
-//       .trim(),
-//     body('ticketType')
-//       .isString()
-//       .trim(),
-//     body('ticketSerie')
-//       .isNumeric()
-//       .trim(),
-//     body('ticketNumber')
-//       .isString()
-//       .trim(),
-//     body('total')
-//       .isFloat()
-//       .trim()
-//   ],
-//   auth.isSeller,
-//   purchaseController.updatePurchase
-// );
-router.patch(
-  '/activate/:purchaseId',
-  auth.isAdmin, auth.isPrime,
-  purchaseController.activatePurchase
-);
-router.patch(
-  '/deactivate/:purchaseId',
-  auth.isAdmin, auth.isPrime,
-  purchaseController.deactivatePurchase
 );
 router.delete(
   '/delete/:purchaseId',

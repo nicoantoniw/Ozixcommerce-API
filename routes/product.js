@@ -80,6 +80,11 @@ router.put(
   auth.isSeller,
   productController.salePrice
 );
+router.put(
+  '/update-categories',
+  auth.isSeller,
+  productController.changeCategories
+);
 router.put('/variants/update/:productId', auth.isAdmin, productController.updateVariant);
 router.patch(
   '/activate/:productId',
@@ -102,9 +107,19 @@ router.delete(
   productController.deleteVariant
 );
 router.delete(
+  '/variants/delete-multiple',
+  auth.isAdmin,
+  productController.deleteVariants
+);
+router.delete(
+  '/delete-multiple',
+  auth.isSeller,
+  productController.deleteProducts
+);
+router.delete(
   '/delete-all',
   auth.isAdmin,
-  productController.deleteProducts
+  productController.deleteAllProducts
 );
 
 module.exports = router;

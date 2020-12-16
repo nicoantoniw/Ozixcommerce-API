@@ -46,7 +46,7 @@ exports.login = async (req, res, next) => {
         groupId: user.group._id.toString()
       },
       'secretwordnamedzoerottweiler',
-      { expiresIn: '12h' }
+      { expiresIn: '6h' }
     );
     res.status(200).json({
       token: token,

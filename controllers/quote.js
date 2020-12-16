@@ -231,6 +231,37 @@ exports.deleteQuote = async (req, res, next) => {
     }
 };
 
+exports.deleteQuotes = async (req, res, next) => {
+    const quotes = req.body.quotes;
+    try {
+        for (let index = 0; index < quotes.length; index++) {
+            const element = quotes[index];
+            const quote = await Quote.findById(element._id);
+            if (!quote) {
+                const error = new Error('Could not find any quote');
+                error.statusCode = 404;
+                throw error;
+            }
+            if (quote.creator._id.toString() !== req.groupId) {
+                const error = new Error('Not authorized.');
+                error.statusCode = 403;
+                throw error;
+            }
+            await quote.remove();
+        }
+        const totalQuotes = await Quote.find().countDocuments();
+        res.status(200).json({
+            message: 'quote deleted',
+            totalQuotes
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
 exports.createPDF = (req, res, next) => {
     const quote = req.body.quote;
     const subject = req.body.subject;

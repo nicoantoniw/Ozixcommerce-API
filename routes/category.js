@@ -49,5 +49,10 @@ router.delete(
   auth.isAdmin,
   categoryController.deleteCategory
 );
+router.delete(
+  '/delete-multiple',
+  auth.isAdmin,
+  categoryController.deleteCategories
+);
 
 module.exports = router;

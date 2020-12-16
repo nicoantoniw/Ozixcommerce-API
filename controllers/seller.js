@@ -224,6 +224,25 @@ exports.deleteSeller = async (req, res, next) => {
   }
 };
 
+exports.deleteSellers = async (req, res, next) => {
+  const sellers = req.body.sellers;
+  try {
+    for (let index = 0; index < sellers.length; index++) {
+      const element = sellers[index];
+      const seller = await Seller.findById(element._id);
+      await seller.remove();
+    }
+    res.status(200).json({
+      message: 'Sellers deleted.',
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
 exports.getSellerTransactions = async (req, res, next) => {
   const sellerId = req.params.sellerId;
   try {

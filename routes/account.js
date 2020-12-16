@@ -33,5 +33,10 @@ router.delete(
     auth.isAdmin,
     accountController.deleteAccount
 );
+router.delete(
+    '/delete-multiple',
+    auth.isAdmin,
+    accountController.deleteAccounts
+);
 
 module.exports = router;

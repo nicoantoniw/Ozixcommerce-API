@@ -130,3 +130,22 @@ exports.deleteOption = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.deleteOptions = async (req, res, next) => {
+    const options = req.body.options;
+    try {
+        for (let index = 0; index < options.length; index++) {
+            const element = options[index];
+            const option = await Option.findById(element._id);
+            await option.remove();
+        }
+        res.status(200).json({
+            message: 'Options deleted.',
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};

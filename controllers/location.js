@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 
 const Location = require('../models/location');
+const Product = require('../models/product');
 
 exports.getLocations = async (req, res, next) => {
     try {
@@ -125,9 +126,54 @@ exports.deleteLocation = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
+        const products = await Product.find();
+        for (let index = 0; index < products.length; index++) {
+            const product = products[index];
+            for (let index = 0; index < product.locations.length; index++) {
+                const productLocation = product.locations[index];
+                const index2 = product.locations.indexOf(productLocation);
+                if (productLocation.location.toString() == location._id.toString()) {
+                    product.unassignedStock += productLocation.quantity;
+                    product.locations.splice(index2, 1);
+                }
+            }
+            await product.save();
+        }
         await location.remove();
         res.status(200).json({
             message: 'Location deleted'
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
+exports.deleteLocations = async (req, res, next) => {
+    const locations = req.body.locations;
+    const products = await Product.find();
+    try {
+        for (let index = 0; index < locations.length; index++) {
+            const element = locations[index];
+            const location = await Location.findById(element._id);
+            for (let index = 0; index < products.length; index++) {
+                const product = products[index];
+                for (let index = 0; index < product.locations.length; index++) {
+                    const productLocation = product.locations[index];
+                    const index2 = product.locations.indexOf(productLocation);
+                    if (productLocation.location.toString() == location._id.toString()) {
+                        product.unassignedStock += productLocation.quantity;
+                        product.locations.splice(index2, 1);
+                    }
+                }
+                await product.save();
+            }
+            await location.remove();
+        }
+        res.status(200).json({
+            message: 'Locations deleted.',
         });
     } catch (err) {
         if (!err.statusCode) {

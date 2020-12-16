@@ -27,5 +27,10 @@ router.delete(
     auth.isAdmin,
     locationController.deleteLocation
 );
+router.delete(
+    '/delete-multiple',
+    auth.isAdmin,
+    locationController.deleteLocations
+);
 
 module.exports = router;

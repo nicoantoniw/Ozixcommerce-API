@@ -3,7 +3,7 @@ const moment = require('moment');
 
 const Purchase = require('../models/purchase');
 const Product = require('../models/product');
-const Cash = require('../models/account');
+const Account = require('../models/account');
 
 exports.getPurchases = async (req, res, next) => {
   try {
@@ -215,37 +215,6 @@ exports.getPurchasesByDate = async (req, res, next) => {
   }
 };
 
-
-exports.getPurchasesByTicketType = async (req, res, next) => {
-  const ticketType = req.params.ticketType;
-  try {
-    const totalPurchases = await Purchase.find({
-      creator: req.groupId,
-      ticketType: ticketType
-    }).countDocuments();
-    const purchases = await Purchase.find({ creator: req.groupId, ticketType: ticketType })
-      .populate('supplier', { company: 1, _id: 1 })
-      .populate('creator', { name: 1, _id: 1 })
-      .sort({ createdAt: -1 });
-
-    if (totalPurchases === 0) {
-      const error = new Error('No purchases found');
-      error.statusCode = 404;
-      throw error;
-    }
-
-    res.status(200).json({
-      purchases,
-      totalPurchases
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 exports.getPurchase = async (req, res, next) => {
   const purchaseId = req.params.purchaseId;
   try {
@@ -269,17 +238,12 @@ exports.getPurchase = async (req, res, next) => {
 };
 
 exports.addPurchase = async (req, res, next) => {
-  const cashRegisterId = req.body.cashRegister;
+  const accountId = req.body.account;
   let amount;
-  let date = moment.utc().utcOffset(-3);
-  if (req.body.createdAt) {
-    date = moment.utc(req.body.createdAt).set('hour', 15);
-  }
   const data2 = {
     type: 'subtract',
     description: 'Compra',
     amount: req.body.total,
-    date
   };
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -289,140 +253,40 @@ exports.addPurchase = async (req, res, next) => {
   }
   try {
     const purchase = new Purchase({
-      description: req.body.description,
-      ticketType: req.body.ticketType,
-      ticketNumber: req.body.ticketNumber,
-      total: req.body.total,
-      subTotal: req.body.subTotal,
-      ivaTotal: req.body.ivaTotal,
-      details: req.body.details,
+      number: req.body.purchase.number,
+      details: req.body.purchase.details,
+      description: 'req.body.purchase.description',
+      total: Number(req.body.purchase.total),
+      subtotal: req.body.purchase.subtotal,
+      taxes: req.body.purchase.taxes,
+      discounts: Number(req.body.purchase.discounts),
       creator: req.groupId,
-      supplier: req.body.supplier,
-      createdAt: date
+      supplier: req.body.purchase.supplier,
+      createdAt: moment.utc(req.body.purchase.createdAt)
     });
-    let details = req.body.details;
-    await details.map(async detail => {
-      await increaseStock(detail.product, Number(detail.quantity), Number(detail.percentage), Number(detail.newPrice), Number(detail.iva), req.groupId);
-    });
-    const cashRegister = await Cash.findById(cashRegisterId);
-    if (!cashRegister) {
-      const error = new Error('Could not find any register');
-      error.statusCode = 404;
-      throw error;
+    for (let index = 0; index < purchase.details.length; index++) {
+      const detail = purchase.details[index];
+      await increaseStock(detail.product, Number(detail.quantity));
     }
-    console.log(data2.amount);
-    amount = parseFloat((Number(data2.amount)).toFixed(2));
-    cashRegister.balance -= amount;
-    if (cashRegister.balance < 0) {
-      const error = new Error('Cash avaiable is lower than the amount required');
-      error.statusCode = 602;
-      throw error;
-    }
-    cashRegister.movements.push(data2);
+    // const account = await Account.findById(accountId);
+    // if (!account) {
+    //   const error = new Error('Could not find any register');
+    //   error.statusCode = 404;
+    //   throw error;
+    // }
+    // console.log(data2.amount);
+    // amount = parseFloat((Number(data2.amount)).toFixed(2));
+    // account.balance -= amount;
+    // if (account.balance < 0) {
+    //   const error = new Error('Account avaiable is lower than the amount required');
+    //   error.statusCode = 602;
+    //   throw error;
+    // }
+    // account.movements.push(data2);
     await purchase.save();
-    await cashRegister.save();
+    // await account.save();
     res.status(200).json({
       message: 'Purchase created.',
-      purchase: purchase
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-// exports.updatePurchase = async (req, res, next) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     const error = new Error('Validation failed, entered data is incorrect');
-//     error.statusCode = 422;
-//     throw error;
-//   }
-//   const purchaseId = req.params.purchaseId;
-//   try {
-//     const purchase = await Purchase.findById(purchaseId)
-//       .populate('supplier', { name: 1, _id: 1 })
-//       .populate('creator', { name: 1, _id: 1 });
-//     if (!purchase) {
-//       const error = new Error('Could not find any purchase');
-//       error.statusCode = 404;
-//       throw error;
-//     }
-//     if (purchase.creator._id.toString() !== req.groupId) {
-//       const error = new Error('Not authorized');
-//       error.statusCode = 403;
-//       throw error;
-//     }
-//     purchase.description = req.body.description;
-//     purchase.ticketType = req.body.ticketType;
-//     purchase.ticketNumber = req.body.ticketNumber;
-//     purchase.total = req.body.total;
-//     purchase.details = req.body.details;
-//     let details = req.body.details;
-//     await details.map(async detail => {
-//       await increaseStock(detail.product, Number(detail.quantity), Number(detail.newPrice), req.groupId);
-//     });
-//     await purchase.save();
-//     res.status(200).json({
-//       message: 'Purchase updated.',
-//       purchase: purchase
-//     });
-//   } catch (err) {
-//     if (!err.statusCode) {
-//       err.statusCode = 500;
-//     }
-//     next(err);
-//   }
-// };
-
-exports.activatePurchase = async (req, res, next) => {
-  const purchaseId = req.params.purchaseId;
-  try {
-    const purchase = await Purchase.findById(purchaseId);
-    if (!purchase) {
-      const error = new Error('Could not find any purchase');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (purchase.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    purchase.status = 'activo';
-    await purchase.save();
-    res.status(200).json({
-      message: 'Purchase has been activated',
-      purchase: purchase
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.deactivatePurchase = async (req, res, next) => {
-  const purchaseId = req.params.purchaseId;
-  try {
-    const purchase = await Purchase.findById(purchaseId);
-    if (!purchase) {
-      const error = new Error('Could not find any purchase');
-      error.statusCode = 404;
-      throw error;
-    }
-    if (purchase.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    purchase.status = 'inactivo';
-    await purchase.save();
-    res.status(200).json({
-      message: 'Purchase has been deactivated',
       purchase: purchase
     });
   } catch (err) {
@@ -459,28 +323,28 @@ exports.deletePurchase = async (req, res, next) => {
   }
 };
 
-const increaseStock = async (productId, quantity, percentage, price, iva, creator) => {
+const increaseStock = async (product, quantity) => {
+  let productId = product._id;
+  if (product.isVariant) {
+    productId = product.productId;
+  };
   try {
-    const product = await Product.findOne({ name: productId, creator: creator });
+    let product2 = await Product.findById(productId);
     if (!product) {
       const error = new Error('Could not find any product');
       error.statusCode = 404;
-      throw error;
     }
-    const newStock = parseInt(product.stock) + Number(quantity);
-    product.stock = newStock;
-    if (price !== 0) {
-      product.price = price;
+    if (product.isVariant) {
+      for (let i = 0; i < product2.variants.length; i++) {
+        const variant = product2.variants[i];
+        if (product.sku == variant.sku) {
+          variant.stock += quantity;
+        }
+      }
+    } else {
+      product2.stock += quantity;
     }
-    if (percentage !== 0) {
-      product.percentage = percentage;
-    }
-    product.iva = iva;
-
-    const difference = Number(req.body.sellingPrice) - Number(req.body.price);
-    const calculatedPercentage = parseFloat(((difference / Number(req.body.price)) * 100).toFixed(2));
-    product.sellingPrice = Number(calculatedPriceIva).toFixed(2);
-    await product.save();
+    await product2.save();
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;

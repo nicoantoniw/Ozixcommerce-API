@@ -21,5 +21,6 @@ router.put(
     quoteController.updateQuote
 );
 router.delete('/delete/:quoteId', auth.isAdmin, quoteController.deleteQuote);
+router.delete('/delete-multiple', auth.isAdmin, quoteController.deleteQuotes);
 
 module.exports = router;

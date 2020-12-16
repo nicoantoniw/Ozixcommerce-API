@@ -54,5 +54,6 @@ router.patch(
   sellerController.deactivateSeller
 );
 router.delete('/delete/:sellerId', auth.isAdmin, sellerController.deleteSeller);
+router.delete('/delete-multiple', auth.isAdmin, sellerController.deleteSellers);
 
 module.exports = router;

@@ -32,5 +32,10 @@ router.delete(
     auth.isAdmin,
     transferController.deleteTransfer
 );
+router.delete(
+    '/delete-multiple',
+    auth.isAdmin,
+    transferController.deleteTransfers
+);
 
 module.exports = router;

@@ -27,5 +27,10 @@ router.delete(
     auth.isAdmin,
     optionController.deleteOption
 );
+router.delete(
+    '/delete-multiple',
+    auth.isAdmin,
+    optionController.deleteOptions
+);
 
 module.exports = router;

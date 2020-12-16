@@ -9,7 +9,8 @@ const router = express.Router();
 router.get('/suppliers', auth.isAdmin, auth.isPrime, personController.getSuppliers);
 router.get('/customers', auth.isUser, personController.getCustomers);
 router.get('/persons/:personId', auth.isUser, auth.isPrime, personController.getPerson);
-router.get('/persons/transactions/:personId', auth.isUser, personController.getCustomerTransactions);
+router.get('/persons/customers/transactions/:personId', auth.isUser, personController.getCustomerTransactions);
+router.get('/persons/suppliers/transactions/:personId', auth.isUser, personController.getSupplierTransactions);
 router.post(
   '/add',
   auth.isUser, auth.isPrime, auth.isWebsiteUser,
@@ -45,5 +46,6 @@ router.put(
   personController.updatePerson
 );
 router.delete('/delete/:personId', auth.isSeller, auth.isPrime, personController.deletePerson);
+router.delete('/delete-multiple', auth.isSeller, auth.isPrime, personController.deletePersons);
 
 module.exports = router;

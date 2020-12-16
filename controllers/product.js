@@ -319,6 +319,7 @@ exports.updateProduct = async (req, res, next) => {
       });
     } else if (req.body.stockOnly) {
       product.stock += Number(req.body.stock);
+      product.unassignedStock += Number(req.body.stock);
     } else {
       product.name = req.body.name;
       product.brand = req.body.brand;
@@ -329,7 +330,6 @@ exports.updateProduct = async (req, res, next) => {
       product.locations = locations;
       product.price = req.body.price;
       product.sellingPrice = req.body.sellingPrice;
-
       if (product.stock < totalStock) {
         product.stock = totalStock;
         product.unassignedStock = 0;
@@ -376,6 +376,29 @@ exports.updateProduct = async (req, res, next) => {
     }
     next(err);
   }
+};
+
+exports.changeCategories = async (req, res, next) => {
+  const products = req.body.products;
+  const category = req.body.category;
+  try {
+    for (let index = 0; index < products.length; index++) {
+      const element = products[index];
+      const product = await Product.findById(element._id);
+      product.category = category;
+      await product.save();
+
+    }
+    res.status(200).json({
+      message: 'Products updated.',
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+
 };
 
 exports.salePrice = async (req, res, next) => {
@@ -554,6 +577,25 @@ exports.deleteProduct = async (req, res, next) => {
 };
 
 exports.deleteProducts = async (req, res, next) => {
+  const products = req.body.products;
+  try {
+    for (let index = 0; index < products.length; index++) {
+      const element = products[index];
+      const product = await Product.findById(element._id);
+      await product.remove();
+    }
+    res.status(200).json({
+      message: 'Products deleted.',
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteAllProducts = async (req, res, next) => {
   try {
     await Product.deleteMany({ creator: req.groupId });
     res.status(200).json({
@@ -751,6 +793,7 @@ exports.updateVariant = async (req, res, next) => {
         } else if (req.body.stockOnly) {
           variant.stock += Number(req.body.stock);
           product.stock += Number(req.body.stock);
+          variant.unassignedStock += Number(req.body.stock);
         } else {
           name = product.name;
           req.body.values.forEach(value => {
@@ -840,6 +883,44 @@ exports.deleteVariant = async (req, res, next) => {
     await product.save();
     res.status(200).json({
       message: 'Product deleted'
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+exports.deleteVariants = async (req, res, next) => {
+  const variants = req.body.variants;
+  try {
+    for (let index = 0; index < variants.length; index++) {
+      const variant = variants[index];
+      const product = await Product.findById(variant.productId);
+      if (!product) {
+        const error = new Error('Could not find any product');
+        error.statusCode = 404;
+        throw error;
+      }
+      if (product.creator._id.toString() !== req.groupId) {
+        const error = new Error('Not authorized.');
+        error.statusCode = 403;
+        throw error;
+      }
+      product.variants.forEach((variant1, index) => {
+        if (variant1._id == variant._id) {
+          indexo = index;
+        }
+      });
+      product.variants.splice(indexo, 1);
+      if (product.variants.length < 1) {
+        product.hasVariants = false;
+      }
+      await product.save();
+    }
+    res.status(200).json({
+      message: 'Products deleted.',
     });
   } catch (err) {
     if (!err.statusCode) {
