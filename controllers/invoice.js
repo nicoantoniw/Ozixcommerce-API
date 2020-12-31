@@ -189,7 +189,7 @@ exports.getInvoice = async (req, res, next) => {
     const invoice = await Invoice.findById(invoiceId)
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 });
+      .populate('customer', { name: 1, _id: 1, email: 1 });
     if (!invoice) {
       const error = new Error('No invoice found');
       error.statusCode = 404;
@@ -950,6 +950,10 @@ exports.createPDF = async (req, res, next) => {
 };
 
 const sendInvoice = (subject, sender, receiver, filename, html) => {
+  console.log(subject,
+    sender,
+    receiver,
+    filename);
   const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/invoice.pdf`);
   let ses_mail = "From: <" + sender + ">\n";
   ses_mail += "To: " + receiver + "\n";
@@ -1036,7 +1040,7 @@ const buildTableBody = (details, columns) => {
       detail.product.sellingPrice = detail.product.sellingPrice.toFixed(2);
     }
     if (Number.isInteger(detail.discount)) {
-      detail.discount = detail.discount.toFixed(2);
+      detail.discount = `${detail.discount}%`;
     }
     for (let o = 0; o < columns.length; o++) {
       const column = columns[o];

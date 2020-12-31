@@ -12,21 +12,28 @@ router.get(
   auth.isAdmin, auth.isPrime,
   purchaseController.getPurchase
 );
-router.get('/purchases-by-date', auth.isAdmin, purchaseController.getPurchasesByDate);
-router.get(
-  '/purchases/supplier/:supplierId',
-  auth.isAdmin, auth.isPrime,
-  purchaseController.getPurchasesBySupplier
-);
+router.get('/purchases-by-date', auth.isAdmin, purchaseController.getPurchasesByFilter);
+router.post('/print', purchaseController.createPDF);
 router.post(
   '/add',
-  auth.isAdmin, auth.isAdmin,
+  auth.isAdmin,
   purchaseController.addPurchase
+);
+router.put(
+  '/update-status/:purchaseId',
+  auth.isAdmin,
+  purchaseController.updatePurchaseStatus
+);
+router.put(
+  '/update-status-multiple/:purchaseId',
+  auth.isAdmin,
+  purchaseController.updatePurchasesStatus
 );
 router.delete(
   '/delete/:purchaseId',
   auth.isAdmin, auth.isPrime,
   purchaseController.deletePurchase
 );
+router.delete('/delete-multiple', auth.isAdmin, purchaseController.deletePurchases);
 
 module.exports = router;

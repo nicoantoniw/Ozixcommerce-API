@@ -68,7 +68,7 @@ const purchaseSchema = new Schema({
   status: {
     type: String,
     required: true,
-    default: 'Approved'
+    default: 'Pending'
   },
   sent: {
     type: String,
