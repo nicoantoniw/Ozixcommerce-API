@@ -5,6 +5,13 @@ const accountSchema = new Schema({
     name: {
         type: String
     },
+    type: {
+        type: String,
+        enum: ['Current Asset', 'Fixed Asset', 'Non-current Asset', 'Accounts receivable (A/R)', 'Inventory', 'Equity', 'Accounts payable (A/P)', 'Expense', 'Current liability', 'Liability', 'Non-current Liability', 'Sales', 'Other Income', 'Cost of Sales']
+    },
+    code: {
+        type: Number
+    },
     description: {
         type: String
     },
@@ -14,8 +21,15 @@ const accountSchema = new Schema({
     },
     movements: [
         {
-            type: {
-                type: String
+            transaction: {
+                type: Schema.Types.ObjectId,
+                refPath: 'transactionRef',
+                required: true
+            },
+            transactionRef: {
+                type: String,
+                enum: ['Payment', 'Bill', 'Invoice'],
+                required: true
             },
             date: {
                 type: Date
@@ -26,11 +40,6 @@ const accountSchema = new Schema({
             amount: {
                 type: Number
             },
-            payment: {
-                type: Schema.Types.ObjectId,
-                ref: 'Payment',
-                required: false
-            }
         }
     ],
     creator: {

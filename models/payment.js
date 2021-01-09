@@ -14,9 +14,13 @@ const paymentSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Person',
     },
-    invoice: {
+    refTransaction: {
+        type: String,
+        enum: ['Bill', 'Invoice']
+    },
+    transaction: {
         type: Schema.Types.ObjectId,
-        ref: 'Invoice',
+        ref: 'refTransaction',
     },
     account: {
         type: Schema.Types.ObjectId,

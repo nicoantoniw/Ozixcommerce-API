@@ -73,6 +73,16 @@ const productSchema = new Schema({
       }
     }
   ],
+  salesAccount: {
+    type: Schema.Types.ObjectId,
+    ref: 'Account',
+    required: true
+  },
+  costOfGoodsAccount: {
+    type: Schema.Types.ObjectId,
+    ref: 'Account',
+    required: true
+  },
   hasVariants: {
     type: Boolean,
     default: false

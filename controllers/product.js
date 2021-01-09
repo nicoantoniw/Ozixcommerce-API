@@ -126,6 +126,8 @@ exports.addProduct = async (req, res, next) => {
       percentage: Number(req.body.percentage),
       sellingPrice: 0,
       stock: req.body.stock,
+      salesAccount: req.body.salesAccount,
+      costOfGoodsAccount: req.body.costOfGoodsAccount,
       creator: req.groupId
     });
     if (req.body.calculatedPriceFlag) {
@@ -328,8 +330,12 @@ exports.updateProduct = async (req, res, next) => {
       product.description = req.body.description;
       product.stock = Number(req.body.stock);
       product.locations = locations;
-      product.price = req.body.price;
-      product.sellingPrice = req.body.sellingPrice;
+      product.salesAccount = req.body.salesAccount;
+      product.costOfGoodsAccount = req.body.costOfGoodsAccount;
+      if (!product.hasVariants) {
+        product.price = req.body.price;
+        product.sellingPrice = req.body.sellingPrice;
+      }
       if (product.stock < totalStock) {
         product.stock = totalStock;
         product.unassignedStock = 0;
@@ -342,7 +348,7 @@ exports.updateProduct = async (req, res, next) => {
           variant.brand = product.brand;
         });
       }
-      if (req.body.calculatedPriceFlag) {
+      if (req.body.calculatedPriceFlag && !product.hasVariants) {
         product.totalDiscounts = 0;
         product.discounts = [];
         product.price = req.body.price;
@@ -351,14 +357,14 @@ exports.updateProduct = async (req, res, next) => {
       }
       const difference = Number(req.body.sellingPrice) - Number(req.body.price);
       const calculatedPercentage = parseFloat(((difference / Number(req.body.price)) * 100).toFixed(2));
-      if (req.body.sellingPriceFlag) {
+      if (req.body.sellingPriceFlag && !product.hasVariants) {
         product.price = req.body.price;
         product.percentage = calculatedPercentage;
         product.discounts = [];
         product.totalDiscounts = 0;
         product.sellingPrice = Number(req.body.sellingPrice).toFixed(2);
       }
-      if (req.body.discountFlag) {
+      if (req.body.discountFlag && !product.hasVariants) {
         discount = Number(product.sellingPrice * req.body.discount / 100).toFixed(2);
         product.sellingPrice -= discount;
         product.discounts.push(req.body.discount);

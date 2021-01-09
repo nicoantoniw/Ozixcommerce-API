@@ -259,30 +259,31 @@ exports.updatePurchaseStatus = async (req, res, next) => {
       throw error;
     }
     purchase.status = req.body.status;
-    if (purchase.status === 'Approved') {
-      for (let index = 0; index < purchase.details.length; index++) {
-        const detail = purchase.details[index];
-        await increaseStock(detail.product, Number(detail.quantity));
-      }
-    }
-    if (purchase.status === 'Billed') {
-      // const account = await Account.findById(accountId);
-      // if (!account) {
-      //   const error = new Error('Could not find any register');
-      //   error.statusCode = 404;
-      //   throw error;
-      // }
-      // console.log(data2.amount);
-      // amount = parseFloat((Number(data2.amount)).toFixed(2));
-      // account.balance -= amount;
-      // if (account.balance < 0) {
-      //   const error = new Error('Account avaiable is lower than the amount required');
-      //   error.statusCode = 602;
-      //   throw error;
-      // }
-      // account.movements.push(data2);
-      // await account.save();
-    }
+
+    // for (let index = 0; index < purchase.details.length; index++) {
+    //   const detail = purchase.details[index];
+    //   await increaseStock(detail.product, Number(detail.quantity));
+    // }
+    // this happens in the bill
+
+
+    // const account = await Account.findById(accountId);
+    // if (!account) {
+    //   const error = new Error('Could not find any register');
+    //   error.statusCode = 404;
+    //   throw error;
+    // }
+    // console.log(data2.amount);
+    // amount = parseFloat((Number(data2.amount)).toFixed(2));
+    // account.balance -= amount;
+    // if (account.balance < 0) {
+    //   const error = new Error('Account avaiable is lower than the amount required');
+    //   error.statusCode = 602;
+    //   throw error;
+    // }
+    // account.movements.push(data2);
+    // await account.save();
+
     await purchase.save();
     res.status(200).json({
       message: 'Purchase Order updated'
@@ -312,30 +313,6 @@ exports.updatePurchasesStatus = async (req, res, next) => {
         throw error;
       }
       purchase.status = req.body.status;
-      if (purchase.status === 'Approved') {
-        for (let index = 0; index < purchase.details.length; index++) {
-          const detail = purchase.details[index];
-          await increaseStock(detail.product, Number(detail.quantity));
-        }
-      }
-      if (purchase.status === 'Billed') {
-        // const account = await Account.findById(accountId);
-        // if (!account) {
-        //   const error = new Error('Could not find any register');
-        //   error.statusCode = 404;
-        //   throw error;
-        // }
-        // console.log(data2.amount);
-        // amount = parseFloat((Number(data2.amount)).toFixed(2));
-        // account.balance -= amount;
-        // if (account.balance < 0) {
-        //   const error = new Error('Account avaiable is lower than the amount required');
-        //   error.statusCode = 602;
-        //   throw error;
-        // }
-        // account.movements.push(data2);
-        // await account.save();
-      }
       await purchase.save();
     }
     res.status(200).json({

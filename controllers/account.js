@@ -87,6 +87,8 @@ exports.addAccount = async (req, res, next) => {
     let account;
     account = new Account({
         name: req.body.name,
+        type: req.body.type,
+        code: req.body.code,
         description: req.body.description,
         movements: [],
         creator: req.groupId,

@@ -237,6 +237,24 @@ exports.addInvoice = async (req, res, next) => {
       const invoice2 = invoices[0];
       invoice.number = Number(invoice2.number) + 1;
     }
+
+    // accounts receivable
+    let account = await Account.findOne({ code: 1100 });
+    if (!account) {
+      const error = new Error('Could not find any account');
+      error.statusCode = 404;
+      throw error;
+    }
+    account.balance += invoice.total;
+    account.movements.push({
+      transactionRef: 'Invoice',
+      transaction: invoice._id,
+      date: invoice.createdAt,
+      description: `Invoice # ${invoice.number}`,
+      amount: invoice.total
+    });
+    // await account.save();
+
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
       const result = await decreaseStock(detail.product, Number(detail.quantity), detail.location);
@@ -248,19 +266,42 @@ exports.addInvoice = async (req, res, next) => {
         });
         await notification.save();
       }
+
+      // product sales account
+      account = await Account.findById(detail.product.salesAccount);
+      if (!account) {
+        const error = new Error('Could not find any account');
+        error.statusCode = 404;
+        throw error;
+      }
+      account.balance += detail.price;
+      account.movements.push({
+        transactionRef: 'Invoice',
+        transaction: invoice._id,
+        date: invoice.createdAt,
+        description: `Invoice # ${invoice.number}`,
+        amount: detail.price
+      });
+      await account.save();
+
+      // product cost of goods account
+      account = await Account.findById(detail.product.costOfGoodsAccount);
+      if (!account) {
+        const error = new Error('Could not find any account');
+        error.statusCode = 404;
+        throw error;
+      }
+      account.balance += detail.product.price * detail.quantity;
+      account.movements.push({
+        transactionRef: 'Invoice',
+        transaction: invoice._id,
+        date: invoice.createdAt,
+        description: `Invoice # ${invoice.number}`,
+        amount: detail.product.price * detail.quantity
+      });
+      await account.save();
     }
     await invoice.save();
-    // const cashRegister = await Cash.findById(cashRegisterId);
-    // if (!cashRegister) {
-    //   const error = new Error('Could not find any register');
-    //   error.statusCode = 404;
-    //   throw error;
-    // }
-    // data2.invoice = invoice._id;
-    // amount = parseFloat((Number(data2.amount)).toFixed(2));
-    // cashRegister.balance += amount;
-    // cashRegister.movements.push(data2);
-    // await cashRegister.save();
     res.status(200).json({
       message: 'invoice created.',
       invoice
@@ -316,6 +357,19 @@ exports.deleteInvoice = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
+
+    // accounts receivable
+    let account = await Account.findOne({ code: 1100 });
+    if (!account) {
+      const error = new Error('Could not find any account');
+      error.statusCode = 404;
+      throw error;
+    }
+    account.balance -= invoice.total;
+    let index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
+    account.movements.splice(index, 1);
+    await account.save();
+
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
       let productId = detail.product._id;
@@ -350,17 +404,42 @@ exports.deleteInvoice = async (req, res, next) => {
         }
       }
       await product.save();
+
+      // product sales account
+      account = await Account.findById(detail.product.salesAccount);
+      if (!account) {
+        const error = new Error('Could not find any account');
+        error.statusCode = 404;
+        throw error;
+      }
+      account.balance -= detail.price;
+      account.movements.push({
+        transactionRef: 'Invoice',
+        transaction: invoice._id,
+        date: invoice.createdAt,
+        description: `Invoice # ${invoice.number}`,
+        amount: detail.price
+      });
+      await account.save();
+
+      // product cost of goods account
+      account = await Account.findById(detail.product.costOfGoodsAccount);
+      if (!account) {
+        const error = new Error('Could not find any account');
+        error.statusCode = 404;
+        throw error;
+      }
+      account.balance -= detail.product.price * detail.quantity;
+      account.movements.push({
+        transactionRef: 'Invoice',
+        date: invoice.createdAt,
+        transaction: invoice._id,
+        description: `Invoice # ${invoice.number}`,
+        amount: detail.product.price * detail.quantity
+      });
+      await account.save();
     }
-    // const cashRegister = await Account.findById(invoice.account);
-    // cashRegister.movements.forEach((movement, index) => {
-    //   if (!movement.invoice) {
-    //   } else if ((movement.invoice).toString() === (invoice._id).toString()) {
-    //     index1 = index;
-    //   }
-    // });
-    // cashRegister.movements.splice(index1, 1);
-    // cashRegister.balance -= invoice.total;
-    // await cashRegister.save();
+
     await invoice.remove();
     const totalInvoices = await Invoice.find().countDocuments();
     res.status(200).json({
