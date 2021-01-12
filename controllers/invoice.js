@@ -219,6 +219,7 @@ exports.addInvoice = async (req, res, next) => {
       number: req.body.invoice.number,
       details: req.body.invoice.details,
       total: Number(req.body.invoice.total),
+      due: Number(req.body.invoice.total),
       subtotal: req.body.invoice.subtotal,
       taxes: req.body.invoice.taxes,
       discounts: Number(req.body.invoice.discounts),
@@ -253,7 +254,24 @@ exports.addInvoice = async (req, res, next) => {
       description: `Invoice # ${invoice.number}`,
       amount: invoice.total
     });
-    // await account.save();
+    await account.save();
+
+    // sales tax account
+    account = await Account.findOne({ code: 1400 });
+    if (!account) {
+      const error = new Error('Could not find any account');
+      error.statusCode = 404;
+      throw error;
+    }
+    account.balance += invoice.taxes;
+    account.movements.push({
+      transactionRef: 'Invoice',
+      transaction: invoice._id,
+      date: invoice.createdAt,
+      description: `Invoice # ${invoice.number}`,
+      amount: invoice.taxes
+    });
+    await account.save();
 
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
@@ -266,7 +284,6 @@ exports.addInvoice = async (req, res, next) => {
         });
         await notification.save();
       }
-
       // product sales account
       account = await Account.findById(detail.product.salesAccount);
       if (!account) {
@@ -1029,10 +1046,6 @@ exports.createPDF = async (req, res, next) => {
 };
 
 const sendInvoice = (subject, sender, receiver, filename, html) => {
-  console.log(subject,
-    sender,
-    receiver,
-    filename);
   const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/invoice.pdf`);
   let ses_mail = "From: <" + sender + ">\n";
   ses_mail += "To: " + receiver + "\n";

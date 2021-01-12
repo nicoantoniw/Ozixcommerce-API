@@ -71,6 +71,16 @@ const invoiceSchema = new Schema({
     required: true,
     default: 'Unpaid'
   },
+  paid: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  due: {
+    type: Number,
+    required: true,
+    default: 0
+  },
   sent: {
     type: String,
     default: 'No'

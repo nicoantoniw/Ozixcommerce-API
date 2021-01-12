@@ -55,33 +55,57 @@ exports.addPayment = async (req, res, next) => {
     const payment = new Payment({
         reference: req.body.reference,
         method: req.body.method,
-        customer: req.body.customer,
-        invoice: req.body.invoice,
+        customer: req.body.customer._id,
         account: req.body.account,
         notes: req.body.notes,
         total: req.body.total,
         createdAt: req.body.createdAt,
         creator: req.groupId
     });
-    const invoice = await Invoice.findById(req.body.invoice);
-    if (invoice.total > payment.total) {
-        invoice.status = 'Partially Paid';
-    } else {
-        invoice.status = 'Paid';
-    }
-    const account = await Account.findById(req.body.account);
-    account.movements.push({
-        type: 'Payment',
-        date: req.body.createdAt,
-        description: `Payment for invoice No. ${invoice.number}`,
-        amount: payment.total,
-        payment: payment._id
-    });
-    account.balance += payment.total;
-    try {
-        await invoice.save();
-        await payment.save();
+    if (req.body.invoice) {
+        payment.invoice = req.body.invoice;
+        const invoice = await Invoice.findById(req.body.invoice);
+        if (invoice.total > payment.total) {
+            invoice.status = 'Partially Paid';
+            invoice.paid = payment.total;
+            invoice.due = Math.round((invoice.total - invoice.paid + Number.EPSILON) * 100) / 100;
+        } else {
+            invoice.status = 'Paid';
+            invoice.paid = invoice.total;
+            invoice.due = 0;
+        }
+        // accounts receivable
+        let account = await Account.findOne({ code: 1100 });
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= invoice.total;
+        let index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
+        account.movements.splice(index, 1);
         await account.save();
+        await invoice.save();
+    }
+    // Bank Account
+    account = await Account.findById(req.body.account);
+    if (!account) {
+        const error = new Error('Could not find any account');
+        error.statusCode = 404;
+        throw error;
+    }
+    account.balance += payment.total;
+    account.movements.push({
+        transactionRef: 'Payment',
+        transaction: payment._id,
+        date: payment.createdAt,
+        description: `Payment from ${req.body.customer.name}`,
+        amount: payment.total
+    });
+    await account.save();
+
+    try {
+        await payment.save();
         res.status(200).json({
             message: 'Payment created.',
             payment

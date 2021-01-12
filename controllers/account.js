@@ -128,8 +128,13 @@ exports.updateAccount = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
-        account.name = req.body.name;
-        account.description = req.body.description;
+        if (req.query.restore) {
+            account.balance = 0;
+        }
+        else {
+            account.name = req.body.name;
+            account.description = req.body.description;
+        }
         await account.save();
         res.status(200).json({
             message: 'Account updated.',
