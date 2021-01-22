@@ -12,7 +12,7 @@ router.get(
   auth.isAdmin, auth.isPrime,
   purchaseController.getPurchase
 );
-router.get('/purchases-by-date', auth.isAdmin, purchaseController.getPurchasesByFilter);
+router.get('/purchases-by-filter', auth.isAdmin, purchaseController.getPurchasesByFilter);
 router.post('/print', purchaseController.createPDF);
 router.post(
   '/add',
@@ -34,6 +34,5 @@ router.delete(
   auth.isAdmin, auth.isPrime,
   purchaseController.deletePurchase
 );
-router.delete('/delete-multiple', auth.isAdmin, purchaseController.deletePurchases);
 
 module.exports = router;

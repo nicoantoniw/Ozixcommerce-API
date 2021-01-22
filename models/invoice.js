@@ -69,7 +69,9 @@ const invoiceSchema = new Schema({
   status: {
     type: String,
     required: true,
-    default: 'Unpaid'
+    default: 'Unpaid',
+    enum: ['Unpaid', 'Partially Paid', 'Paid'],
+
   },
   paid: {
     type: Number,

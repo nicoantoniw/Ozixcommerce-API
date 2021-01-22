@@ -471,62 +471,6 @@ exports.deleteInvoice = async (req, res, next) => {
   }
 };
 
-exports.deleteInvoices = async (req, res, next) => {
-  const invoices = req.body.invoices;
-  try {
-    for (let index = 0; index < invoices.length; index++) {
-      const element = invoices[index];
-      const invoice = await Invoice.findById(element._id);
-      for (let i = 0; i < invoice.details.length; i++) {
-        const detail = invoice.details[i];
-        let productId = detail.product._id;
-        if (detail.product.isVariant) {
-          productId = detail.product.productId;
-        }
-        const product = await Product.findById(productId);
-        if (!product) {
-          const error = new Error('Could not find any product');
-          error.statusCode = 404;
-        }
-        if (detail.product.isVariant) {
-          for (let i = 0; i < product.variants.length; i++) {
-            const variant = product.variants[i];
-            if (detail.product.sku == variant.sku) {
-              for (let y = 0; y < variant.locations.length; y++) {
-                const location = variant.locations[y];
-                if (detail.location == location.location.toString()) {
-                  location.quantity += detail.quantity;
-                  variant.stock += detail.quantity;
-                }
-              }
-            }
-          }
-        } else {
-          for (let i = 0; i < product.locations.length; i++) {
-            const location = product.locations[i];
-            if (detail.location == location.location.toString()) {
-              location.quantity += detail.quantity;
-              product.stock += detail.quantity;
-            }
-          }
-        }
-        await product.save();
-      }
-      await invoice.remove();
-    }
-    const totalInvoices = await Invoice.find().countDocuments();
-    res.status(200).json({
-      message: 'Invoices deleted.',
-      totalInvoices
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
 const decreaseStock = async (product, quantity, location) => {
   let productId = product._id;
   let notification;

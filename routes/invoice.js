@@ -13,6 +13,5 @@ router.post('/print', invoiceController.createPDF);
 router.post('/add', auth.isUser, invoiceController.addInvoice);
 router.patch('/activate/:invoiceId', auth.isAdmin, invoiceController.activateInvoice);
 router.delete('/delete/:invoiceId', auth.isAdmin, invoiceController.deleteInvoice);
-router.delete('/delete-multiple', auth.isAdmin, invoiceController.deleteInvoices);
 
 module.exports = router;

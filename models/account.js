@@ -28,7 +28,7 @@ const accountSchema = new Schema({
             },
             transactionRef: {
                 type: String,
-                enum: ['Payment', 'Bill', 'Invoice'],
+                enum: ['Payment', 'Bill', 'Invoice', 'Expense'],
                 required: true
             },
             date: {

@@ -68,6 +68,7 @@ const purchaseSchema = new Schema({
   status: {
     type: String,
     required: true,
+    enum: ['Pending', 'Approved', 'Billed'],
     default: 'Pending'
   },
   sent: {

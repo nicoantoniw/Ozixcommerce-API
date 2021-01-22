@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 
 const Payment = require('../models/payment');
 const Invoice = require('../models/invoice');
+const Bill = require('../models/bill');
 const Account = require('../models/account');
 
 exports.getPayments = async (req, res, next) => {
@@ -55,15 +56,19 @@ exports.addPayment = async (req, res, next) => {
     const payment = new Payment({
         reference: req.body.reference,
         method: req.body.method,
-        customer: req.body.customer._id,
         account: req.body.account,
         notes: req.body.notes,
         total: req.body.total,
         createdAt: req.body.createdAt,
         creator: req.groupId
     });
+    let receiver;
     if (req.body.invoice) {
-        payment.invoice = req.body.invoice;
+        payment.refTransaction = 'Invoice';
+        payment.transaction = req.body.invoice;
+        payment.refPerson = 'Customer';
+        payment.person = req.body.customer;
+        receiver = req.body.customer;
         const invoice = await Invoice.findById(req.body.invoice);
         if (invoice.total > payment.total) {
             invoice.status = 'Partially Paid';
@@ -85,24 +90,70 @@ exports.addPayment = async (req, res, next) => {
         let index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
         account.movements.splice(index, 1);
         await account.save();
+
+        // Bank Account
+        account = await Account.findById(req.body.account);
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance += payment.total;
+        account.movements.push({
+            transactionRef: 'Payment',
+            transaction: payment._id,
+            date: payment.createdAt,
+            description: `Payment from ${receiver}`,
+            amount: payment.total
+        });
+        await account.save();
         await invoice.save();
     }
-    // Bank Account
-    account = await Account.findById(req.body.account);
-    if (!account) {
-        const error = new Error('Could not find any account');
-        error.statusCode = 404;
-        throw error;
+    else if (req.body.bill) {
+        payment.refTransaction = 'Bill';
+        payment.transaction = req.body.bill;
+        payment.refPerson = 'Supplier';
+        payment.person = req.body.supplier;
+        receiver = req.body.supplier;
+        const bill = await Bill.findById(req.body.bill);
+        if (bill.total > payment.total) {
+            bill.status = 'Partially Paid';
+            bill.paid = payment.total;
+            bill.due = Math.round((bill.total - bill.paid + Number.EPSILON) * 100) / 100;
+        } else {
+            bill.status = 'Paid';
+            bill.paid = bill.total;
+            bill.due = 0;
+        }
+        // accounts payable
+        let account = await Account.findOne({ code: 2100 });
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= bill.total;
+        let index = account.movements.findIndex(movement => movement.transaction == bill._id.toString());
+        account.movements.splice(index, 1);
+        await account.save();
+        // Bank Account
+        account = await Account.findById(req.body.account);
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= payment.total;
+        account.movements.push({
+            transactionRef: 'Payment',
+            transaction: payment._id,
+            date: payment.createdAt,
+            description: `Payment to ${receiver}`,
+            amount: payment.total
+        });
+        await account.save();
+        await bill.save();
     }
-    account.balance += payment.total;
-    account.movements.push({
-        transactionRef: 'Payment',
-        transaction: payment._id,
-        date: payment.createdAt,
-        description: `Payment from ${req.body.customer.name}`,
-        amount: payment.total
-    });
-    await account.save();
 
     try {
         await payment.save();
