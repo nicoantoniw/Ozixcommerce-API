@@ -2,6 +2,8 @@ const { validationResult } = require('express-validator');
 const moment = require('moment');
 
 const Account = require('../models/account');
+const accountTransfer = require('../models/accountTransfer');
+const AccountTransfer = require('../models/accountTransfer');
 const Group = require('../models/group');
 const Payment = require('../models/payment');
 
@@ -148,57 +150,6 @@ exports.updateAccount = async (req, res, next) => {
     }
 };
 
-exports.addMovement = async (req, res, next) => {
-    let date = moment.utc().utcOffset(-3);
-    if (req.body.date) {
-        date = moment.utc(req.body.date).set('hour', 15);
-    }
-    const accountId = req.params.accountId;
-    let type = 'subtract';
-    let amount;
-    if (req.body.type === 'Ingreso') {
-        type = 'add';
-    }
-    const data = {
-        type,
-        description: req.body.description,
-        amount: Number(req.body.amount),
-        date
-    };
-    try {
-        const account = await Account.findById(accountId);
-        if (!account) {
-            const error = new Error('Could not find any register');
-            error.statusCode = 404;
-            throw error;
-        }
-        if (data.type === 'add') {
-            amount = parseFloat((data.amount).toFixed(2));
-            account.balance += amount;
-        } else {
-            amount = parseFloat((data.amount).toFixed(2));
-            account.balance -= amount;
-            if (account.balance < 0) {
-                const error = new Error('Account avaiable is lower than the amount required');
-                error.statusCode = 602;
-                throw error;
-            }
-        }
-        account.movements.push(data);
-        await account.save();
-        res.status(200).json({
-            message: 'Movement created.',
-        });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    }
-};
-
-
-
 exports.deleteAccount = async (req, res, next) => {
     const accountId = req.params.accountId;
     try {
@@ -225,16 +176,125 @@ exports.deleteAccount = async (req, res, next) => {
     }
 };
 
-exports.deleteAccounts = async (req, res, next) => {
-    const accounts = req.body.accounts;
+exports.getAccountTransfer = async (req, res, next) => {
+    const accountTransferId = req.params.accountTransferId;
     try {
-        for (let index = 0; index < accounts.length; index++) {
-            const element = accounts[index];
-            const account = await Account.findById(element._id);
-            await account.remove();
+        const accountTransfer = await AccountTransfer.findById(accountTransferId).populate('fromAccount', { name: 1 }).populate('toAccount', { name: 1 });
+        if (!accountTransfer) {
+            const error = new Error('No transfer found');
+            error.statusCode = 404;
+            throw error;
         }
         res.status(200).json({
-            message: 'Accounts deleted.',
+            accountTransfer
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
+exports.addAccountTransfer = async (req, res, next) => {
+    const accountTransfer = new AccountTransfer({
+        reference: req.body.accountTransfer.reference,
+        amount: req.body.accountTransfer.amount,
+        fromAccount: req.body.accountTransfer.fromAccount,
+        toAccount: req.body.accountTransfer.toAccount,
+        createdAt: req.body.accountTransfer.createdAt,
+        creator: req.groupId
+    });
+    try {
+        // From Account
+        let account = await Account.findById(accountTransfer.fromAccount);
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= accountTransfer.amount;
+        account.movements.push({
+            transactionRef: 'AccountTransfer',
+            transaction: accountTransfer._id,
+            date: accountTransfer.createdAt,
+            description: `Transfer to account '${req.body.accountTransfer.toAccount.name}'`,
+            amount: accountTransfer.amount
+        });
+        await account.save();
+
+        // To Account
+        account = await Account.findById(accountTransfer.toAccount);
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance += accountTransfer.amount;
+        account.movements.push({
+            transactionRef: 'AccountTransfer',
+            transaction: accountTransfer._id,
+            date: accountTransfer.createdAt,
+            description: `Transfer from account '${req.body.accountTransfer.fromAccount.name}'`,
+            amount: accountTransfer.amount
+        });
+        await account.save();
+
+        await accountTransfer.save();
+        res.status(200).json({
+            message: 'Transfer created.',
+            account
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
+exports.deleteAccountTransfer = async (req, res, next) => {
+    const accountTransferId = req.params.accountTransferId;
+    try {
+        const accountTransfer = await AccountTransfer.findById(accountTransferId);
+        if (!accountTransfer) {
+            const error = new Error('Could not find transfer');
+            error.statusCode = 404;
+            throw error;
+        }
+        if (accountTransfer.creator._id.toString() !== req.groupId) {
+            const error = new Error('Not authorized.');
+            error.statusCode = 403;
+            throw error;
+        }
+
+        // From Account
+        let account = await Account.findById(accountTransfer.fromAccount);
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance += accountTransfer.amount;
+        let index = account.movements.findIndex(movement => movement.transaction == accountTransfer._id.toString());
+        account.movements.splice(index, 1);
+        await account.save();
+
+        // To Account
+        account = await Account.findById(accountTransfer.toAccount);
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= accountTransfer.amount;
+        index = account.movements.findIndex(movement => movement.transaction == accountTransfer._id.toString());
+        account.movements.splice(index, 1);
+        await account.save();
+
+        await accountTransfer.remove();
+        res.status(200).json({
+            message: 'Transfer deleted.',
         });
     } catch (err) {
         if (!err.statusCode) {

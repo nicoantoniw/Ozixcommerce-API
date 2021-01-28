@@ -13,15 +13,20 @@ router.get(
     auth.isUser,
     accountController.getAccount
 );
+router.get(
+    '/accounts/transfer/:accountTransferId',
+    auth.isUser,
+    accountController.getAccountTransfer
+);
 router.post(
     '/add',
     auth.isSeller,
     accountController.addAccount
 );
 router.post(
-    '/add-movement/:accountId',
+    '/add-transfer',
     auth.isSeller,
-    accountController.addMovement
+    accountController.addAccountTransfer
 );
 router.put(
     '/update/:accountId',
@@ -34,9 +39,9 @@ router.delete(
     accountController.deleteAccount
 );
 router.delete(
-    '/delete-multiple',
+    '/delete-transfer/:accountTransferId',
     auth.isAdmin,
-    accountController.deleteAccounts
+    accountController.deleteAccountTransfer
 );
 
 module.exports = router;
