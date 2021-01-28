@@ -18,7 +18,6 @@ const purchaseSchema = new Schema({
   },
   description: {
     type: String,
-    required: true
   },
   number: {
     type: String,

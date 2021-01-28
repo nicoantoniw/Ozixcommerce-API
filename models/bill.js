@@ -16,6 +16,9 @@ const billSchema = new Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String,
+    },
     total: {
         type: Number,
         required: true

@@ -17,15 +17,16 @@ router.post(
     auth.isAdmin,
     paymentController.addPayment
 );
+router.post('/print', paymentController.createPDF);
 // router.put(
 //     '/update/:paymentId',
 //     auth.isAdmin,
 //     paymentController.updatePayment
 // );
-// router.delete(
-//     '/delete/:paymentId',
-//     auth.isAdmin,
-//     paymentController.deletePayment
-// );
+router.delete(
+    '/delete/:paymentId',
+    auth.isAdmin,
+    paymentController.deletePayment
+);
 
 module.exports = router;

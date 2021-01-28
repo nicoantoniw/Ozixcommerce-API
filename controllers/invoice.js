@@ -375,6 +375,12 @@ exports.deleteInvoice = async (req, res, next) => {
       throw error;
     }
 
+    if (invoice.paid > 0) {
+      const error = new Error('This invoice cannot be deleted');
+      error.statusCode = 101;
+      throw error;
+    }
+
     // accounts receivable
     let account = await Account.findOne({ code: 1100 });
     if (!account) {

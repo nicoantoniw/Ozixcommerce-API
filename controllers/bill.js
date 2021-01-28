@@ -230,6 +230,11 @@ exports.deleteBill = async (req, res, next) => {
             error.statusCode = 403;
             throw error;
         }
+        if (invoice.paid > 0) {
+            const error = new Error('This bill cannot be deleted');
+            error.statusCode = 101;
+            throw error;
+        }
 
         // accounts payable
         let account = await Account.findOne({ code: 2100 });
