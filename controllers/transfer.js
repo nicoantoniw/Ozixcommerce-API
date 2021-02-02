@@ -99,21 +99,25 @@ exports.transferUnassignedStock = async (req, res, next) => {
             throw error;
         }
         if (variantSku) {
-            product.variants.forEach((variant) => {
+            for (let index = 0; index < product.variants.length; index++) {
+                const variant = product.variants[index];
                 if (variant.sku == variantSku) {
-                    variant.locations.forEach(location => {
+                    for (let index2 = 0; index2 < variant.locations.length; index2++) {
+                        const location = variant.locations[index2];
                         if (location._id == locationId) {
                             location.quantity += Number(stock);
                         }
-                    });
+                    }
                 }
-            });
+
+            }
         } else {
-            product.locations.forEach(location => {
+            for (let index3 = 0; index3 < product.locations.length; index3++) {
+                const location = product.locations[index3];
                 if (location._id == locationId) {
                     location.quantity += Number(stock);
                 }
-            });
+            }
         }
         await product.save();
         res.status(200).json({
@@ -335,7 +339,6 @@ const transferStock = async (items, origin, destination, groupId) => {
         for (let index = 0; index < items.length; index++) {
             notthere = true;
             const item = items[index];
-            console.log(item);
             productId = item.product;
             const product = await Product.findById(productId).populate('locations.location');
             if (!product) {
@@ -352,14 +355,15 @@ const transferStock = async (items, origin, destination, groupId) => {
                 for (let q = 0; q < product.variants.length; q++) {
                     const variant = product.variants[q];
                     if (variant.sku == item.variantSku) {
-                        variant.locations.forEach(location => {
+                        for (let index = 0; index < variant.locations.length; index++) {
+                            const location = variant.locations[index];
                             if (origin.toString() === location.location._id.toString()) {
                                 location.quantity -= Number(item.quantity);
                             } else if (destination.toString() === location.location._id.toString()) {
                                 location.quantity += Number(item.quantity);
                                 notthere = false;
                             }
-                        });
+                        }
                         if (notthere && destination) {
                             const location = await Location.findById(destination);
                             variant.locations.push({
@@ -371,14 +375,15 @@ const transferStock = async (items, origin, destination, groupId) => {
                     }
                 };
             } else {
-                product.locations.forEach(location => {
+                for (let index = 0; index < product.locations.length; index++) {
+                    const location = product.locations[index];
                     if (origin.toString() === location.location._id.toString()) {
                         location.quantity -= Number(item.quantity);
                     } else if (destination.toString() === location.location._id.toString()) {
                         location.quantity += Number(item.quantity);
                         notthere = false;
                     }
-                });
+                }
                 if (notthere && destination) {
                     const location = await Location.findById(destination);
                     product.locations.push({

@@ -6,7 +6,7 @@ const User = require('../models/user');
 const WebsiteUser = require('../models/websiteUser');
 const Group = require('../models/group');
 const Mac = require('../models/mac');
-const Person = require('../models/person');
+const Contact = require('../models/contact');
 
 exports.login = async (req, res, next) => {
   const username = req.body.username;
@@ -252,7 +252,7 @@ exports.websiteSignup = async (req, res, next) => {
     });
     group.websiteUsers.push(user);
 
-    const person = new Person({
+    const contact = new Contact({
       name: `${name} ${surname}`,
       type: 'customer',
       description: 'Cliente de pagina web',
@@ -263,8 +263,8 @@ exports.websiteSignup = async (req, res, next) => {
       creator: '5ea9c4a058eb5371b70d4dc6'
     });
     await group.save();
-    await person.save();
-    user.clientId = person._id;
+    await contact.save();
+    user.clientId = contact._id;
     await user.save();
     res.status(200).json({ message: 'User Created' });
   } catch (err) {

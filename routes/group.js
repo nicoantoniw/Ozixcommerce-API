@@ -10,7 +10,7 @@ router.get('/groups/group', auth.isUser, groupController.getGroup);
 router.get('/sale-points', auth.isUser, groupController.getSalePoints);
 router.post('/add', auth.isUser, groupController.addGroup);
 router.post('/add-sale-point', auth.isUser, groupController.addSalePoint);
-router.put('/update', auth.isAdmin, groupController.updatePersonalData);
+router.put('/update', auth.isAdmin, groupController.updateContactalData);
 router.put('/update-sale-point', auth.isAdmin, groupController.updateDefaultSalePoint);
 router.delete('/delete-sale-point', auth.isAdmin, groupController.deleteSalePoint);
 

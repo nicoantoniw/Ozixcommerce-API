@@ -218,7 +218,8 @@ exports.addMassiveProducts = async (req, res, next) => {
             data[i].percentage = parseFloat(Number(req.body.sellingPrice) * 100 / Number(req.body.price)).toFixed(2);
           }
           data[i].creator = req.groupId;
-          products.forEach(product => {
+          for (let index = 0; index < products.length; index++) {
+            const product = products[index];
             if (product.sku === data[i].codigo || product.name === data[i].nombre) {
               product.sellingPrice = data[i].sellingPrice;
               product.stock = data[i].stock;
@@ -229,7 +230,8 @@ exports.addMassiveProducts = async (req, res, next) => {
               product.save().then(success => {
               }).catch(err => console.log(err));
             }
-          });
+
+          }
         };
         data = data.filter(product => {
           for (let i = 0; i < data2.length; i++) {
@@ -312,13 +314,14 @@ exports.updateProduct = async (req, res, next) => {
         product.unassignedStock = product.stock - totalStock;
       }
     } else if (req.body.deleteLocationsOnly) {
-      product.locations.forEach(location => {
+      for (let index = 0; index < product.locations.length; index++) {
+        const location = product.locations[index];
         if (location._id == req.body.item._id) {
           index = product.locations.indexOf(location);
           product.unassignedStock += location.quantity;
           product.locations.splice(index, 1);
         }
-      });
+      }
     } else if (req.body.stockOnly) {
       product.stock += Number(req.body.stock);
       product.unassignedStock += Number(req.body.stock);
@@ -343,10 +346,12 @@ exports.updateProduct = async (req, res, next) => {
         product.unassignedStock = product.stock - totalStock;
       }
       if (product.variants.length > 0) {
-        product.variants.forEach(variant => {
+        for (let index = 0; index < product.variants.length; index++) {
+          const variant = product.variants[index];
           variant.category = product.category;
           variant.brand = product.brand;
-        });
+
+        }
       }
       if (req.body.calculatedPriceFlag && !product.hasVariants) {
         product.totalDiscounts = 0;
@@ -476,11 +481,12 @@ exports.addImage = async (req, res, next) => {
         throw err;
       }
       if (variantSku) {
-        product.variants.forEach(variant => {
+        for (let index = 0; index < product.variants.length; index++) {
+          const variant = product.variants[index];
           if (variant.sku == variantSku) {
             variant.image = data.Location;
           }
-        });
+        }
       } else {
         product.image = data.Location;
       }
@@ -645,11 +651,12 @@ exports.getProductVariant = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    product.variants.forEach(item => {
+    for (let index = 0; index < product.variants.length; index++) {
+      const item = product.variants[index];
       if (item._id == variantId) {
         variant = item;
       }
-    });
+    }
     res.status(200).json({
       variant
     });
@@ -684,9 +691,10 @@ exports.addVariant = async (req, res, next) => {
       throw error;
     }
     name = product.name;
-    req.body.values.forEach(value => {
+    for (let index = 0; index < req.body.values.length; index++) {
+      const value = req.body.values[index];
       name += ` - ${value.value} `;
-    });
+    }
     const variant = {
       name: name,
       brand: product.brand,
@@ -725,9 +733,11 @@ exports.addVariant = async (req, res, next) => {
       variant.totalDiscounts += discount;
     }
     product.hasVariants = true;
-    product.variants.forEach(variant => {
+    for (let index = 0; index < product.variants.length; index++) {
+      const variant = product.variants[index];
       totalStock2 += variant.stock;
-    });
+
+    }
     if (totalStock2 > product.stock) {
       product.stock = totalStock2;
     }
@@ -769,7 +779,8 @@ exports.updateVariant = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    product.variants.forEach(variant => {
+    for (let index = 0; index < product.variants.length; index++) {
+      const variant = product.variants[index];
       totalStock2 += (variant.stock);
       if (variant.sku == req.body.sku) {
         totalStock2 -= variant.stock;
@@ -779,8 +790,8 @@ exports.updateVariant = async (req, res, next) => {
             name: req.body.name,
             quantity: req.body.quantity
           });
-          for (let index = 0; index < variant.locations.length; index++) {
-            totalStock += Number(variant.locations[index].quantity);
+          for (let index2 = 0; index < variant.locations.length; index2++) {
+            totalStock += Number(variant.locations[index2].quantity);
           }
           if (variant.stock < totalStock) {
             variant.stock = totalStock;
@@ -789,22 +800,26 @@ exports.updateVariant = async (req, res, next) => {
             variant.unassignedStock = variant.stock - totalStock;
           }
         } else if (req.body.deleteLocationsOnly) {
-          variant.locations.forEach(location => {
+          for (let index3 = 0; index3 < variant.locations.length; index3++) {
+            const location = variant.locations[index3];
             if (location._id == req.body.item._id) {
               index = variant.locations.indexOf(location);
               variant.unassignedStock += location.quantity;
               variant.locations.splice(index, 1);
             }
-          });
+
+          }
         } else if (req.body.stockOnly) {
           variant.stock += Number(req.body.stock);
           product.stock += Number(req.body.stock);
           variant.unassignedStock += Number(req.body.stock);
         } else {
           name = product.name;
-          req.body.values.forEach(value => {
+          for (let index4 = 0; index4 < req.body.values.length; index4++) {
+            const value = req.body.values[index4];
             name += ` - ${value.value} `;
-          });
+
+          }
           variant.name = name;
           variant.values = req.body.values;
           variant.stock = req.body.stock;
@@ -846,7 +861,7 @@ exports.updateVariant = async (req, res, next) => {
           }
         }
       }
-    });
+    }
     product.stock = totalStock2;
     await product.save();
     res.status(200).json({
@@ -877,11 +892,12 @@ exports.deleteVariant = async (req, res, next) => {
       error.statusCode = 403;
       throw error;
     }
-    product.variants.forEach((variant, index) => {
+    for (let i = 0; i < product.variants.length; i++) {
+      const variant = product.variants[i];
       if (variant._id == variantId) {
-        indexo = index;
+        indexo = i;
       }
-    });
+    }
     product.variants.splice(indexo, 1);
     if (product.variants.length < 1) {
       product.hasVariants = false;
@@ -914,11 +930,13 @@ exports.deleteVariants = async (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      product.variants.forEach((variant1, index) => {
+      for (let i = 0; i < product.variants.length; i++) {
+        const variant = product.variants[i];
         if (variant1._id == variant._id) {
-          indexo = index;
+          indexo = i;
         }
-      });
+
+      }
       product.variants.splice(indexo, 1);
       if (product.variants.length < 1) {
         product.hasVariants = false;

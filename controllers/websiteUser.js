@@ -268,7 +268,8 @@ exports.addMercadopagoSale = (req, res, next) => {
         "auto_return": 'approved'
     };
     const cartItems = req.body.items;
-    cartItems.forEach(item => {
+    for (let index = 0; index < cartItems.length; index++) {
+        const item = cartItems[index];
         const data = {
             title: item.name,
             unit_price: item.price / item.quantity,
@@ -277,7 +278,7 @@ exports.addMercadopagoSale = (req, res, next) => {
             currency_id: 'ARS'
         };
         preference.items.push(data);
-    });
+    }
     mercadopago.preferences.create(preference).then((response) => {
         global.init_point = response.body.init_point;
         const url = global.init_point;

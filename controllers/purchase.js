@@ -8,6 +8,7 @@ const AWS = require('aws-sdk');
 
 const Purchase = require('../models/purchase');
 const Bill = require('../models/bill');
+const Contact = require('../models/contact');
 const Product = require('../models/product');
 const Group = require('../models/group');
 const Account = require('../models/account');
@@ -25,7 +26,7 @@ exports.getPurchases = async (req, res, next) => {
       creator: req.groupId
     }).countDocuments();
     const purchases = await Purchase.find({ creator: req.groupId })
-      .populate('supplier', { company: 1, _id: 1, email: 1 })
+      .populate('supplier', { name: 1, _id: 1, email: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .sort({ number: -1 });
 
@@ -77,42 +78,42 @@ exports.getPurchasesByFilter = async (req, res, next) => {
   try {
     if (dateFrom === null && dateTo === null && status === '' && supplier != '') {
       purchases = await Purchase.find({ supplier: supplier, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && supplier === '' && status != '') {
       purchases = await Purchase.find({ status: status, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (supplier === '' && status === '' && dateFrom != null && dateTo != null) {
       purchases = await Purchase.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (status === '' && dateFrom != null && dateTo != null && supplier != '') {
       purchases = await Purchase.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, supplier: supplier, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (supplier === '' && dateFrom != null && dateTo != null && status != '') {
       purchases = await Purchase.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && supplier != '' && status != '') {
       purchases = await Purchase.find({ supplier: supplier, status: status, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && supplier != '' && status != '') {
       purchases = await Purchase.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, supplier: supplier, creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     } else {
       purchases = await Purchase.find({ creator: req.groupId })
-        .populate('supplier', { company: 1, _id: 1 })
+        .populate('supplier', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .sort({ number: -1 });
     }
@@ -137,7 +138,7 @@ exports.getPurchase = async (req, res, next) => {
   const purchaseId = req.params.purchaseId;
   try {
     const purchase = await Purchase.findById(purchaseId)
-      .populate('supplier', { company: 1, _id: 1, email: 1 })
+      .populate('supplier', { name: 1, _id: 1, email: 1 })
       .populate('creator', { name: 1, _id: 1 });
     if (!purchase) {
       const error = new Error('No purchase found');
@@ -177,6 +178,16 @@ exports.addPurchase = async (req, res, next) => {
       supplier: req.body.purchase.supplier,
       createdAt: moment.utc(req.body.purchase.createdAt)
     });
+
+    const contact = await Contact.findById(req.body.purchase.supplier);
+    if (contact.type === 'None') {
+      contact.type = 'Supplier';
+      await contact.save();
+    } else if (contact.type === 'Customer') {
+      contact.type = 'All';
+      await contact.save();
+    }
+
     await purchase.save();
     res.status(200).json({
       message: 'Purchase created.',
@@ -727,10 +738,6 @@ exports.createPDF = (req, res, next) => {
 };
 
 const sendPurchase = (subject, sender, receiver, filename, html) => {
-  console.log(subject,
-    sender,
-    receiver,
-    filename);
   const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/purchase.pdf`);
   let ses_mail = "From: <" + sender + ">\n";
   ses_mail += "To: " + receiver + "\n";

@@ -8,7 +8,7 @@ const quoteSchema = new Schema({
     },
     customer: {
         type: Schema.Types.ObjectId,
-        ref: 'Person',
+        ref: 'Contact',
         required: false
     },
     description: {

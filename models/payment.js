@@ -10,13 +10,13 @@ const paymentSchema = new Schema({
         type: String,
         required: true
     },
-    refPerson: {
+    refContact: {
         type: String,
         enum: ['Customer', 'Supplier'],
     },
-    person: {
+    contact: {
         type: Schema.Types.ObjectId,
-        ref: 'Person',
+        ref: 'Contact',
     },
     refTransaction: {
         type: String,
@@ -36,6 +36,10 @@ const paymentSchema = new Schema({
     total: {
         type: Number,
         required: true
+    },
+    type: {
+        type: String,
+        default: 'Payment'
     },
     creator: {
         type: Schema.Types.ObjectId,

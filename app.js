@@ -17,7 +17,7 @@ const paymentRoutes = require('./routes/payment');
 const expenseRoutes = require('./routes/expense');
 const purchaseRoutes = require('./routes/purchase');
 const billRoutes = require('./routes/bill');
-const personRoutes = require('./routes/person');
+const contactRoutes = require('./routes/contact');
 const sellerRoutes = require('./routes/seller');
 const macRoutes = require('./routes/mac');
 const groupRoutes = require('./routes/group');
@@ -60,7 +60,7 @@ app.use(
 );
 
 app.use('/api/auth', authRoutes);
-app.use('/api/person', personRoutes);
+app.use('/api/contact', contactRoutes);
 app.use('/api/mac', macRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/category', categoryRoutes);

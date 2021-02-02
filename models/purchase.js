@@ -9,7 +9,7 @@ const purchaseSchema = new Schema({
   },
   supplier: {
     type: Schema.Types.ObjectId,
-    ref: 'Person',
+    ref: 'Contact',
     required: false
   },
   account: {

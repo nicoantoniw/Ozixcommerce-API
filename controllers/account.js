@@ -17,7 +17,7 @@ exports.getAccounts = async (req, res, next) => {
             .sort({ createdAt: 1 });
 
         if (totalAccounts === 0) {
-            const error = new Error('No cash registers found');
+            const error = new Error('No accounts found');
             error.statusCode = 404;
             throw error;
         }

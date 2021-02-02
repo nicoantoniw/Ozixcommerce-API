@@ -8,6 +8,7 @@ const AWS = require('aws-sdk');
 
 const Invoice = require('../models/invoice');
 const Product = require('../models/product');
+const Contact = require('../models/contact');
 const Group = require('../models/group');
 const Account = require('../models/account');
 const Notification = require('../models/notification');
@@ -229,6 +230,16 @@ exports.addInvoice = async (req, res, next) => {
       dueDate: moment.utc(req.body.invoice.dueDate),
       createdAt: moment.utc(req.body.invoice.createdAt)
     });
+
+    const contact = await Contact.findById(req.body.invoice.customer);
+    if (contact.type === 'None') {
+      contact.type = 'Customer';
+      await contact.save();
+    } else if (contact.type === 'Supplier') {
+      contact.type = 'All';
+      await contact.save();
+    }
+
     if (req.body.fromQuote) {
       const invoices = await Invoice.find({ creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })

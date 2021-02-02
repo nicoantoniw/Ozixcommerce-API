@@ -8,6 +8,7 @@ const AWS = require('aws-sdk');
 
 const Bill = require('../models/bill');
 const Product = require('../models/product');
+const Contact = require('../models/contact');
 const Group = require('../models/group');
 const Account = require('../models/account');
 const Notification = require('../models/notification');
@@ -25,7 +26,7 @@ exports.getBills = async (req, res, next) => {
         }).countDocuments();
         const bills = await Bill.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('supplier', { company: 1, email: 1, _id: 1 })
+            .populate('supplier', { name: 1, email: 1, _id: 1 })
             .sort({ number: -1 });
 
         if (totalBills === 0) {
@@ -61,12 +62,12 @@ exports.getBillsByFilter = async (req, res, next) => {
     try {
         if (dateFrom != null && dateTo != null) {
             bills = await Bill.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
         } else {
             bills = await Bill.find({ creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
         }
@@ -86,7 +87,7 @@ exports.getBill = async (req, res, next) => {
     const billId = req.params.billId;
     try {
         const bill = await Bill.findById(billId)
-            .populate('supplier', { company: 1, _id: 1 })
+            .populate('supplier', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 });
         if (!bill) {
             const error = new Error('No bill found');
@@ -123,13 +124,21 @@ exports.addBill = async (req, res, next) => {
             discounts: Number(req.body.bill.discounts),
             creator: req.groupId,
             supplier: req.body.bill.supplier,
-            customer: req.body.bill.customer,
             dueDate: moment.utc(req.body.bill.dueDate),
             createdAt: moment.utc(req.body.bill.createdAt)
         });
+
+        const contact = await Contact.findById(req.body.bill.supplier);
+        if (contact.type === 'None') {
+            contact.type = 'Supplier';
+            await contact.save();
+        } else if (contact.type === 'Customer') {
+            contact.type = 'All';
+            await contact.save();
+        }
         if (req.body.fromPurchaseOrder) {
             const bills = await Bill.find({ creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
             const bill2 = bills[0];

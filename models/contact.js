@@ -1,20 +1,25 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const personSchema = new Schema({
+const contactSchema = new Schema({
   name: {
+    type: String,
+    required: true
+  },
+  personName: {
     type: String,
     required: false
   },
-  notes: {
+  personLastName: {
     type: String,
     required: false
   },
   type: {
     type: String,
-    required: false
+    enum: ['None', 'Supplier', 'Customer', 'All'],
+    default: 'None'
   },
-  company: {
+  notes: {
     type: String,
     required: false
   },
@@ -113,4 +118,4 @@ const personSchema = new Schema({
   }
 });
 
-module.exports = mongoose.model('Person', personSchema);
+module.exports = mongoose.model('Contact', contactSchema);

@@ -7,6 +7,7 @@ const moment = require('moment');
 const AWS = require('aws-sdk');
 
 const Quote = require('../models/quote');
+const Contact = require('../models/contact');
 const Product = require('../models/product');
 const Group = require('../models/group');
 const Account = require('../models/account');
@@ -144,6 +145,16 @@ exports.addQuote = async (req, res, next) => {
             dueDate: moment.utc(req.body.quote.dueDate),
             createdAt: moment.utc(req.body.quote.createdAt)
         });
+
+        const contact = await Contact.findById(req.body.quote.customer);
+        if (contact.type === 'None') {
+            contact.type = 'Customer';
+            await contact.save();
+        } else if (contact.type === 'Supplier') {
+            contact.type = 'All';
+            await contact.save();
+        }
+
         await quote.save();
         res.status(200).json({
             message: 'quote created.',

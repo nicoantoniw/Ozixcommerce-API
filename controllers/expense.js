@@ -8,6 +8,7 @@ const AWS = require('aws-sdk');
 
 const Expense = require('../models/expense');
 const Bill = require('../models/bill');
+const Contact = require('../models/contact');
 const Product = require('../models/product');
 const Group = require('../models/group');
 const Account = require('../models/account');
@@ -25,7 +26,7 @@ exports.getExpenses = async (req, res, next) => {
             creator: req.groupId
         }).countDocuments();
         let expenses = await Expense.find({ creator: req.groupId })
-            .populate('supplier', { company: 1, _id: 1, email: 1 })
+            .populate('supplier', { name: 1, _id: 1, email: 1 })
             .populate('creator', { name: 1, _id: 1 })
             .sort({ number: -1 });
 
@@ -64,22 +65,22 @@ exports.getExpensesByFilter = async (req, res, next) => {
     try {
         if (dateFrom === null && dateTo === null && supplier != '') {
             expenses = await Expense.find({ supplier: supplier, creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
         } else if (supplier === '' && dateFrom != null && dateTo != null) {
             expenses = await Expense.find({ paymentDate: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
         } else if (dateFrom != null && dateTo != null && supplier != '') {
             expenses = await Expense.find({ paymentDate: { '$gte': dateFrom, '$lte': dateTo }, supplier: supplier, creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
         } else {
             expenses = await Expense.find({ creator: req.groupId })
-                .populate('supplier', { company: 1, _id: 1 })
+                .populate('supplier', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ number: -1 });
         }
@@ -99,7 +100,7 @@ exports.getExpense = async (req, res, next) => {
     const expenseId = req.params.expenseId;
     try {
         const expense = await Expense.findById(expenseId)
-            .populate('supplier', { company: 1, _id: 1, email: 1 })
+            .populate('supplier', { name: 1, _id: 1, email: 1 })
             .populate('creator', { name: 1, _id: 1 });
         if (!expense) {
             const error = new Error('No expense found');
@@ -140,6 +141,16 @@ exports.addExpense = async (req, res, next) => {
             paymentMethod: req.body.expense.method,
             paymentDate: req.body.expense.paymentDate,
         });
+
+        const contact = await Contact.findById(req.body.expense.supplier);
+        if (contact.type === 'None') {
+            contact.type = 'Supplier';
+            await contact.save();
+        } else if (contact.type === 'Customer') {
+            contact.type = 'All';
+            await contact.save();
+        }
+
         // bank account
         let account = await Account.findById(accountId);
         if (!account) {
@@ -152,7 +163,7 @@ exports.addExpense = async (req, res, next) => {
             transactionRef: 'Expense',
             transaction: expense._id,
             date: expense.paymentDate,
-            description: `Expense payed to ${req.body.expense.supplier.company}`,
+            description: `Expense payed to ${req.body.expense.supplier.name}`,
             amount: expense.total
         });
         await account.save();
@@ -628,10 +639,6 @@ exports.createPDF = (req, res, next) => {
 };
 
 const sendExpense = (subject, sender, receiver, filename, html) => {
-    console.log(subject,
-        sender,
-        receiver,
-        filename);
     const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/expense.pdf`);
     let ses_mail = "From: <" + sender + ">\n";
     ses_mail += "To: " + receiver + "\n";

@@ -84,7 +84,7 @@ exports.getSalePoints = async (req, res, next) => {
     }
 };
 
-exports.updatePersonalData = async (req, res, next) => {
+exports.updateContactalData = async (req, res, next) => {
     const data = {
         province: req.body.province,
         city: req.body.city,
@@ -92,7 +92,7 @@ exports.updatePersonalData = async (req, res, next) => {
         zip: req.body.zip,
         apartment: req.body.apartment,
         category: req.body.category,
-        personeria: req.body.personeria,
+        contacteria: req.body.contacteria,
         cuit: req.body.cuit,
         activitiesDate: req.body.activitiesDate,
         socialName: req.body.socialName,
@@ -114,7 +114,7 @@ exports.updatePersonalData = async (req, res, next) => {
         group.zip = data.zip;
         group.apartment = data.apartment;
         group.category = data.category;
-        group.personeria = data.personeria;
+        group.contacteria = data.contacteria;
         group.cuit = data.cuit;
         group.activitiesDate = data.activitiesDate;
         group.socialName = data.socialName;

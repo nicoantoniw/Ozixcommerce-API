@@ -173,11 +173,13 @@ exports.changeCategories = async (req, res, next) => {
     const products = req.body.products;
     const category = req.body.category;
     try {
-        products.forEach(async (element) => {
+        for (let index = 0; index < products.length; index++) {
+            const element = products[index];
             const product = await Product.findById(element._id);
             product.category = category;
             await product.save();
-        });
+
+        }
         res.status(200).json({
             message: 'Products updated.',
         });

@@ -73,7 +73,7 @@ const websiteUserSchema = new Schema({
     },
     clientId: {
         type: Schema.Types.ObjectId,
-        ref: 'Person',
+        ref: 'Contact',
         required: false
     },
     group: {

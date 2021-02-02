@@ -77,11 +77,30 @@ exports.addPayment = async (req, res, next) => {
             creator: req.groupId
         });
         let receiver;
-        if (req.body.invoice) {
+        if (req.body.receiveMoney) {
+            payment.contact = req.body.contact;
+            // Bank Account
+            account = await Account.findById(req.body.account);
+            if (!account) {
+                const error = new Error('Could not find any account');
+                error.statusCode = 404;
+                throw error;
+            }
+            account.balance += payment.total;
+            account.movements.push({
+                transactionRef: 'Payment',
+                transaction: payment._id,
+                date: payment.createdAt,
+                description: `Payment from ${req.body.contact.name}`,
+                amount: payment.total
+            });
+            await account.save();
+
+        } else if (req.body.invoice) {
             payment.refTransaction = 'Invoice';
             payment.transaction = req.body.invoice;
-            payment.refPerson = 'Customer';
-            payment.person = req.body.customer;
+            payment.refContact = 'Customer';
+            payment.contact = req.body.customer;
             receiver = req.body.customer.name;
             const invoice = await Invoice.findById(req.body.invoice);
             if (invoice.due > 0 && payment.total <= invoice.due) {
@@ -129,13 +148,12 @@ exports.addPayment = async (req, res, next) => {
                 await account.save();
                 await invoice.save();
             }
-        }
-        else if (req.body.bill) {
+        } else if (req.body.bill) {
             payment.refTransaction = 'Bill';
             payment.transaction = req.body.bill;
-            payment.refPerson = 'Supplier';
-            payment.person = req.body.supplier;
-            receiver = req.body.supplier.company;
+            payment.refContact = 'Supplier';
+            payment.contact = req.body.supplier;
+            receiver = req.body.supplier.name;
             const bill = await Bill.findById(req.body.bill);
             if (bill.due > 0 && payment.total <= bill.due) {
                 if (bill.due > payment.total) {

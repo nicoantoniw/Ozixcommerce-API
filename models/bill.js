@@ -9,7 +9,7 @@ const billSchema = new Schema({
     },
     supplier: {
         type: Schema.Types.ObjectId,
-        ref: 'Person',
+        ref: 'Contact',
         required: false
     },
     number: {
