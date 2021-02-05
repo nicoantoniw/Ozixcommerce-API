@@ -33,9 +33,6 @@ router.post(
     body('sku')
       .trim()
       .isAlphanumeric(),
-    body('stock')
-      .trim()
-      .isNumeric()
   ],
   auth.isSeller,
   productController.addProduct
@@ -67,10 +64,6 @@ router.put(
     body('price')
       .trim()
       .isFloat(),
-
-    body('stock')
-      .trim()
-      .isNumeric()
   ],
   auth.isSeller,
   productController.updateProduct

@@ -59,6 +59,10 @@ const productSchema = new Schema({
     type: Number,
     default: 0
   },
+  trackItem: {
+    type: Boolean,
+    default: true
+  },
   locations: [
     {
       location: {
@@ -81,7 +85,6 @@ const productSchema = new Schema({
   costOfGoodsAccount: {
     type: Schema.Types.ObjectId,
     ref: 'Account',
-    required: true
   },
   hasVariants: {
     type: Boolean,
@@ -147,6 +150,10 @@ const productSchema = new Schema({
     unassignedStock: {
       type: Number,
       default: 0
+    },
+    trackItem: {
+      type: Boolean,
+      default: true
     },
     hasImage: {
       type: Boolean,

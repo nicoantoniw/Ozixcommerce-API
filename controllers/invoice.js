@@ -209,6 +209,7 @@ exports.getInvoice = async (req, res, next) => {
 
 exports.addInvoice = async (req, res, next) => {
   let amount;
+  let result;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect');
@@ -286,7 +287,9 @@ exports.addInvoice = async (req, res, next) => {
 
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
-      const result = await decreaseStock(detail.product, Number(detail.quantity), detail.location);
+      if (detail.product.trackItem) {
+        result = await decreaseStock(detail.product, Number(detail.quantity), detail.location);
+      }
       if (result) {
         const notification = new Notification({
           description: `Product '${detail.product.name}' ran out of stock in location '${result}'`,
@@ -313,21 +316,23 @@ exports.addInvoice = async (req, res, next) => {
       await account.save();
 
       // product cost of goods account
-      account = await Account.findById(detail.product.costOfGoodsAccount);
-      if (!account) {
-        const error = new Error('Could not find any account');
-        error.statusCode = 404;
-        throw error;
+      if (detail.product.trackItem) {
+        account = await Account.findById(detail.product.costOfGoodsAccount);
+        if (!account) {
+          const error = new Error('Could not find any account');
+          error.statusCode = 404;
+          throw error;
+        }
+        account.balance += detail.product.price * detail.quantity;
+        account.movements.push({
+          transactionRef: 'Invoice',
+          transaction: invoice._id,
+          date: invoice.createdAt,
+          description: `Invoice # ${invoice.number}`,
+          amount: detail.product.price * detail.quantity
+        });
+        await account.save();
       }
-      account.balance += detail.product.price * detail.quantity;
-      account.movements.push({
-        transactionRef: 'Invoice',
-        transaction: invoice._id,
-        date: invoice.createdAt,
-        description: `Invoice # ${invoice.number}`,
-        amount: detail.product.price * detail.quantity
-      });
-      await account.save();
     }
     await invoice.save();
     res.status(200).json({
@@ -406,38 +411,9 @@ exports.deleteInvoice = async (req, res, next) => {
 
     for (let i = 0; i < invoice.details.length; i++) {
       const detail = invoice.details[i];
-      let productId = detail.product._id;
-      if (detail.product.isVariant) {
-        productId = detail.product.productId;
+      if (detail.product.trackItem) {
+        await increaseStock(detail.product, Number(detail.quantity), detail.location);
       }
-      const product = await Product.findById(productId);
-      if (!product) {
-        const error = new Error('Could not find any product');
-        error.statusCode = 404;
-      }
-      if (detail.product.isVariant) {
-        for (let i = 0; i < product.variants.length; i++) {
-          const variant = product.variants[i];
-          if (detail.product.sku == variant.sku) {
-            for (let y = 0; y < variant.locations.length; y++) {
-              const location = variant.locations[y];
-              if (detail.location == location.location.toString()) {
-                location.quantity += detail.quantity;
-                variant.stock += detail.quantity;
-              }
-            }
-          }
-        }
-      } else {
-        for (let i = 0; i < product.locations.length; i++) {
-          const location = product.locations[i];
-          if (detail.location == location.location.toString()) {
-            location.quantity += detail.quantity;
-            product.stock += detail.quantity;
-          }
-        }
-      }
-      await product.save();
 
       // product sales account
       account = await Account.findById(detail.product.salesAccount);
@@ -456,22 +432,24 @@ exports.deleteInvoice = async (req, res, next) => {
       });
       await account.save();
 
-      // product cost of goods account
-      account = await Account.findById(detail.product.costOfGoodsAccount);
-      if (!account) {
-        const error = new Error('Could not find any account');
-        error.statusCode = 404;
-        throw error;
+      if (detail.product.trackItem) {
+        // product cost of goods account
+        account = await Account.findById(detail.product.costOfGoodsAccount);
+        if (!account) {
+          const error = new Error('Could not find any account');
+          error.statusCode = 404;
+          throw error;
+        }
+        account.balance -= detail.product.price * detail.quantity;
+        account.movements.push({
+          transactionRef: 'Invoice',
+          date: invoice.createdAt,
+          transaction: invoice._id,
+          description: `Invoice # ${invoice.number}`,
+          amount: detail.product.price * detail.quantity
+        });
+        await account.save();
       }
-      account.balance -= detail.product.price * detail.quantity;
-      account.movements.push({
-        transactionRef: 'Invoice',
-        date: invoice.createdAt,
-        transaction: invoice._id,
-        description: `Invoice # ${invoice.number}`,
-        amount: detail.product.price * detail.quantity
-      });
-      await account.save();
     }
 
     await invoice.remove();
@@ -530,6 +508,47 @@ const decreaseStock = async (product, quantity, location) => {
     }
     await product2.save();
     return notification;
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+  }
+};
+
+const increaseStock = async (product, quantity, location) => {
+  let productId = product._id;
+  if (product.isVariant) {
+    productId = product.productId;
+  };
+  try {
+    let product2 = await Product.findById(productId);
+    if (!product) {
+      const error = new Error('Could not find any product');
+      error.statusCode = 404;
+    }
+    if (product.isVariant) {
+      for (let i = 0; i < product2.variants.length; i++) {
+        const variant = product2.variants[i];
+        if (product.sku == variant.sku) {
+          for (let y = 0; y < variant.locations.length; y++) {
+            const location2 = variant.locations[y];
+            if (location == location2.location.toString()) {
+              location2.quantity += quantity;
+              variant.stock += quantity;
+            }
+          }
+        }
+      }
+    } else {
+      for (let i = 0; i < product2.locations.length; i++) {
+        const location2 = product2.locations[i];
+        if (location == location2.location.toString()) {
+          location2.quantity += quantity;
+          product2.stock += quantity;
+        }
+      }
+    }
+    await product2.save();
   } catch (err) {
     if (!err.statusCode) {
       err.statusCode = 500;

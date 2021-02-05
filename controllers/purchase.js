@@ -285,37 +285,6 @@ exports.deletePurchase = async (req, res, next) => {
   }
 };
 
-
-const increaseStock = async (product, quantity) => {
-  let productId = product._id;
-  if (product.isVariant) {
-    productId = product.productId;
-  };
-  try {
-    let product2 = await Product.findById(productId);
-    if (!product) {
-      const error = new Error('Could not find any product');
-      error.statusCode = 404;
-    }
-    if (product.isVariant) {
-      for (let i = 0; i < product2.variants.length; i++) {
-        const variant = product2.variants[i];
-        if (product.sku == variant.sku) {
-          variant.stock += quantity;
-        }
-      }
-    } else {
-      product2.stock += quantity;
-    }
-    await product2.save();
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-  }
-
-};
-
 exports.createPDF = (req, res, next) => {
   const purchase = req.body.purchase;
   const subject = req.body.subject;

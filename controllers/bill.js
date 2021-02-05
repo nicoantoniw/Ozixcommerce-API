@@ -164,7 +164,9 @@ exports.addBill = async (req, res, next) => {
 
         for (let i = 0; i < bill.details.length; i++) {
             const detail = bill.details[i];
-            await increaseStock(detail.product, Number(detail.quantity));
+            if (detail.product.trackItem) {
+                await increaseStock(detail.product, Number(detail.quantity));
+            }
 
             // inventory asset account
             account = await Account.findOne({ code: 2500 });
@@ -261,6 +263,10 @@ exports.deleteBill = async (req, res, next) => {
 
         for (let i = 0; i < bill.details.length; i++) {
             const detail = bill.details[i];
+            // Do this if quantity doesnt fall bellow 0
+
+
+
             // let productId = detail.product._id;
             // if (detail.product.isVariant) {
             //     productId = detail.product.productId;

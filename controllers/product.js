@@ -130,6 +130,9 @@ exports.addProduct = async (req, res, next) => {
       costOfGoodsAccount: req.body.costOfGoodsAccount,
       creator: req.groupId
     });
+    if (req.body.trackItem === false) {
+      product.trackItem = false;
+    }
     if (req.body.calculatedPriceFlag) {
       product.totalDiscounts = 0;
       product.discounts = [];
@@ -331,19 +334,21 @@ exports.updateProduct = async (req, res, next) => {
       product.category = req.body.category;
       product.sku = req.body.sku;
       product.description = req.body.description;
-      product.stock = Number(req.body.stock);
-      product.locations = locations;
+      if (product.trackItem) {
+        product.stock = Number(req.body.stock);
+        product.locations = locations;
+        product.costOfGoodsAccount = req.body.costOfGoodsAccount;
+        if (product.stock < totalStock) {
+          product.stock = totalStock;
+          product.unassignedStock = 0;
+        } else {
+          product.unassignedStock = product.stock - totalStock;
+        }
+      }
       product.salesAccount = req.body.salesAccount;
-      product.costOfGoodsAccount = req.body.costOfGoodsAccount;
       if (!product.hasVariants) {
         product.price = req.body.price;
         product.sellingPrice = req.body.sellingPrice;
-      }
-      if (product.stock < totalStock) {
-        product.stock = totalStock;
-        product.unassignedStock = 0;
-      } else {
-        product.unassignedStock = product.stock - totalStock;
       }
       if (product.variants.length > 0) {
         for (let index = 0; index < product.variants.length; index++) {
@@ -740,6 +745,9 @@ exports.addVariant = async (req, res, next) => {
     }
     if (totalStock2 > product.stock) {
       product.stock = totalStock2;
+    }
+    if (!product.trackItem) {
+      variant.trackItem = false;
     }
     product.variants.push(variant);
     await product.save();

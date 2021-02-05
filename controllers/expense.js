@@ -45,6 +45,36 @@ exports.getExpenses = async (req, res, next) => {
     }
 };
 
+exports.getExpensesAndBills = async (req, res, next) => {
+    let transactions;
+    try {
+        let expenses = await Expense.find({ creator: req.groupId })
+            .populate('supplier', { name: 1, _id: 1, email: 1 })
+            .populate('creator', { name: 1, _id: 1 })
+            .sort({ number: -1 });
+
+        const bills = await Bill.find({ creator: req.groupId })
+            .populate('creator', { name: 1, _id: 1 })
+            .populate('supplier', { name: 1, email: 1, _id: 1 })
+            .sort({ number: -1 });
+
+        transactions = expenses;
+        transactions = transactions.concat(bills);
+        transactions.sort((a, b) =>
+            a.createdAt > b.createdAt ? -1 : 1
+        );
+
+        res.status(200).json({
+            transactions
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
 exports.getExpensesByFilter = async (req, res, next) => {
     let expenses;
     let dateFrom = req.query.dateFrom;

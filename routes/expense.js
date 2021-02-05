@@ -7,6 +7,7 @@ const auth = require('../middleware/is-auth');
 const router = express.Router();
 
 router.get('/expenses', auth.isAdmin, auth.isPrime, expenseController.getExpenses);
+router.get('/expenses-bills', auth.isAdmin, auth.isPrime, expenseController.getExpensesAndBills);
 router.get(
     '/expenses/:expenseId',
     auth.isAdmin, auth.isPrime,
