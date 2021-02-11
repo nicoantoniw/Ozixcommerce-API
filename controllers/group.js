@@ -1,4 +1,10 @@
+const fs = require('fs');
+
+const aws = require('aws-sdk');
+const path = require('path');
+
 const Group = require('../models/group');
+
 
 exports.getGroups = async (req, res, next) => {
     try {
@@ -30,7 +36,7 @@ exports.getGroup = async (req, res, next) => {
             throw error;
         }
         res.status(200).json({
-            name: group.name
+            group
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -60,7 +66,7 @@ exports.addGroup = async (req, res, next) => {
 
 };
 
-exports.getSalePoints = async (req, res, next) => {
+exports.updateBusinessInfo = async (req, res, next) => {
     try {
         const group = await Group.findById(
             req.groupId
@@ -70,11 +76,27 @@ exports.getSalePoints = async (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
-        let salePoints = group.salePoint;
-        const defaultSalePoint = group.defaultSalePoint;
+        group.name = req.body.group.name;
+        group.legalName = req.body.group.legalName;
+        group.idNumber = req.body.group.idNumber;
+        group.industry = req.body.group.industry;
+        group.contactDetails.phone = req.body.group.contactDetails.phone;
+        group.contactDetails.email = req.body.group.contactDetails.email;
+        group.contactDetails.customerFacingEmail = req.body.group.contactDetails.customerFacingEmail;
+        group.contactDetails.website = req.body.group.contactDetails.website;
+        group.companyAddress.state = req.body.group.companyAddress.state;
+        group.companyAddress.city = req.body.group.companyAddress.city;
+        group.companyAddress.streetAddress = req.body.group.companyAddress.streetAddress;
+        group.companyAddress.zip = req.body.group.companyAddress.zip;
+        group.customerFacingAddress.state = req.body.group.customerFacingAddress.state;
+        group.customerFacingAddress.city = req.body.group.customerFacingAddress.city;
+        group.customerFacingAddress.streetAddress = req.body.group.customerFacingAddress.streetAddress;
+        group.customerFacingAddress.zip = req.body.group.customerFacingAddress.zip;
+
+        await group.save();
         res.status(200).json({
-            salePoints,
-            defaultSalePoint
+            group,
+            message: 'Data updated'
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -84,137 +106,49 @@ exports.getSalePoints = async (req, res, next) => {
     }
 };
 
-exports.updateContactalData = async (req, res, next) => {
-    const data = {
-        province: req.body.province,
-        city: req.body.city,
-        streetAddress: req.body.streetAddress,
-        zip: req.body.zip,
-        apartment: req.body.apartment,
-        category: req.body.category,
-        contacteria: req.body.contacteria,
-        cuit: req.body.cuit,
-        activitiesDate: req.body.activitiesDate,
-        socialName: req.body.socialName,
-        brutosNumber: req.body.brutosNumber,
-        phone: req.body.phone
+exports.addLogo = async (req, res, next) => {
+    const groupId = req.groupId;
+    let data;
+    const s3 = new aws.S3({
+        accessKeyId: 'AKIAUEN42P7LBOUCJDJF',
+        secretAccessKey: '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',
+        Bucket: 'ozixcommerce.com-images'
+    });
+    const ext = req.file.originalname.split('.').pop();
+    // const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+    const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
+    if (ext === 'jpg') {
+        ext2 = 'jpeg';
+    } else {
+        ext2 = 'png';
+    }
+    const params = {
+        Bucket: 'ozixcommerce.com-images',
+        acl: 'public-read',
+        Key: `${Date.now()}-${req.file.originalname}`,
+        Body: file,
+        ContentType: `image/${ext2}`
     };
     try {
-        const group = await Group.findById(
-            req.groupId
-        );
-        if (!group) {
-            const error = new Error('No group found');
-            error.statusCode = 404;
-            throw error;
-        }
-        group.province = data.province;
-        group.city = data.city;
-        group.streetAddress = data.streetAddress;
-        group.zip = data.zip;
-        group.apartment = data.apartment;
-        group.category = data.category;
-        group.contacteria = data.contacteria;
-        group.cuit = data.cuit;
-        group.activitiesDate = data.activitiesDate;
-        group.socialName = data.socialName;
-        group.brutosNumber = data.brutosNumber;
-        group.phone = data.phone;
-        await group.save();
-        res.status(200).json({
-            group,
-            message: 'Data updated'
+        const group = await Group.findById(groupId);
+        s3.upload(params, (err, data) => {
+            if (err) {
+                throw err;
+            }
+            group.logo = data.Location;
+            group.hasLogo = true;
+            group.save().then(success => {
+                // fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+                fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
+                res.status(200).json({
+                    message: 'Logo uploaded'
+                });
+            }).catch(err => console.log(err));
         });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
+    } catch (error) {
+        if (!error.statusCode) {
+            error.statusCode = 500;
         }
-        next(err);
-    }
-};
-
-exports.addSalePoint = async (req, res, next) => {
-    const data = {
-        salePoint: req.body.salePoint,
-        defaultSalePoint: req.body.defaultSalePoint,
-    };
-    try {
-        const group = await Group.findById(
-            req.groupId
-        );
-        if (!group) {
-            const error = new Error('No group found');
-            error.statusCode = 404;
-            throw error;
-        }
-        group.salePoint.push(data.salePoint);
-        group.defaultSalePoint = data.defaultSalePoint;
-        await group.save();
-        res.status(200).json({
-            group,
-            message: 'Data updated'
-        });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    }
-};
-
-exports.updateDefaultSalePoint = async (req, res, next) => {
-    const salePoint = req.body.salePoint;
-    try {
-        const group = await Group.findById(
-            req.groupId
-        );
-        if (!group) {
-            const error = new Error('No group found');
-            error.statusCode = 404;
-            throw error;
-        }
-        group.defaultSalePoint = salePoint;
-        await group.save();
-        res.status(200).json({
-            group,
-            message: 'Data updated'
-        });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    }
-};
-
-exports.deleteSalePoint = async (req, res, next) => {
-    const salePoint = req.query.salePoint;
-    try {
-        const group = await Group.findById(
-            req.groupId
-        );
-        if (!group) {
-            const error = new Error('No group found');
-            error.statusCode = 404;
-            throw error;
-        }
-        let salePoints = group.salePoint;
-        const position = (salePoints.indexOf(salePoint));
-        salePoints.splice(position, 1);
-        group.salePoint = salePoints;
-        if (group.defaultSalePoint === salePoint && salePoints.length > 0) {
-            group.defaultSalePoint = salePoints[0];
-        } else if (group.defaultSalePoint === salePoint && salePoints.length === 0) {
-            group.defaultSalePoint = '';
-        }
-        await group.save();
-        res.status(200).json({
-            salePoints
-        });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
+        next(error);
     }
 };

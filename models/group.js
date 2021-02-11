@@ -6,6 +6,70 @@ const groupSchema = new Schema({
     type: String,
     required: true
   },
+  legalName: {
+    type: String,
+    required: true
+  },
+  idNumber: {
+    type: String,
+    required: true
+  },
+  industry: {
+    type: String
+  },
+  logo: {
+    type: String
+  },
+  hasLogo: {
+    type: Boolean,
+    default: false
+  },
+  contactDetails: {
+    phone: {
+      type: String
+    },
+    email: {
+      type: String
+    },
+    customerFacingEmail: {
+      type: String
+    },
+    website: {
+      type: String
+    }
+  },
+  companyAddress: {
+    state: {
+      type: String
+    },
+    city: {
+      type: String
+    },
+    streetAddress: {
+      type: String
+    },
+    zip: {
+      type: String
+    },
+  },
+  customerFacingAddress: {
+    state: {
+      type: String
+    },
+    city: {
+      type: String
+    },
+    streetAddress: {
+      type: String
+    },
+    zip: {
+      type: String
+    },
+  },
+  plan: {
+    type: String,
+    required: false
+  },
   users: [
     {
       type: Schema.Types.ObjectId,
@@ -18,31 +82,6 @@ const groupSchema = new Schema({
       ref: 'WebsiteUser',
     }
   ],
-  plan: {
-    type: String,
-    required: false
-  },
-  province: {
-    type: String
-  },
-  city: {
-    type: String
-  },
-  streetAddress: {
-    type: String
-  },
-  zip: {
-    type: String
-  },
-  apartment: {
-    type: String
-  },
-  category: {
-    type: String
-  },
-  phone: {
-    type: String
-  },
   status: {
     type: String,
     default: 'active',
