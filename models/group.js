@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const groupSchema = new Schema({
   name: {
     type: String,
+    default: '',
     required: true
   },
   legalName: {
@@ -18,7 +19,12 @@ const groupSchema = new Schema({
     type: String
   },
   logo: {
-    type: String
+    url: {
+      type: String
+    },
+    key: {
+      type: String
+    }
   },
   hasLogo: {
     type: Boolean,
@@ -26,13 +32,16 @@ const groupSchema = new Schema({
   },
   contactDetails: {
     phone: {
-      type: String
+      type: String,
+      default: '',
     },
     email: {
-      type: String
+      type: String,
+      default: '',
     },
     customerFacingEmail: {
-      type: String
+      type: String,
+      default: '',
     },
     website: {
       type: String

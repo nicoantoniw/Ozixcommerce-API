@@ -123,18 +123,18 @@ exports.getContact = async (req, res, next) => {
 
 exports.getContactTransactions = async (req, res, next) => {
   const contactId = req.params.contactId;
-  let transactions;
+  let transactions = [];
   try {
     //customer
     if (req.query.type === 'Customer' || req.query.type === 'All') {
       const invoices = await Invoice.find({ creator: req.groupId, customer: contactId })
-        .populate('seller', { name: 1, _id: 1 })
+        .populate('seller', { name: 1, email: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
         .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
       const quotes = await Quote.find({ creator: req.groupId, customer: contactId })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
       transactions = invoices.concat(quotes);
     }
@@ -159,10 +159,12 @@ exports.getContactTransactions = async (req, res, next) => {
     }
 
     const payments = await Payment.find({ creator: req.groupId, contact: contactId })
-      .populate('contact', { name: 1, _id: 1 })
+      .populate('contact', { name: 1, email: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
       .sort({ number: -1 });
-    transactions = transactions.concat(payments);
+    if (payments.length > 0) {
+      transactions = transactions.concat(payments);
+    }
 
     if (transactions.length < 1) {
       const error = new Error('No transactions found');
@@ -245,7 +247,6 @@ exports.updateContact = async (req, res, next) => {
     contact.personName = req.body.personName;
     contact.personLastName = req.body.personLastName;
     contact.notes = req.body.notes;
-    contact.type = req.body.type;
     contact.phone = req.body.phone;
     contact.mobile = req.body.mobile;
     contact.fax = req.body.fax;

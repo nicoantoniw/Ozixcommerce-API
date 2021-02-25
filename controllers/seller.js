@@ -253,7 +253,7 @@ exports.getSellerTransactions = async (req, res, next) => {
       .sort({ number: -1 });
     const quotes = await Quote.find({ creator: req.groupId, seller: sellerId })
       .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1 })
+      .populate('customer', { name: 1, email: 1, _id: 1 })
       .sort({ number: -1 });
     if (invoices.length < 1 && quotes.length < 1) {
       const error = new Error('No transactions found');

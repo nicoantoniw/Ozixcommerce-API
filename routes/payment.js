@@ -17,7 +17,7 @@ router.post(
     auth.isAdmin,
     paymentController.addPayment
 );
-router.post('/print', paymentController.createPDF);
+router.post('/print', auth.isAdmin, paymentController.createPDF);
 // router.put(
 //     '/update/:paymentId',
 //     auth.isAdmin,

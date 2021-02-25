@@ -14,7 +14,7 @@ router.get(
     expenseController.getExpense
 );
 router.get('/expenses-by-filter', auth.isAdmin, expenseController.getExpensesByFilter);
-router.post('/print', expenseController.createPDF);
+router.post('/print', auth.isAdmin, expenseController.createPDF);
 router.post(
     '/add',
     auth.isAdmin,

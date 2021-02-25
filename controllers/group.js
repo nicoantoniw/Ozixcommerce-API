@@ -135,7 +135,10 @@ exports.addLogo = async (req, res, next) => {
             if (err) {
                 throw err;
             }
-            group.logo = data.Location;
+            group.logo = {
+                url: data.Location,
+                key: data.Key
+            };
             group.hasLogo = true;
             group.save().then(success => {
                 // fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);

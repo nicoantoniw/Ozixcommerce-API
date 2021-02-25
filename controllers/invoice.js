@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
+const https = require('https');
 
-const { validationResult } = require('express-validator');
+const { validationResult, body } = require('express-validator');
 const PdfMake = require('pdfmake');
 const moment = require('moment');
 const AWS = require('aws-sdk');
@@ -38,7 +40,6 @@ exports.getInvoices = async (req, res, next) => {
     res.status(200).json({
       invoices,
       totalInvoices,
-      groupId: req.groupId
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -75,97 +76,97 @@ exports.getInvoicesByFilter = async (req, res, next) => {
       invoices = await Invoice.find({ seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller === '' && status === '' && customer != '') {
       invoices = await Invoice.find({ customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller === '' && customer === '' && status != '') {
       invoices = await Invoice.find({ status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (seller === '' && customer === '' && status === '' && dateFrom != null && dateTo != null) {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (customer === '' && status === '' && dateFrom != null && dateTo != null && seller != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (seller === '' && status === '' && dateFrom != null && dateTo != null && customer != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (seller === '' && customer === '' && dateFrom != null && dateTo != null && status != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && status === '' && seller != '' && customer != '') {
       invoices = await Invoice.find({ seller: seller, customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && customer === '' && seller != '' && status != '') {
       invoices = await Invoice.find({ seller: seller, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller === '' && customer != '' && status != '') {
       invoices = await Invoice.find({ customer: customer, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller != '' && customer != '' && status != '') {
       invoices = await Invoice.find({ customer: customer, status: status, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && seller != '' && customer != '' && status === '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && seller != '' && customer === '' && status != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && seller === '' && customer != '' && status != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else if (dateFrom != null && dateTo != null && customer != '' && status != '' && seller != '') {
       invoices = await Invoice.find({ seller: seller, createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     } else {
       invoices = await Invoice.find({ creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1 })
         .sort({ number: -1 });
     }
     if (invoices.length < 1) {
@@ -559,8 +560,7 @@ const increaseStock = async (product, quantity, location) => {
 
 exports.createPDF = async (req, res, next) => {
   const invoice = req.body.invoice;
-  const groupId = req.body.groupId;
-  console.log(groupId);
+  const groupId = req.groupId;
   const subject = req.body.subject;
   const sender = 'nicolasantoniw@gmail.com';
   const receiver = req.body.receiver;
@@ -604,213 +604,240 @@ exports.createPDF = async (req, res, next) => {
     let docDefinition;
     const group = await Group.findById(groupId);
     if (group.hasLogo) {
-      docDefinition = {
-        content: [
-          {
-            columns: [
-              {
-                image:
-                  `data:image/png;base64,${group.logo}`,
-                width: 150,
-              },
-              [
+      //here convert image
+      let base64Str = '';
+      const s3 = new AWS.S3();
+      const params = {
+        Bucket: 'ozixcommerce.com-images',
+        Key: group.logo.key
+      };
+
+      s3.getObject(
+        params, function (error, data) {
+          if (error != null) {
+            console.log(error);
+          } else {
+            base64Str = data.Body.toString('base64');
+          }
+        }
+      );
+      setTimeout(() => {
+        docDefinition = {
+          content: [
+            {
+              columns: [
                 {
-                  text: 'Invoice',
-                  color: '#333333',
-                  width: '*',
-                  fontSize: 28,
-                  bold: true,
-                  alignment: 'right',
-                  margin: [0, 0, 0, 15],
+                  image:
+                    `data:image/png;base64,${base64Str}`,
+                  width: 150,
                 },
-                {
-                  stack: [
+                [
+                  {
+                    text: 'Invoice',
+                    color: '#333333',
+                    width: '*',
+                    fontSize: 28,
+                    bold: true,
+                    alignment: 'right',
+                    margin: [0, 0, 0, 15],
+                  },
+                  {
+                    stack: [
+                      {
+                        columns: [
+                          {
+                            text: 'Invoice No.',
+                            color: '#aaaaab',
+                            bold: true,
+                            width: '*',
+                            fontSize: 12,
+                            alignment: 'right',
+                            margin: [0, 0, 0, 5],
+                          },
+                          {
+                            text: `${invoice.number}`,
+                            bold: true,
+                            color: '#333333',
+                            fontSize: 12,
+                            alignment: 'right',
+                            width: 120,
+                            margin: [0, 0, 0, 5],
+                          },
+                        ],
+                      },
+                      {
+                        columns: [
+                          {
+                            text: 'Date Issued',
+                            color: '#aaaaab',
+                            bold: true,
+                            width: '*',
+                            fontSize: 12,
+                            alignment: 'right',
+                            margin: [0, 0, 0, 5],
+                          },
+                          {
+                            text: `${invoice.createdAt}`,
+                            bold: true,
+                            color: '#333333',
+                            fontSize: 12,
+                            alignment: 'right',
+                            width: 120,
+                            margin: [0, 0, 0, 5],
+                          },
+                        ],
+                      },
+                      {
+                        columns: [
+                          {
+                            text: 'Due Date',
+                            color: '#aaaaab',
+                            bold: true,
+                            fontSize: 12,
+                            alignment: 'right',
+                            width: '*',
+                            margin: [0, 0, 0, 5],
+                          },
+                          {
+                            text: `${invoice.dueDate}`,
+                            bold: true,
+                            fontSize: 12,
+                            alignment: 'right',
+                            color: '#333333',
+                            width: 120,
+                            margin: [0, 0, 0, 5],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              ],
+              margin: [0, 0, 0, 50]
+            },
+            table(invoice.details, ['Item', 'Quantity', 'Unit Price', 'Discount', 'Amount',]),
+            '\n',
+            '\n\n',
+            {
+              layout: {
+                defaultBorder: false,
+                hLineWidth: function (i, node) {
+                  return 1;
+                },
+                vLineWidth: function (i, node) {
+                  return 1;
+                },
+                hLineColor: function (i, node) {
+                  return '#eaeaea';
+                },
+                vLineColor: function (i, node) {
+                  return '#eaeaea';
+                },
+                hLineStyle: function (i, node) {
+                  // if (i === 0 || i === node.table.body.length) {
+                  return null;
+                  //}
+                },
+                // vLineStyle: function (i, node) { return {dash: { length: 10, space: 4 }}; },
+                paddingLeft: function (i, node) {
+                  return 10;
+                },
+                paddingRight: function (i, node) {
+                  return 10;
+                },
+                paddingTop: function (i, node) {
+                  return 3;
+                },
+                paddingBottom: function (i, node) {
+                  return 3;
+                },
+                fillColor: function (rowIndex, node, columnIndex) {
+                  return '#fff';
+                },
+              },
+              table: {
+                headerRows: 1,
+                widths: ['*', 'auto'],
+                body: [
+                  [
                     {
-                      columns: [
-                        {
-                          text: 'Invoice No.',
-                          color: '#aaaaab',
-                          bold: true,
-                          width: '*',
-                          fontSize: 12,
-                          alignment: 'right',
-                          margin: [0, 0, 0, 5],
-                        },
-                        {
-                          text: `${invoice.number}`,
-                          bold: true,
-                          color: '#333333',
-                          fontSize: 12,
-                          alignment: 'right',
-                          width: 120,
-                          margin: [0, 0, 0, 5],
-                        },
-                      ],
+                      text: 'Subtotal',
+                      border: [false, true, false, true],
+                      alignment: 'right',
+                      margin: [0, 5, 0, 5],
                     },
                     {
-                      columns: [
-                        {
-                          text: 'Date Issued',
-                          color: '#aaaaab',
-                          bold: true,
-                          width: '*',
-                          fontSize: 12,
-                          alignment: 'right',
-                          margin: [0, 0, 0, 5],
-                        },
-                        {
-                          text: `${invoice.createdAt}`,
-                          bold: true,
-                          color: '#333333',
-                          fontSize: 12,
-                          alignment: 'right',
-                          width: 120,
-                          margin: [0, 0, 0, 5],
-                        },
-                      ],
-                    },
-                    {
-                      columns: [
-                        {
-                          text: 'Due Date',
-                          color: '#aaaaab',
-                          bold: true,
-                          fontSize: 12,
-                          alignment: 'right',
-                          width: '*',
-                          margin: [0, 0, 0, 5],
-                        },
-                        {
-                          text: `${invoice.dueDate}`,
-                          bold: true,
-                          fontSize: 12,
-                          alignment: 'right',
-                          color: '#333333',
-                          width: 120,
-                          margin: [0, 0, 0, 5],
-                        },
-                      ],
+                      border: [false, true, false, true],
+                      text: `$${invoice.subtotal}`,
+                      alignment: 'right',
+                      fillColor: '#f5f5f5',
+                      margin: [0, 5, 0, 5],
                     },
                   ],
-                },
-              ],
-            ],
-            margin: [0, 0, 0, 50]
-          },
-          table(invoice.details, ['Item', 'Quantity', 'Unit Price', 'Discount', 'Amount',]),
-          '\n',
-          '\n\n',
-          {
-            layout: {
-              defaultBorder: false,
-              hLineWidth: function (i, node) {
-                return 1;
-              },
-              vLineWidth: function (i, node) {
-                return 1;
-              },
-              hLineColor: function (i, node) {
-                return '#eaeaea';
-              },
-              vLineColor: function (i, node) {
-                return '#eaeaea';
-              },
-              hLineStyle: function (i, node) {
-                // if (i === 0 || i === node.table.body.length) {
-                return null;
-                //}
-              },
-              // vLineStyle: function (i, node) { return {dash: { length: 10, space: 4 }}; },
-              paddingLeft: function (i, node) {
-                return 10;
-              },
-              paddingRight: function (i, node) {
-                return 10;
-              },
-              paddingTop: function (i, node) {
-                return 3;
-              },
-              paddingBottom: function (i, node) {
-                return 3;
-              },
-              fillColor: function (rowIndex, node, columnIndex) {
-                return '#fff';
+                  [
+                    {
+                      text: 'Taxes',
+                      border: [false, false, false, true],
+                      alignment: 'right',
+                      margin: [0, 5, 0, 5],
+                    },
+                    {
+                      text: `$${invoice.taxes}`,
+                      border: [false, false, false, true],
+                      fillColor: '#f5f5f5',
+                      alignment: 'right',
+                      margin: [0, 5, 0, 5],
+                    },
+                  ],
+                  [
+                    {
+                      text: 'Total',
+                      bold: true,
+                      fontSize: 20,
+                      alignment: 'right',
+                      border: [false, false, false, true],
+                      margin: [0, 5, 0, 5],
+                    },
+                    {
+                      text: `$${invoice.total}`,
+                      bold: true,
+                      fontSize: 20,
+                      alignment: 'right',
+                      border: [false, false, false, true],
+                      fillColor: '#f5f5f5',
+                      margin: [0, 5, 0, 5],
+                    },
+                  ],
+                ],
               },
             },
-            table: {
-              headerRows: 1,
-              widths: ['*', 'auto'],
-              body: [
-                [
-                  {
-                    text: 'Subtotal',
-                    border: [false, true, false, true],
-                    alignment: 'right',
-                    margin: [0, 5, 0, 5],
-                  },
-                  {
-                    border: [false, true, false, true],
-                    text: `$${invoice.subtotal}`,
-                    alignment: 'right',
-                    fillColor: '#f5f5f5',
-                    margin: [0, 5, 0, 5],
-                  },
-                ],
-                [
-                  {
-                    text: 'Taxes',
-                    border: [false, false, false, true],
-                    alignment: 'right',
-                    margin: [0, 5, 0, 5],
-                  },
-                  {
-                    text: `$${invoice.taxes}`,
-                    border: [false, false, false, true],
-                    fillColor: '#f5f5f5',
-                    alignment: 'right',
-                    margin: [0, 5, 0, 5],
-                  },
-                ],
-                [
-                  {
-                    text: 'Total',
-                    bold: true,
-                    fontSize: 20,
-                    alignment: 'right',
-                    border: [false, false, false, true],
-                    margin: [0, 5, 0, 5],
-                  },
-                  {
-                    text: `$${invoice.total}`,
-                    bold: true,
-                    fontSize: 20,
-                    alignment: 'right',
-                    border: [false, false, false, true],
-                    fillColor: '#f5f5f5',
-                    margin: [0, 5, 0, 5],
-                  },
-                ],
-              ],
+
+          ],
+          styles: {
+            notesTitle: {
+              fontSize: 10,
+              bold: true,
+              margin: [0, 50, 0, 3],
+            },
+            notesText: {
+              fontSize: 10,
             },
           },
-
-        ],
-        styles: {
-          notesTitle: {
-            fontSize: 10,
-            bold: true,
-            margin: [0, 50, 0, 3],
+          defaultStyle: {
+            columnGap: 20,
+            font: 'Helvetica',
           },
-          notesText: {
-            fontSize: 10,
-          },
-        },
-        defaultStyle: {
-          columnGap: 20,
-          font: 'Helvetica',
-        },
 
-      };
+        };
+        let pdfDoc = printer.createPdfKitDocument(docDefinition);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(`Content-Disposition`, `inline; filename= ${invoiceName}`);
+        if (!deletePdf) {
+          pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'invoice.pdf')));
+        }
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+      }, 5000);
     }
     else {
 
@@ -1017,15 +1044,15 @@ exports.createPDF = async (req, res, next) => {
         },
 
       };
+      let pdfDoc = printer.createPdfKitDocument(docDefinition);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(`Content-Disposition`, `inline; filename= ${invoiceName}`);
+      if (!deletePdf) {
+        pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'invoice.pdf')));
+      }
+      pdfDoc.pipe(res);
+      pdfDoc.end();
     }
-    let pdfDoc = printer.createPdfKitDocument(docDefinition);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(`Content-Disposition`, `inline; filename= ${invoiceName}`);
-    if (!deletePdf) {
-      pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'invoice.pdf')));
-    }
-    pdfDoc.pipe(res);
-    pdfDoc.end();
   }
 };
 

@@ -13,7 +13,7 @@ router.get(
   purchaseController.getPurchase
 );
 router.get('/purchases-by-filter', auth.isAdmin, purchaseController.getPurchasesByFilter);
-router.post('/print', purchaseController.createPDF);
+router.post('/print', auth.isAdmin, purchaseController.createPDF);
 router.post(
   '/add',
   auth.isAdmin,

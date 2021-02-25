@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/bills', auth.isAdmin, billController.getBills);
 router.get('/bills-by-filter', auth.isAdmin, billController.getBillsByFilter);
 router.get('/bills/:billId', auth.isAdmin, billController.getBill);
-router.post('/print', billController.createPDF);
+router.post('/print', auth.isAdmin, billController.createPDF);
 router.post('/add', auth.isUser, billController.addBill);
 router.patch('/activate/:billId', auth.isAdmin, billController.activateBill);
 router.delete('/delete/:billId', auth.isAdmin, billController.deleteBill);
