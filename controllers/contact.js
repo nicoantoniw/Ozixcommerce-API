@@ -260,7 +260,10 @@ exports.updateContact = async (req, res, next) => {
     if (contact.totalDebt > 0) {
       contact.owes = contact.totalDebt;
     } else if (contact.totalDebt < 0) {
-      contact.youOwe = contact.totalDebt * -1;
+      contact.credit = contact.totalDebt * -1;
+    } else {
+      contact.owes = 0;
+      contact.credit = 0;
     }
     contact.creator = req.groupId;
     await contact.save();
@@ -312,83 +315,6 @@ exports.deleteContacts = async (req, res, next) => {
     }
     res.status(200).json({
       message: 'Contacts deleted.',
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.addDebt = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error('Validation failed, entered data is incorrect');
-    error.statusCode = 422;
-    next(error);
-  }
-  const contactId = req.body.contactId;
-  const debt = Number(req.body.debt);
-  const description = req.body.description;
-  const typeDebt = req.body.type;
-  const data = {
-    debt,
-    description,
-    typeDebt
-  };
-  try {
-    const contact = await Contact.findById(contactId);
-    if (contact.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    contact.account.push(data);
-    contact.totalDebt += data.debt;
-    await contact.save();
-    res.status(200).json({
-      message: 'Debt created.',
-      data: data
-    });
-  } catch (err) {
-    if (!err.statusCode) {
-      err.statusCode = 500;
-    }
-    next(err);
-  }
-};
-
-exports.subtractDebt = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    const error = new Error('Validation failed, entered data is incorrect');
-    error.statusCode = 422;
-    next(error);
-  }
-
-  const contactId = req.body.contactId;
-  const debt = Number(req.body.debt);
-  const description = req.body.description;
-  const typeDebt = req.body.type;
-  const data = {
-    debt,
-    description,
-    typeDebt
-  };
-  try {
-    const contact = await Contact.findById(contactId);
-    if (contact.creator._id.toString() !== req.groupId) {
-      const error = new Error('Not authorized');
-      error.statusCode = 403;
-      throw error;
-    }
-    contact.account.push(data);
-    contact.totalDebt -= data.debt;
-    await contact.save();
-    res.status(200).json({
-      message: 'Debt created.',
-      data: data
     });
   } catch (err) {
     if (!err.statusCode) {

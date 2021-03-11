@@ -102,7 +102,7 @@ const contactSchema = new Schema({
     required: false,
     default: 0
   },
-  youOwe: {
+  credit: {
     type: Number,
     required: false,
     default: 0

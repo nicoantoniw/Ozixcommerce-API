@@ -1,12 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const { validationResult } = require('express-validator');
+const { validationResult, body } = require('express-validator');
 const PdfMake = require('pdfmake');
 const moment = require('moment');
 const AWS = require('aws-sdk');
 
-const Bill = require('../models/bill');
+const CreditNote = require('../models/creditNote');
+const Invoice = require('../models/invoice');
 const Product = require('../models/product');
 const Contact = require('../models/contact');
 const Group = require('../models/group');
@@ -19,24 +20,24 @@ AWS.config.update({
     secretAccessKey: '/xI+f2ODIQdFqK1GFInnexEC0VgRcPyoH8VM5a6m'
 });
 
-exports.getBills = async (req, res, next) => {
+exports.getCreditNotes = async (req, res, next) => {
     try {
-        const totalBills = await Bill.find({
+        const totalCreditNotes = await CreditNote.find({
             creator: req.groupId
         }).countDocuments();
-        const bills = await Bill.find({ creator: req.groupId })
+        const creditNotes = await CreditNote.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('supplier', { name: 1, email: 1, _id: 1, owes: 1 })
+            .populate('contact', { name: 1, email: 1, _id: 1 })
             .sort({ number: -1 });
 
-        if (totalBills === 0) {
-            const error = new Error('No bills found');
+        if (totalCreditNotes === 0) {
+            const error = new Error('No creditNotes found');
             error.statusCode = 404;
             throw error;
         }
         res.status(200).json({
-            bills,
-            totalBills
+            creditNotes,
+            totalCreditNotes,
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -46,56 +47,30 @@ exports.getBills = async (req, res, next) => {
     }
 };
 
-exports.getBillsByFilter = async (req, res, next) => {
-    let bills;
-    let dateFrom = req.query.dateFrom;
-    let dateTo = req.query.dateTo;
-    if (!dateFrom | !dateTo) {
-        dateTo = null;
-        dateFrom = null;
-    }
-    if (req.query.dateFrom) {
-        dateFrom = moment.utc(req.query.dateFrom).toISOString();
-    } if (req.query.dateTo) {
-        dateTo = moment.utc(req.query.dateTo).toISOString();
-    }
+exports.getCreditNotesByContact = async (req, res, next) => {
     try {
-        if (dateFrom != null && dateTo != null) {
-            bills = await Bill.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
-                .populate('supplier', { name: 1, email: 1, _id: 1, owes: 1 })
-                .populate('creator', { name: 1, _id: 1 })
-                .sort({ number: -1 });
-        } else {
-            bills = await Bill.find({ creator: req.groupId })
-                .populate('supplier', { name: 1, email: 1, _id: 1, owes: 1 })
-                .populate('creator', { name: 1, _id: 1 })
-                .sort({ number: -1 });
-        }
-        res.status(200).json({
-            bills
-        });
+        const totalCreditNotes = await CreditNote.find({
+            creator: req.groupId,
+            contact: req.params.contactId,
+            $or: [{ status: 'Partially Paid' }, { status: 'Unpaid' }]
+        }).countDocuments();
+        const creditNotes = await CreditNote.find({
+            creator: req.groupId,
+            contact: req.params.contactId,
+            $or: [{ status: 'Partially Paid' }, { status: 'Unpaid' }]
+        })
+            .populate('creator', { name: 1, _id: 1 })
+            .populate('contact', { name: 1, email: 1, _id: 1 })
+            .sort({ number: -1 });
 
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    }
-};
-
-exports.getBill = async (req, res, next) => {
-    const billId = req.params.billId;
-    try {
-        const bill = await Bill.findById(billId)
-            .populate('supplier', { name: 1, email: 1, _id: 1, owes: 1 })
-            .populate('creator', { name: 1, _id: 1 });
-        if (!bill) {
-            const error = new Error('No bill found');
+        if (totalCreditNotes === 0) {
+            const error = new Error('No creditNotes found');
             error.statusCode = 404;
             throw error;
         }
         res.status(200).json({
-            bill
+            creditNotes,
+            totalCreditNotes,
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -105,8 +80,30 @@ exports.getBill = async (req, res, next) => {
     }
 };
 
-exports.addBill = async (req, res, next) => {
-    let amount;
+exports.getCreditNote = async (req, res, next) => {
+    const creditNoteId = req.params.creditNoteId;
+    try {
+        const creditNote = await CreditNote.findById(creditNoteId)
+            .populate('creator', { name: 1, _id: 1 })
+            .populate('contact', { name: 1, _id: 1, email: 1 });
+        if (!creditNote) {
+            const error = new Error('No creditNote found');
+            error.statusCode = 404;
+            throw error;
+        }
+        res.status(200).json({
+            creditNote
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
+exports.addCreditNote = async (req, res, next) => {
+    let result;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = new Error('Validation failed, entered data is incorrect');
@@ -114,28 +111,163 @@ exports.addBill = async (req, res, next) => {
         next(error);
     }
     try {
-        const bill = new Bill({
-            number: req.body.bill.number,
-            details: req.body.bill.details,
-            total: Number(req.body.bill.total),
-            due: Number(req.body.bill.total),
-            subtotal: req.body.bill.subtotal,
-            taxes: req.body.bill.taxes,
-            discounts: Number(req.body.bill.discounts),
+        const creditNote = new CreditNote({
+            number: req.body.creditNote.number,
+            details: req.body.creditNote.details,
+            total: Number(req.body.creditNote.total),
+            due: Number(req.body.creditNote.total),
+            subtotal: req.body.creditNote.subtotal,
+            taxes: req.body.creditNote.taxes,
+            discounts: Number(req.body.creditNote.discounts),
             creator: req.groupId,
-            supplier: req.body.bill.supplier,
-            dueDate: moment.utc(req.body.bill.dueDate),
-            createdAt: moment.utc(req.body.bill.createdAt)
+            contact: req.body.creditNote.contact,
+            createdAt: moment.utc(req.body.creditNote.createdAt)
         });
 
-        //contact
-        const contact = await Contact.findById(bill.supplier);
-        if (contact.type === 'None') {
-            contact.type = 'Supplier';
-        } else if (contact.type === 'Customer') {
-            contact.type = 'All';
+        if (req.body.fromInvoice) {
+            const creditNotes = await CreditNote.find({ creator: req.groupId })
+                .populate('creator', { name: 1, _id: 1 })
+                .populate('contact', { name: 1, _id: 1, email: 1 })
+                .sort({ number: -1 });
+            const creditNote2 = creditNotes[0];
+            creditNote.number = Number(creditNote2.number) + 1;
+
+            const invoice = await Invoice.findById(req.body.invoice);
+            invoice.status = 'Paid';
+            invoice.paid = creditNote.total;
+            invoice.due = 0;
+            await invoice.save();
+            CreditNote.status = 'Paid';
+            CreditNote.paid = creditNote.total;
+            CreditNote.due = 0;
         }
-        contact.totalDebt -= Math.round((bill.total + Number.EPSILON) * 100) / 100;
+        //contact
+        const contact = await Contact.findById(creditNote.contact);
+        contact.totalDebt -= Math.round((creditNote.total + Number.EPSILON) * 100) / 100;
+        if (contact.totalDebt > 0) {
+            contact.owes = contact.totalDebt;
+            contact.credit = 0;
+        } else if (contact.totalDebt < 0) {
+            contact.credit = contact.totalDebt * -1;
+            contact.owes = 0;
+        } else {
+            contact.owes = 0;
+            contact.credit = 0;
+        }
+
+        // accounts receivable
+        let account = await Account.findOne({ code: 1100 });
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= creditNote.total;
+        account.movements.push({
+            transactionRef: 'CreditNote',
+            transaction: creditNote._id,
+            date: creditNote.createdAt,
+            description: `Credit Note # ${creditNote.number}`,
+            amount: creditNote.total
+        });
+        await account.save();
+
+        // sales tax account
+        account = await Account.findOne({ code: 1400 });
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= creditNote.taxes;
+        account.movements.push({
+            transactionRef: 'CreditNote',
+            transaction: creditNote._id,
+            date: creditNote.createdAt,
+            description: `Credit Note # ${creditNote.number}`,
+            amount: creditNote.taxes
+        });
+        await account.save();
+
+        if (creditNote.details.length > 0) {
+            for (let i = 0; i < creditNote.details.length; i++) {
+                const detail = creditNote.details[i];
+                if (detail.product.trackItem) {
+                    result = await increaseStock(detail.product, Number(detail.quantity), detail.location);
+                }
+                if (result) {
+                    const notification = new Notification({
+                        description: `Product '${detail.product.name}' ran out of stock in location '${result}'`,
+                        importance: 'moderate',
+                        creator: req.groupId
+                    });
+                    await notification.save();
+                }
+                // product sales account
+                account = await Account.findById(detail.product.salesAccount);
+                if (!account) {
+                    const error = new Error('Could not find any account');
+                    error.statusCode = 404;
+                    throw error;
+                }
+                account.balance -= detail.price;
+                account.movements.push({
+                    transactionRef: 'CreditNote',
+                    transaction: creditNote._id,
+                    date: creditNote.createdAt,
+                    description: `Credit Note # ${creditNote.number}`,
+                    amount: detail.price
+                });
+                await account.save();
+
+                // product cost of goods account
+                if (detail.product.trackItem) {
+                    account = await Account.findById(detail.product.costOfGoodsAccount);
+                    if (!account) {
+                        const error = new Error('Could not find any account');
+                        error.statusCode = 404;
+                        throw error;
+                    }
+                    account.balance += detail.product.price * detail.quantity;
+                    account.movements.push({
+                        transactionRef: 'CreditNote',
+                        transaction: creditNote._id,
+                        date: creditNote.createdAt,
+                        description: `Credit Note # ${creditNote.number}`,
+                        amount: detail.product.price * detail.quantity
+                    });
+                    await account.save();
+                }
+            }
+        }
+        await contact.save();
+        await creditNote.save();
+        res.status(200).json({
+            message: 'Credit Note created.',
+            creditNote
+        });
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    }
+};
+
+exports.applyCredit = async (req, res, next) => {
+    const totalCreditToApply = req.body.creditToApply;
+    const creditNotes = req.body.creditNotes;
+    let result;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const error = new Error('Validation failed, entered data is incorrect');
+        error.statusCode = 422;
+        next(error);
+    }
+    try {
+        //contact
+        const contact = await Contact.findById(req.body.invoice.customer);
+        contact.totalDebt -= Math.round((totalCreditToApply + Number.EPSILON) * 100) / 100;
         if (contact.totalDebt > 0) {
             contact.owes = contact.totalDebt;
         } else if (contact.totalDebt < 0) {
@@ -144,61 +276,66 @@ exports.addBill = async (req, res, next) => {
             contact.owes = 0;
             contact.credit = 0;
         }
+
+        const invoice = await Invoice.findById(req.body.invoice);
+        if (invoice.due > 0 && totalCreditToApply <= invoice.due) {
+            if (invoice.due > totalCreditToApply) {
+                invoice.status = 'Partially Paid';
+                invoice.paid += totalCreditToApply;
+                invoice.due = Math.round((invoice.total - invoice.paid + Number.EPSILON) * 100) / 100;
+            } else {
+                invoice.status = 'Paid';
+                invoice.paid = invoice.total;
+                invoice.due = 0;
+            }
+        } else {
+            const error = new Error('Amount is greater than due.');
+            error.statusCode = 601;
+            next(error);
+        }
+        for (let index = 0; index < creditNotes.length; index++) {
+            const creditNote2 = creditNotes[index];
+            if (creditNote2.creditToApply > 0) {
+                const creditNote = await CreditNote.findById(creditNote2);
+                if (creditNote.due > 0 && creditNote2.creditToApply <= creditNote.due) {
+                    if (creditNote.due > creditNote2.creditToApply) {
+                        creditNote.status = 'Partially Paid';
+                        creditNote.paid += creditNote2.creditToApply;
+                        creditNote.due = Math.round((creditNote.total - creditNote.paid + Number.EPSILON) * 100) / 100;
+                    } else {
+                        creditNote.status = 'Paid';
+                        creditNote.paid = creditNote.total;
+                        creditNote.due = 0;
+                    }
+                    await creditNote.save();
+                } else {
+                    const error = new Error('Amount is greater than due.');
+                    error.statusCode = 601;
+                    next(error);
+                }
+                // accounts receivable
+                let account = await Account.findOne({ code: 1100 });
+                if (!account) {
+                    const error = new Error('Could not find any account');
+                    error.statusCode = 404;
+                    throw error;
+                }
+                account.balance -= creditNote2.creditToApply;
+                account.movements.push({
+                    transactionRef: 'CreditNote',
+                    transaction: creditNote._id,
+                    date: Date.now(),
+                    description: `CN-${creditNote.number} applied to INV-${invoice.number}`,
+                    amount: creditNote2.creditToApply
+                });
+                await account.save();
+            }
+        }
+
         await contact.save();
-
-        if (req.body.fromPurchaseOrder) {
-            const bills = await Bill.find({ creator: req.groupId })
-                .populate('supplier', { name: 1, _id: 1 })
-                .populate('creator', { name: 1, _id: 1 })
-                .sort({ number: -1 });
-            const bill2 = bills[0];
-            bill.number = Number(bill2.number) + 1;
-        }
-
-        // accounts payable
-        let account = await Account.findOne({ code: 2100 });
-        if (!account) {
-            const error = new Error('Could not find any account');
-            error.statusCode = 404;
-            throw error;
-        }
-        account.balance += bill.total;
-        account.movements.push({
-            transactionRef: 'Bill',
-            transaction: bill._id,
-            date: bill.createdAt,
-            description: `Bill # ${bill.number}`,
-            amount: bill.total
-        });
-        await account.save();
-
-        for (let i = 0; i < bill.details.length; i++) {
-            const detail = bill.details[i];
-            if (detail.product.trackItem) {
-                await increaseStock(detail.product, Number(detail.quantity));
-            }
-
-            // inventory asset account
-            account = await Account.findOne({ code: 2500 });
-            if (!account) {
-                const error = new Error('Could not find any account');
-                error.statusCode = 404;
-                throw error;
-            }
-            account.balance += detail.product.price * detail.quantity;
-            account.movements.push({
-                transactionRef: 'Bill',
-                transaction: bill._id,
-                date: bill.createdAt,
-                description: `Bill # ${bill.number}`,
-                amount: detail.product.price * detail.quantity
-            });
-            await account.save();
-        }
-        await bill.save();
+        await invoice.save();
         res.status(200).json({
-            message: 'bill created.',
-            bill
+            message: 'Credit Note created.',
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -208,58 +345,31 @@ exports.addBill = async (req, res, next) => {
     }
 };
 
-exports.activateBill = async (req, res, next) => {
-    const billId = req.params.billId;
-    try {
-        const bill = await Bill.findById(billId);
-        if (!bill) {
-            const error = new Error('Could not find any bill');
-            error.statusCode = 404;
-            throw error;
-        }
-        if (bill.creator._id.toString() !== req.groupId) {
-            const error = new Error('Not authorized');
-            error.statusCode = 403;
-            throw error;
-        }
-        bill.status = 'activo';
-        await bill.save();
-        res.status(200).json({
-            message: 'bill has been activated',
-            bill
-        });
-    } catch (err) {
-        if (!err.statusCode) {
-            err.statusCode = 500;
-        }
-        next(err);
-    }
-};
-
-exports.deleteBill = async (req, res, next) => {
-    const billId = req.params.billId;
+exports.deleteCreditNote = async (req, res, next) => {
+    const creditNoteId = req.params.creditNoteId;
     let index1;
     try {
-        const bill = await Bill.findById(billId);
-        if (!bill) {
-            const error = new Error('Could not find any bill');
+        const creditNote = await CreditNote.findById(creditNoteId);
+        if (!creditNote) {
+            const error = new Error('Could not find any creditNote');
             error.statusCode = 404;
             throw error;
         }
-        if (bill.creator._id.toString() !== req.groupId) {
+        if (creditNote.creator._id.toString() !== req.groupId) {
             const error = new Error('Not authorized.');
             error.statusCode = 403;
             throw error;
         }
-        if (invoice.paid > 0) {
-            const error = new Error('This bill cannot be deleted');
+
+        if (creditNote.paid > 0) {
+            const error = new Error('This creditNote cannot be deleted');
             error.statusCode = 101;
             throw error;
         }
 
         //contact
-        const contact = await Contact.findById(bill.supplier);
-        contact.totalDebt += Math.round((bill.total + Number.EPSILON) * 100) / 100;
+        const contact = await Contact.findById(creditNote.contact);
+        contact.totalDebt += Math.round((creditNote.total + Number.EPSILON) * 100) / 100;
         if (contact.totalDebt > 0) {
             contact.owes = contact.totalDebt;
         } else if (contact.totalDebt < 0) {
@@ -268,79 +378,72 @@ exports.deleteBill = async (req, res, next) => {
             contact.owes = 0;
             contact.credit = 0;
         }
-        await contact.save();
 
-        // accounts payable
-        let account = await Account.findOne({ code: 2100 });
+        // accounts receivable
+        let account = await Account.findOne({ code: 1100 });
         if (!account) {
             const error = new Error('Could not find any account');
             error.statusCode = 404;
             throw error;
         }
-        let index = account.movements.findIndex(movement => movement.transaction == bill._id.toString());
-        if (index != -1) {
-            account.movements.splice(index, 1);
-            account.balance -= bill.total;
-        }
+        account.balance -= creditNote.total;
+        let index = account.movements.findIndex(movement => movement.transaction == creditNote._id.toString());
+        account.movements.splice(index, 1);
         await account.save();
 
-        for (let i = 0; i < bill.details.length; i++) {
-            const detail = bill.details[i];
-            // Do this if quantity doesnt fall bellow 0
+        // sales tax account
+        account = await Account.findOne({ code: 1400 });
+        if (!account) {
+            const error = new Error('Could not find any account');
+            error.statusCode = 404;
+            throw error;
+        }
+        account.balance -= creditNote.taxes;
+        index = account.movements.findIndex(movement => movement.transaction == creditNote._id.toString());
+        account.movements.splice(index, 1);
+        await account.save();
 
+        if (creditNote.details.length > 0) {
+            for (let i = 0; i < creditNote.details.length; i++) {
+                const detail = creditNote.details[i];
+                if (detail.product.trackItem) {
+                    await decreaseStock(detail.product, Number(detail.quantity), detail.location);
+                }
 
+                // product sales account
+                account = await Account.findById(detail.product.salesAccount);
+                if (!account) {
+                    const error = new Error('Could not find any account');
+                    error.statusCode = 404;
+                    throw error;
+                }
+                account.balance -= detail.price;
+                index = account.movements.findIndex(movement => movement.transaction == creditNote._id.toString());
+                account.movements.splice(index, 1);
+                await account.save();
 
-            // let productId = detail.product._id;
-            // if (detail.product.isVariant) {
-            //     productId = detail.product.productId;
-            // }
-            // const product = await Product.findById(productId);
-            // if (!product) {
-            //     const error = new Error('Could not find any product');
-            //     error.statusCode = 404;
-            // }
-            // if (detail.product.isVariant) {
-            //     for (let i = 0; i < product.variants.length; i++) {
-            //         const variant = product.variants[i];
-            //         if (detail.product.sku == variant.sku) {
-            //             for (let y = 0; y < variant.locations.length; y++) {
-            //                 const location = variant.locations[y];
-            //                 if (detail.location == location.location.toString()) {
-            //                     location.quantity += detail.quantity;
-            //                     variant.stock += detail.quantity;
-            //                 }
-            //             }
-            //         }
-            //     }
-            // } else {
-            //     for (let i = 0; i < product.locations.length; i++) {
-            //         const location = product.locations[i];
-            //         if (detail.location == location.location.toString()) {
-            //             location.quantity += detail.quantity;
-            //             product.stock += detail.quantity;
-            //         }
-            //     }
-            // }
-            // await product.save();
-
-            // inventory asset account
-            account = await Account.findOne({ code: 2500 });
-            if (!account) {
-                const error = new Error('Could not find any account');
-                error.statusCode = 404;
-                throw error;
+                if (detail.product.trackItem) {
+                    // product cost of goods account
+                    account = await Account.findById(detail.product.costOfGoodsAccount);
+                    if (!account) {
+                        const error = new Error('Could not find any account');
+                        error.statusCode = 404;
+                        throw error;
+                    }
+                    account.balance -= detail.product.price * detail.quantity;
+                    index = account.movements.findIndex(movement => movement.transaction == creditNote._id.toString());
+                    account.movements.splice(index, 1);
+                    await account.save();
+                }
             }
-            account.balance -= detail.product.price * detail.quantity;
-            let index = account.movements.findIndex(movement => movement.transaction == bill._id.toString());
-            account.movements.splice(index, 1);
-            await account.save();
         }
 
-        await bill.remove();
-        const totalBills = await Bill.find().countDocuments();
+        await contact.save();
+        await creditNote.remove();
+        const totalCreditNotes = await CreditNote.find().countDocuments();
         res.status(200).json({
-            message: 'bill deleted',
-            totalBills
+            message: 'Credit Note deleted',
+            totalCreditNotes
         });
     } catch (err) {
         if (!err.statusCode) {
@@ -350,8 +453,56 @@ exports.deleteBill = async (req, res, next) => {
     }
 };
 
+const decreaseStock = async (product, quantity, location) => {
+    let productId = product._id;
+    let notification;
+    if (product.isVariant) {
+        productId = product.productId;
+    };
+    try {
+        let product2 = await Product.findById(productId);
+        if (!product) {
+            const error = new Error('Could not find any product');
+            error.statusCode = 404;
+        }
+        if (product.isVariant) {
+            for (let i = 0; i < product2.variants.length; i++) {
+                const variant = product2.variants[i];
+                if (product.sku == variant.sku) {
+                    for (let y = 0; y < variant.locations.length; y++) {
+                        const location2 = variant.locations[y];
+                        if (location == location2.location.toString()) {
+                            location2.quantity -= quantity;
+                            variant.stock -= quantity;
+                            if (location2.quantity === 0) {
+                                notification = location2.name;
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            for (let i = 0; i < product2.locations.length; i++) {
+                const location2 = product2.locations[i];
+                if (location == location2.location.toString()) {
+                    location2.quantity -= quantity;
+                    product2.stock -= quantity;
+                    if (location2.quantity === 0) {
+                        notification = location2.name;
+                    }
+                }
+            }
+        }
+        await product2.save();
+        return notification;
+    } catch (err) {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+    }
+};
 
-const increaseStock = async (product, quantity) => {
+const increaseStock = async (product, quantity, location) => {
     let productId = product._id;
     if (product.isVariant) {
         productId = product.productId;
@@ -366,11 +517,23 @@ const increaseStock = async (product, quantity) => {
             for (let i = 0; i < product2.variants.length; i++) {
                 const variant = product2.variants[i];
                 if (product.sku == variant.sku) {
-                    variant.stock += quantity;
+                    for (let y = 0; y < variant.locations.length; y++) {
+                        const location2 = variant.locations[y];
+                        if (location == location2.location.toString()) {
+                            location2.quantity += quantity;
+                            variant.stock += quantity;
+                        }
+                    }
                 }
             }
         } else {
-            product2.stock += quantity;
+            for (let i = 0; i < product2.locations.length; i++) {
+                const location2 = product2.locations[i];
+                if (location == location2.location.toString()) {
+                    location2.quantity += quantity;
+                    product2.stock += quantity;
+                }
+            }
         }
         await product2.save();
     } catch (err) {
@@ -378,11 +541,10 @@ const increaseStock = async (product, quantity) => {
             err.statusCode = 500;
         }
     }
-
 };
 
 exports.createPDF = async (req, res, next) => {
-    const bill = req.body.bill;
+    const creditNote = req.body.creditNote;
     const groupId = req.groupId;
     const subject = req.body.subject;
     const sender = 'nicolasantoniw@gmail.com';
@@ -390,18 +552,18 @@ exports.createPDF = async (req, res, next) => {
     const html = req.body.html;
     const sendPdf = req.body.sendPdf;
     const deletePdf = req.query.delete;
-    const billName = `BILL-${bill.number}.pdf`;
-    if (Number.isInteger(bill.taxes)) {
-        bill.taxes = bill.taxes.toFixed(2);
+    const creditNoteName = `CREDIT-NOTE-${creditNote.number}.pdf`;
+    if (Number.isInteger(creditNote.taxes)) {
+        creditNote.taxes = creditNote.taxes.toFixed(2);
     }
-    if (Number.isInteger(bill.subtotal)) {
-        bill.subtotal = bill.subtotal.toFixed(2);
+    if (Number.isInteger(creditNote.subtotal)) {
+        creditNote.subtotal = creditNote.subtotal.toFixed(2);
     }
-    if (Number.isInteger(bill.total)) {
-        bill.total = bill.total.toFixed(2);
+    if (Number.isInteger(creditNote.total)) {
+        creditNote.total = creditNote.total.toFixed(2);
     }
-    if (bill.total[0] === "$") {
-        bill.total = req.body.bill.total.substring(1);
+    if (creditNote.total[0] === "$") {
+        creditNote.total = req.body.creditNote.total.substring(1);
     }
     const fonts = {
         Helvetica: {
@@ -412,11 +574,11 @@ exports.createPDF = async (req, res, next) => {
         },
     };
     if (sendPdf) {
-        sendBill(subject, sender, receiver, billName, html);
-        if (bill.sent == 'No') {
-            const bill2 = await Bill.findById(bill._id);
-            bill2.sent = 'Yes';
-            await bill2.save();
+        sendCreditNote(subject, sender, receiver, creditNoteName, html);
+        if (creditNote.sent == 'No') {
+            const creditNote2 = await CreditNote.findById(creditNote._id);
+            creditNote2.sent = 'Yes';
+            await creditNote2.save();
         }
         return res.status(200).json({
             message: 'pdf sent'
@@ -456,7 +618,7 @@ exports.createPDF = async (req, res, next) => {
                                 },
                                 [
                                     {
-                                        text: 'Bill',
+                                        text: 'Credit Note',
                                         color: '#333333',
                                         width: '*',
                                         fontSize: 28,
@@ -469,7 +631,7 @@ exports.createPDF = async (req, res, next) => {
                                             {
                                                 columns: [
                                                     {
-                                                        text: 'Bill No.',
+                                                        text: 'Credit Note No.',
                                                         color: '#aaaaab',
                                                         bold: true,
                                                         width: '*',
@@ -478,7 +640,7 @@ exports.createPDF = async (req, res, next) => {
                                                         margin: [0, 0, 0, 5],
                                                     },
                                                     {
-                                                        text: `${bill.number}`,
+                                                        text: `${creditNote.number}`,
                                                         bold: true,
                                                         color: '#333333',
                                                         fontSize: 12,
@@ -500,7 +662,7 @@ exports.createPDF = async (req, res, next) => {
                                                         margin: [0, 0, 0, 5],
                                                     },
                                                     {
-                                                        text: `${bill.createdAt}`,
+                                                        text: `${creditNote.createdAt}`,
                                                         bold: true,
                                                         color: '#333333',
                                                         fontSize: 12,
@@ -522,7 +684,7 @@ exports.createPDF = async (req, res, next) => {
                                                         margin: [0, 0, 0, 5],
                                                     },
                                                     {
-                                                        text: `${bill.dueDate}`,
+                                                        text: `${creditNote.dueDate}`,
                                                         bold: true,
                                                         fontSize: 12,
                                                         alignment: 'right',
@@ -538,7 +700,7 @@ exports.createPDF = async (req, res, next) => {
                             ],
                             margin: [0, 0, 0, 50]
                         },
-                        table(bill.details, ['Item', 'Quantity', 'Unit Price', 'Discount', 'Amount',]),
+                        table(creditNote.details, ['Item', 'Quantity', 'Unit Price', 'Discount', 'Amount',]),
                         '\n',
                         '\n\n',
                         {
@@ -591,7 +753,7 @@ exports.createPDF = async (req, res, next) => {
                                         },
                                         {
                                             border: [false, true, false, true],
-                                            text: `$${bill.subtotal}`,
+                                            text: `$${creditNote.subtotal}`,
                                             alignment: 'right',
                                             fillColor: '#f5f5f5',
                                             margin: [0, 5, 0, 5],
@@ -605,7 +767,7 @@ exports.createPDF = async (req, res, next) => {
                                             margin: [0, 5, 0, 5],
                                         },
                                         {
-                                            text: `$${bill.taxes}`,
+                                            text: `$${creditNote.taxes}`,
                                             border: [false, false, false, true],
                                             fillColor: '#f5f5f5',
                                             alignment: 'right',
@@ -622,7 +784,7 @@ exports.createPDF = async (req, res, next) => {
                                             margin: [0, 5, 0, 5],
                                         },
                                         {
-                                            text: `$${bill.total}`,
+                                            text: `$${creditNote.total}`,
                                             bold: true,
                                             fontSize: 20,
                                             alignment: 'right',
@@ -654,9 +816,9 @@ exports.createPDF = async (req, res, next) => {
                 };
                 let pdfDoc = printer.createPdfKitDocument(docDefinition);
                 res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader(`Content-Disposition`, `inline; filename= ${billName}`);
+                res.setHeader(`Content-Disposition`, `inline; filename= ${creditNoteName}`);
                 if (!deletePdf) {
-                    pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'bill.pdf')));
+                    pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'creditNote.pdf')));
                 }
                 pdfDoc.pipe(res);
                 pdfDoc.end();
@@ -671,7 +833,7 @@ exports.createPDF = async (req, res, next) => {
 
                             [
                                 {
-                                    text: 'Bill',
+                                    text: 'Credit Note',
                                     color: '#333333',
                                     width: '*',
                                     fontSize: 28,
@@ -684,7 +846,7 @@ exports.createPDF = async (req, res, next) => {
                                         {
                                             columns: [
                                                 {
-                                                    text: 'Bill No.',
+                                                    text: 'Credit Note No.',
                                                     color: '#aaaaab',
                                                     bold: true,
                                                     width: '*',
@@ -693,7 +855,7 @@ exports.createPDF = async (req, res, next) => {
                                                     margin: [0, 0, 0, 5],
                                                 },
                                                 {
-                                                    text: `${bill.number}`,
+                                                    text: `${creditNote.number}`,
                                                     bold: true,
                                                     color: '#333333',
                                                     fontSize: 12,
@@ -715,7 +877,7 @@ exports.createPDF = async (req, res, next) => {
                                                     margin: [0, 0, 0, 5],
                                                 },
                                                 {
-                                                    text: `${bill.createdAt}`,
+                                                    text: `${creditNote.createdAt}`,
                                                     bold: true,
                                                     color: '#333333',
                                                     fontSize: 12,
@@ -737,7 +899,7 @@ exports.createPDF = async (req, res, next) => {
                                                     margin: [0, 0, 0, 5],
                                                 },
                                                 {
-                                                    text: `${bill.dueDate}`,
+                                                    text: `${creditNote.dueDate}`,
                                                     bold: true,
                                                     fontSize: 12,
                                                     alignment: 'right',
@@ -753,7 +915,7 @@ exports.createPDF = async (req, res, next) => {
                         ],
                         margin: [0, 0, 0, 50]
                     },
-                    table(bill.details, ['Item', 'Quantity', 'Unit Price', 'Discount', 'Amount',]),
+                    table(creditNote.details, ['Item', 'Quantity', 'Unit Price', 'Discount', 'Amount',]),
                     '\n',
                     '\n\n',
                     {
@@ -806,7 +968,7 @@ exports.createPDF = async (req, res, next) => {
                                     },
                                     {
                                         border: [false, true, false, true],
-                                        text: `$${bill.subtotal}`,
+                                        text: `$${creditNote.subtotal}`,
                                         alignment: 'right',
                                         fillColor: '#f5f5f5',
                                         margin: [0, 5, 0, 5],
@@ -820,7 +982,7 @@ exports.createPDF = async (req, res, next) => {
                                         margin: [0, 5, 0, 5],
                                     },
                                     {
-                                        text: `$${bill.taxes}`,
+                                        text: `$${creditNote.taxes}`,
                                         border: [false, false, false, true],
                                         fillColor: '#f5f5f5',
                                         alignment: 'right',
@@ -837,7 +999,7 @@ exports.createPDF = async (req, res, next) => {
                                         margin: [0, 5, 0, 5],
                                     },
                                     {
-                                        text: `$${bill.total}`,
+                                        text: `$${creditNote.total}`,
                                         bold: true,
                                         fontSize: 20,
                                         alignment: 'right',
@@ -869,9 +1031,9 @@ exports.createPDF = async (req, res, next) => {
             };
             let pdfDoc = printer.createPdfKitDocument(docDefinition);
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader(`Content-Disposition`, `inline; filename= ${billName}`);
+            res.setHeader(`Content-Disposition`, `inline; filename= ${creditNoteName}`);
             if (!deletePdf) {
-                pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'bill.pdf')));
+                pdfDoc.pipe(fs.createWriteStream(path.join('assets', 'creditNote.pdf')));
             }
             pdfDoc.pipe(res);
             pdfDoc.end();
@@ -879,8 +1041,8 @@ exports.createPDF = async (req, res, next) => {
     }
 };
 
-const sendBill = (subject, sender, receiver, filename, html) => {
-    const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/bill.pdf`);
+const sendCreditNote = (subject, sender, receiver, filename, html) => {
+    const data = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/creditNote.pdf`);
     let ses_mail = "From: <" + sender + ">\n";
     ses_mail += "To: " + receiver + "\n";
     ses_mail += "Subject: " + subject + "\n";
@@ -906,7 +1068,7 @@ const sendBill = (subject, sender, receiver, filename, html) => {
 
     sendPromise.then(
         (data) => {
-            fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/bill.pdf`);
+            fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/creditNote.pdf`);
             return;
         }).catch(
             (err) => {
@@ -1061,3 +1223,4 @@ const table = (details, columns) => {
         }
     };
 };
+

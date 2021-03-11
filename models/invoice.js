@@ -17,10 +17,6 @@ const invoiceSchema = new Schema({
     ref: 'Contact',
     required: false
   },
-  account: {
-    type: Schema.Types.ObjectId,
-    ref: 'Account'
-  },
   number: {
     type: String,
     required: true

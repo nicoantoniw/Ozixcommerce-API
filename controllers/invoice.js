@@ -29,7 +29,7 @@ exports.getInvoices = async (req, res, next) => {
     const invoices = await Invoice.find({ creator: req.groupId })
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, email: 1, _id: 1 })
+      .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
       .sort({ number: -1 });
 
     if (totalInvoices === 0) {
@@ -76,97 +76,97 @@ exports.getInvoicesByFilter = async (req, res, next) => {
       invoices = await Invoice.find({ seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller === '' && status === '' && customer != '') {
       invoices = await Invoice.find({ customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller === '' && customer === '' && status != '') {
       invoices = await Invoice.find({ status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (seller === '' && customer === '' && status === '' && dateFrom != null && dateTo != null) {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (customer === '' && status === '' && dateFrom != null && dateTo != null && seller != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (seller === '' && status === '' && dateFrom != null && dateTo != null && customer != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (seller === '' && customer === '' && dateFrom != null && dateTo != null && status != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && status === '' && seller != '' && customer != '') {
       invoices = await Invoice.find({ seller: seller, customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && customer === '' && seller != '' && status != '') {
       invoices = await Invoice.find({ seller: seller, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller === '' && customer != '' && status != '') {
       invoices = await Invoice.find({ customer: customer, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom === null && dateTo === null && seller != '' && customer != '' && status != '') {
       invoices = await Invoice.find({ customer: customer, status: status, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && seller != '' && customer != '' && status === '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && seller != '' && customer === '' && status != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, seller: seller, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom !== null && dateTo !== null && seller === '' && customer != '' && status != '') {
       invoices = await Invoice.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, status: status, customer: customer, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else if (dateFrom != null && dateTo != null && customer != '' && status != '' && seller != '') {
       invoices = await Invoice.find({ seller: seller, createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, status: status, creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     } else {
       invoices = await Invoice.find({ creator: req.groupId })
         .populate('seller', { name: 1, _id: 1 })
         .populate('creator', { name: 1, _id: 1 })
-        .populate('customer', { name: 1, email: 1, _id: 1 })
+        .populate('customer', { name: 1, email: 1, _id: 1, credit: 1 })
         .sort({ number: -1 });
     }
     if (invoices.length < 1) {
@@ -192,7 +192,7 @@ exports.getInvoice = async (req, res, next) => {
     const invoice = await Invoice.findById(invoiceId)
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1, email: 1 });
+      .populate('customer', { name: 1, _id: 1, email: 1, credit: 1 });
     if (!invoice) {
       const error = new Error('No invoice found');
       error.statusCode = 404;
@@ -234,14 +234,23 @@ exports.addInvoice = async (req, res, next) => {
       createdAt: moment.utc(req.body.invoice.createdAt)
     });
 
+    //contact
     const contact = await Contact.findById(req.body.invoice.customer);
     if (contact.type === 'None') {
       contact.type = 'Customer';
-      await contact.save();
     } else if (contact.type === 'Supplier') {
       contact.type = 'All';
-      await contact.save();
     }
+    contact.totalDebt += Math.round((invoice.total + Number.EPSILON) * 100) / 100;
+    if (contact.totalDebt > 0) {
+      contact.owes = contact.totalDebt;
+    } else if (contact.totalDebt < 0) {
+      contact.credit = contact.totalDebt * -1;
+    } else {
+      contact.owes = 0;
+      contact.credit = 0;
+    }
+    await contact.save();
 
     if (req.body.fromQuote) {
       const invoices = await Invoice.find({ creator: req.groupId })
@@ -399,6 +408,19 @@ exports.deleteInvoice = async (req, res, next) => {
       throw error;
     }
 
+    //contact
+    const contact = await Contact.findById(invoice.customer);
+    contact.totalDebt -= Math.round((invoice.total + Number.EPSILON) * 100) / 100;
+    if (contact.totalDebt > 0) {
+      contact.owes = contact.totalDebt;
+    } else if (contact.totalDebt < 0) {
+      contact.credit = contact.totalDebt * -1;
+    } else {
+      contact.owes = 0;
+      contact.credit = 0;
+    }
+    await contact.save();
+
     // accounts receivable
     let account = await Account.findOne({ code: 1100 });
     if (!account) {
@@ -408,6 +430,18 @@ exports.deleteInvoice = async (req, res, next) => {
     }
     account.balance -= invoice.total;
     let index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
+    account.movements.splice(index, 1);
+    await account.save();
+
+    // sales tax account
+    account = await Account.findOne({ code: 1400 });
+    if (!account) {
+      const error = new Error('Could not find any account');
+      error.statusCode = 404;
+      throw error;
+    }
+    account.balance -= invoice.taxes;
+    index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
     account.movements.splice(index, 1);
     await account.save();
 
@@ -425,13 +459,8 @@ exports.deleteInvoice = async (req, res, next) => {
         throw error;
       }
       account.balance -= detail.price;
-      account.movements.push({
-        transactionRef: 'Invoice',
-        transaction: invoice._id,
-        date: invoice.createdAt,
-        description: `Invoice # ${invoice.number}`,
-        amount: detail.price
-      });
+      index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
+      account.movements.splice(index, 1);
       await account.save();
 
       if (detail.product.trackItem) {
@@ -443,13 +472,8 @@ exports.deleteInvoice = async (req, res, next) => {
           throw error;
         }
         account.balance -= detail.product.price * detail.quantity;
-        account.movements.push({
-          transactionRef: 'Invoice',
-          date: invoice.createdAt,
-          transaction: invoice._id,
-          description: `Invoice # ${invoice.number}`,
-          amount: detail.product.price * detail.quantity
-        });
+        index = account.movements.findIndex(movement => movement.transaction == invoice._id.toString());
+        account.movements.splice(index, 1);
         await account.save();
       }
     }

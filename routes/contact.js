@@ -16,30 +16,6 @@ router.post(
   auth.isUser, auth.isPrime, auth.isWebsiteUser,
   contactController.addContact
 );
-router.post(
-  '/debt/add',
-  body('debt')
-    .isNumeric()
-    .trim(),
-  body('description')
-    .isString()
-    .trim()
-    .isLength({ max: 100 }),
-  auth.isUser, auth.isPrime,
-  contactController.addDebt
-);
-router.post(
-  '/debt/subtract',
-  body('debt')
-    .isNumeric()
-    .trim(),
-  body('description')
-    .isString()
-    .trim()
-    .isLength({ max: 100 }),
-  auth.isUser, auth.isPrime,
-  contactController.subtractDebt
-);
 router.put(
   '/update/:contactId',
   auth.isUser, auth.isPrime,

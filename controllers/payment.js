@@ -8,6 +8,7 @@ const AWS = require('aws-sdk');
 
 const Payment = require('../models/payment');
 const Invoice = require('../models/invoice');
+const Contact = require('../models/contact');
 const Bill = require('../models/bill');
 const Account = require('../models/account');
 const Group = require('../models/group');
@@ -113,6 +114,20 @@ exports.addPayment = async (req, res, next) => {
                     invoice.paid = invoice.total;
                     invoice.due = 0;
                 }
+
+                //contact
+                const contact = await Contact.findById(invoice.customer);
+                contact.totalDebt -= Math.round((invoice.total + Number.EPSILON) * 100) / 100;
+                if (contact.totalDebt > 0) {
+                    contact.owes = contact.totalDebt;
+                } else if (contact.totalDebt < 0) {
+                    contact.credit = contact.totalDebt * -1;
+                } else {
+                    contact.owes = 0;
+                    contact.credit = 0;
+                }
+                await contact.save();
+
                 // accounts receivable
                 let account = await Account.findOne({ code: 1100 });
                 if (!account) {
@@ -165,6 +180,19 @@ exports.addPayment = async (req, res, next) => {
                     bill.paid = bill.total;
                     bill.due = 0;
                 }
+
+                //contact
+                const contact = await Contact.findById(bill.supplier);
+                contact.totalDebt += Math.round((bill.total + Number.EPSILON) * 100) / 100;
+                if (contact.totalDebt > 0) {
+                    contact.owes = contact.totalDebt;
+                } else if (contact.totalDebt < 0) {
+                    contact.credit = contact.totalDebt * -1;
+                } else {
+                    contact.owes = 0;
+                    contact.credit = 0;
+                }
+                await contact.save();
 
                 // Accounts Payable
                 let account = await Account.findOne({ code: 2100 });
@@ -279,6 +307,19 @@ exports.deletePayment = async (req, res, next) => {
                 invoice.due = invoice.total;
             }
 
+            //contact
+            const contact = await Contact.findById(invoice.customer);
+            contact.totalDebt += Math.round((invoice.total + Number.EPSILON) * 100) / 100;
+            if (contact.totalDebt > 0) {
+                contact.owes = contact.totalDebt;
+            } else if (contact.totalDebt < 0) {
+                contact.credit = contact.totalDebt * -1;
+            } else {
+                contact.owes = 0;
+                contact.credit = 0;
+            }
+            await contact.save();
+
             // accounts receivable
             let account = await Account.findOne({ code: 1100 });
             if (!account) {
@@ -287,8 +328,13 @@ exports.deletePayment = async (req, res, next) => {
                 throw error;
             }
             account.balance += invoice.total;
-            let index = account.movements.findIndex(movement => movement.transaction == payment._id.toString());
-            account.movements.splice(index, 1);
+            account.movements.push({
+                transactionRef: 'Invoice',
+                transaction: invoice._id,
+                date: invoice.createdAt,
+                description: `Invoice # ${invoice.number}`,
+                amount: invoice.total
+            });
             await account.save();
 
             // Bank Account
@@ -316,6 +362,19 @@ exports.deletePayment = async (req, res, next) => {
                 bill.due = bill.total;
             }
 
+            //contact
+            const contact = await Contact.findById(bill.supplier);
+            contact.totalDebt -= Math.round((bill.total + Number.EPSILON) * 100) / 100;
+            if (contact.totalDebt > 0) {
+                contact.owes = contact.totalDebt;
+            } else if (contact.totalDebt < 0) {
+                contact.credit = contact.totalDebt * -1;
+            } else {
+                contact.owes = 0;
+                contact.credit = 0;
+            }
+            await contact.save();
+
             // accounts payable
             let account = await Account.findOne({ code: 2100 });
             if (!account) {
@@ -324,8 +383,13 @@ exports.deletePayment = async (req, res, next) => {
                 throw error;
             }
             account.balance += payment.total;
-            let index = account.movements.findIndex(movement => movement.transaction == payment._id.toString());
-            account.movements.splice(index, 1);
+            account.movements.push({
+                transactionRef: 'Bill',
+                transaction: bill._id,
+                date: bill.createdAt,
+                description: `Bill # ${bill.number}`,
+                amount: bill.total
+            });
             await account.save();
 
             // Bank Account
