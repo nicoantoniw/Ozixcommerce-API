@@ -126,6 +126,7 @@ exports.addProduct = async (req, res, next) => {
       percentage: Number(req.body.percentage),
       sellingPrice: 0,
       stock: req.body.stock,
+      taxable: req.body.taxable,
       salesAccount: req.body.salesAccount,
       costOfGoodsAccount: req.body.costOfGoodsAccount,
       creator: req.groupId
@@ -334,6 +335,7 @@ exports.updateProduct = async (req, res, next) => {
       product.category = req.body.category;
       product.sku = req.body.sku;
       product.description = req.body.description;
+      product.taxable = req.body.taxable;
       if (product.trackItem) {
         product.stock = Number(req.body.stock);
         product.locations = locations;

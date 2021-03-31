@@ -59,6 +59,10 @@ const invoiceSchema = new Schema({
       price: {
         type: Number,
         required: true
+      },
+      taxes: {
+        type: Number,
+        required: true
       }
     }
   ],

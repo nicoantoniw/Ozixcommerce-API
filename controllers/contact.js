@@ -256,7 +256,9 @@ exports.updateContact = async (req, res, next) => {
     contact.billingAddress = req.body.billingAddress;
     contact.shippingAddress = req.body.shippingAddress;
     contact.account = req.body.account;
-    contact.totalDebt = req.body.totalDebt;
+    if (req.body.totalDebt) {
+      contact.totalDebt = req.body.totalDebt;
+    }
     if (contact.totalDebt > 0) {
       contact.owes = contact.totalDebt;
     } else if (contact.totalDebt < 0) {

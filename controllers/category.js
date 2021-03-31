@@ -50,6 +50,7 @@ exports.getCategory = async (req, res, next) => {
     next(err);
   }
 };
+
 exports.addCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
