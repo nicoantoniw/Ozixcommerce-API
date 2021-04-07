@@ -2,6 +2,7 @@ const Taxjar = require('taxjar');
 
 const Contact = require('../models/contact');
 const Group = require('../models/group');
+const invoice = require('../models/invoice');
 const TaxRate = require('../models/taxRate');
 
 const taxjarClient = new Taxjar({
@@ -9,36 +10,87 @@ const taxjarClient = new Taxjar({
 });
 
 exports.getSalesTax = async (req, res, next) => {
-    const amount = req.query.amount;
-    const contact = await Contact.findById(req.query.customer);
-    const group = await Group.findById(req.groupId);
-
-    taxjarClient.taxForOrder({
-        from_country: 'US',
-        from_zip: group.companyAddress.zip,
-        from_state: group.companyAddress.state,
-        from_city: group.companyAddress.city,
-        from_street: group.companyAddress.street,
-        to_country: 'US',
-        to_zip: contact.shippingAddress.zip,
-        to_state: contact.shippingAddress.state,
-        to_city: contact.shippingAddress.city,
-        to_street: contact.shippingAddress.street,
-        amount: amount,
-        shipping: 0,
-        line_items: []
-    }).then(
-        response => {
-            res.status(200).json({
-                response
+    try {
+        const amount = req.query.amount;
+        const group = await Group.findById(req.groupId);
+        const contact = await Contact.findById(req.query.contactId);
+        if (contact.shippingAddress.street === '' && req.query.shipToAddressCheckbox === 'true' || contact.shippingAddress.state === '' && req.query.shipToAddressCheckbox === 'true' || contact.shippingAddress.zip === '' && req.query.shipToAddressCheckbox === 'true' || contact.shippingAddress.city === '' && req.query.shipToAddressCheckbox === 'true') {
+            contact.shippingAddress.street = req.query.street;
+            contact.shippingAddress.city = req.query.city;
+            contact.shippingAddress.state = req.query.state;
+            contact.shippingAddress.zip = req.query.zip;
+            await contact.save();
+        }
+        if (!group.validatedAddress) {
+            const error = new Error('Business address not validated');
+            error.statusCode = 102;
+            throw error;
+        }
+        if (req.query.shipToAddressCheckbox === 'false') {
+            taxjarClient.taxForOrder({
+                from_country: 'US',
+                from_zip: group.companyAddress.zip,
+                from_state: group.companyAddress.state,
+                from_city: group.companyAddress.city,
+                from_street: group.companyAddress.street,
+                to_country: 'US',
+                to_zip: group.companyAddress.zip,
+                to_state: group.companyAddress.state,
+                to_city: group.companyAddress.city,
+                to_street: group.companyAddress.street,
+                amount: amount,
+                shipping: 0,
+                line_items: []
+            }).then(
+                response => {
+                    res.status(200).json({
+                        response
+                    });
+                }
+            ).catch(err => {
+                err.statusCode = err.status;
+                if (!err.statusCode) {
+                    err.statusCode = 500;
+                }
+                next(err);
+            });
+        } else {
+            taxjarClient.taxForOrder({
+                from_country: 'US',
+                from_zip: group.companyAddress.zip,
+                from_state: group.companyAddress.state,
+                from_city: group.companyAddress.city,
+                from_street: group.companyAddress.street,
+                to_country: 'US',
+                to_zip: contact.shippingAddress.zip,
+                to_state: contact.shippingAddress.state,
+                to_city: contact.shippingAddress.city,
+                to_street: contact.shippingAddress.street,
+                amount: amount,
+                shipping: 0,
+                line_items: []
+            }).then(
+                response => {
+                    res.status(200).json({
+                        response
+                    });
+                }
+            ).catch(err => {
+                err.statusCode = err.status;
+                if (!err.statusCode) {
+                    err.statusCode = 500;
+                }
+                next(err);
             });
         }
-    ).catch(err => {
+    } catch (err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    }
+
+
 };
 
 exports.getCategories = async (req, res, next) => {
@@ -83,19 +135,33 @@ exports.getTaxRates = async (req, res, next) => {
 };
 
 exports.validateAddress = async (req, res, next) => {
+    const country = req.body.country;
+    const state = req.body.state;
+    const zip = req.body.zip;
+    const city = req.body.city;
+    const street = req.body.street;
+    let contact = null;
+    if (req.body.contact) {
+        contact = await Contact.findById(contact._id);
+    }
     taxjarClient.validateAddress({
-        country: 'US',
-        state: 'FL',
-        zip: '32824',
-        city: 'Orlando',
-        street: '9610 S Orange Ave',
+        country: country,
+        state: state,
+        zip: zip,
+        city: city,
+        street: street,
     }).then(
         response => {
+            if (contact) {
+                contact.validatedAddress = true;
+                contact.save();
+            }
             res.status(200).json({
                 response
             });
         }
     ).catch(err => {
+        err.statusCode = err.status;
         if (!err.statusCode) {
             err.statusCode = 500;
         }

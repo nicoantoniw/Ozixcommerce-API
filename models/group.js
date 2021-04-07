@@ -54,12 +54,16 @@ const groupSchema = new Schema({
     city: {
       type: String
     },
-    streetAddress: {
+    street: {
       type: String
     },
     zip: {
       type: String
     },
+  },
+  validatedAddress: {
+    type: Boolean,
+    default: false
   },
   customerFacingAddress: {
     state: {
@@ -68,7 +72,7 @@ const groupSchema = new Schema({
     city: {
       type: String
     },
-    streetAddress: {
+    street: {
       type: String
     },
     zip: {

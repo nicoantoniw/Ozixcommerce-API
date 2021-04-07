@@ -64,6 +64,10 @@ const contactSchema = new Schema({
       type: String,
     },
   },
+  validatedAddress: {
+    type: Boolean,
+    default: false
+  },
   shippingAddress: {
     street: {
       type: String,

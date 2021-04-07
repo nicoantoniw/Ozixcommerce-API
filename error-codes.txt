@@ -1,4 +1,6 @@
 101 - Invoices and Bills payed cannot be deleted.
+102 - Business address not validated
+103 - Contact address not validated
 601 - Amount is greater than due.
 604 - Some fields in the file are not correct
 605 - the resource already exists

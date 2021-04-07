@@ -17,6 +17,20 @@ const invoiceSchema = new Schema({
     ref: 'Contact',
     required: false
   },
+  shippingAddress: {
+    street: {
+      type: String,
+    },
+    city: {
+      type: String,
+    },
+    state: {
+      type: String,
+    },
+    zip: {
+      type: String,
+    }
+  },
   number: {
     type: String,
     required: true

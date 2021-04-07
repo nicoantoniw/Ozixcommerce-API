@@ -86,12 +86,13 @@ exports.updateBusinessInfo = async (req, res, next) => {
         group.contactDetails.website = req.body.group.contactDetails.website;
         group.companyAddress.state = req.body.group.companyAddress.state;
         group.companyAddress.city = req.body.group.companyAddress.city;
-        group.companyAddress.streetAddress = req.body.group.companyAddress.streetAddress;
+        group.companyAddress.street = req.body.group.companyAddress.street;
         group.companyAddress.zip = req.body.group.companyAddress.zip;
         group.customerFacingAddress.state = req.body.group.customerFacingAddress.state;
         group.customerFacingAddress.city = req.body.group.customerFacingAddress.city;
-        group.customerFacingAddress.streetAddress = req.body.group.customerFacingAddress.streetAddress;
+        group.customerFacingAddress.street = req.body.group.customerFacingAddress.street;
         group.customerFacingAddress.zip = req.body.group.customerFacingAddress.zip;
+        group.validatedAddress = true;
 
         await group.save();
         res.status(200).json({

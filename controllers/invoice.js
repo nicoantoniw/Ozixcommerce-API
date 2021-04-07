@@ -23,6 +23,7 @@ AWS.config.update({
 
 exports.getInvoices = async (req, res, next) => {
   try {
+    const group = await Group.findById(req.groupId);
     const totalInvoices = await Invoice.find({
       creator: req.groupId
     }).countDocuments();
@@ -40,6 +41,7 @@ exports.getInvoices = async (req, res, next) => {
     res.status(200).json({
       invoices,
       totalInvoices,
+      group
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -242,6 +244,9 @@ exports.addInvoice = async (req, res, next) => {
       contact.type = 'All';
     }
     contact.totalDebt += Math.round((invoice.total + Number.EPSILON) * 100) / 100;
+    if (req.body.shipToAddressCheckbox) {
+      invoice.shippingAddress = req.body.invoice.shippingAddress;
+    }
     if (contact.totalDebt > 0) {
       contact.owes = contact.totalDebt;
     } else if (contact.totalDebt < 0) {
