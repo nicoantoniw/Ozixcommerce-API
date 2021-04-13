@@ -143,6 +143,14 @@ exports.addCreditNote = async (req, res, next) => {
         }
         //contact
         const contact = await Contact.findById(creditNote.contact);
+        if (contact.type === 'None') {
+            contact.type = 'Customer';
+        } else if (contact.type === 'Supplier') {
+            contact.type = 'All';
+        }
+        if (req.body.shipToAddressCheckbox) {
+            creditNote.shippingAddress = req.body.creditNote.shippingAddress;
+        }
         contact.totalDebt -= Math.round((creditNote.total + Number.EPSILON) * 100) / 100;
         if (contact.totalDebt > 0) {
             contact.owes = contact.totalDebt;

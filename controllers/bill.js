@@ -120,7 +120,6 @@ exports.addBill = async (req, res, next) => {
             total: Number(req.body.bill.total),
             due: Number(req.body.bill.total),
             subtotal: req.body.bill.subtotal,
-            taxes: req.body.bill.taxes,
             discounts: Number(req.body.bill.discounts),
             creator: req.groupId,
             supplier: req.body.bill.supplier,
@@ -391,9 +390,6 @@ exports.createPDF = async (req, res, next) => {
     const sendPdf = req.body.sendPdf;
     const deletePdf = req.query.delete;
     const billName = `BILL-${bill.number}.pdf`;
-    if (Number.isInteger(bill.taxes)) {
-        bill.taxes = bill.taxes.toFixed(2);
-    }
     if (Number.isInteger(bill.subtotal)) {
         bill.subtotal = bill.subtotal.toFixed(2);
     }
@@ -599,21 +595,6 @@ exports.createPDF = async (req, res, next) => {
                                     ],
                                     [
                                         {
-                                            text: 'Taxes',
-                                            border: [false, false, false, true],
-                                            alignment: 'right',
-                                            margin: [0, 5, 0, 5],
-                                        },
-                                        {
-                                            text: `$${bill.taxes}`,
-                                            border: [false, false, false, true],
-                                            fillColor: '#f5f5f5',
-                                            alignment: 'right',
-                                            margin: [0, 5, 0, 5],
-                                        },
-                                    ],
-                                    [
-                                        {
                                             text: 'Total',
                                             bold: true,
                                             fontSize: 20,
@@ -809,21 +790,6 @@ exports.createPDF = async (req, res, next) => {
                                         text: `$${bill.subtotal}`,
                                         alignment: 'right',
                                         fillColor: '#f5f5f5',
-                                        margin: [0, 5, 0, 5],
-                                    },
-                                ],
-                                [
-                                    {
-                                        text: 'Taxes',
-                                        border: [false, false, false, true],
-                                        alignment: 'right',
-                                        margin: [0, 5, 0, 5],
-                                    },
-                                    {
-                                        text: `$${bill.taxes}`,
-                                        border: [false, false, false, true],
-                                        fillColor: '#f5f5f5',
-                                        alignment: 'right',
                                         margin: [0, 5, 0, 5],
                                     },
                                 ],

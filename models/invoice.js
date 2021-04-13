@@ -20,15 +20,19 @@ const invoiceSchema = new Schema({
   shippingAddress: {
     street: {
       type: String,
+      default: ''
     },
     city: {
       type: String,
+      default: ''
     },
     state: {
       type: String,
+      default: ''
     },
     zip: {
       type: String,
+      default: ''
     }
   },
   number: {
@@ -73,6 +77,10 @@ const invoiceSchema = new Schema({
       price: {
         type: Number,
         required: true
+      },
+      taxable: {
+        type: String,
+
       },
       taxes: {
         type: Number,

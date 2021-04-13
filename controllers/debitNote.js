@@ -117,7 +117,6 @@ exports.addDebitNote = async (req, res, next) => {
             total: Number(req.body.debitNote.total),
             due: Number(req.body.debitNote.total),
             subtotal: req.body.debitNote.subtotal,
-            taxes: req.body.debitNote.taxes,
             discounts: Number(req.body.debitNote.discounts),
             creator: req.groupId,
             contact: req.body.debitNote.contact,
@@ -244,7 +243,6 @@ exports.applyDebit = async (req, res, next) => {
         }
 
         const bill = await Bill.findById(req.body.bill);
-        console.log(totalCreditToApply);
         if (bill.due > 0 && totalCreditToApply <= bill.due) {
             if (bill.due > totalCreditToApply) {
                 bill.status = 'Partially Paid';
@@ -500,9 +498,6 @@ exports.createPDF = async (req, res, next) => {
     const sendPdf = req.body.sendPdf;
     const deletePdf = req.query.delete;
     const debitNoteName = `CREDIT-NOTE-${debitNote.number}.pdf`;
-    if (Number.isInteger(debitNote.taxes)) {
-        debitNote.taxes = debitNote.taxes.toFixed(2);
-    }
     if (Number.isInteger(debitNote.subtotal)) {
         debitNote.subtotal = debitNote.subtotal.toFixed(2);
     }
@@ -708,21 +703,6 @@ exports.createPDF = async (req, res, next) => {
                                     ],
                                     [
                                         {
-                                            text: 'Taxes',
-                                            border: [false, false, false, true],
-                                            alignment: 'right',
-                                            margin: [0, 5, 0, 5],
-                                        },
-                                        {
-                                            text: `$${debitNote.taxes}`,
-                                            border: [false, false, false, true],
-                                            fillColor: '#f5f5f5',
-                                            alignment: 'right',
-                                            margin: [0, 5, 0, 5],
-                                        },
-                                    ],
-                                    [
-                                        {
                                             text: 'Total',
                                             bold: true,
                                             fontSize: 20,
@@ -918,21 +898,6 @@ exports.createPDF = async (req, res, next) => {
                                         text: `$${debitNote.subtotal}`,
                                         alignment: 'right',
                                         fillColor: '#f5f5f5',
-                                        margin: [0, 5, 0, 5],
-                                    },
-                                ],
-                                [
-                                    {
-                                        text: 'Taxes',
-                                        border: [false, false, false, true],
-                                        alignment: 'right',
-                                        margin: [0, 5, 0, 5],
-                                    },
-                                    {
-                                        text: `$${debitNote.taxes}`,
-                                        border: [false, false, false, true],
-                                        fillColor: '#f5f5f5',
-                                        alignment: 'right',
                                         margin: [0, 5, 0, 5],
                                     },
                                 ],

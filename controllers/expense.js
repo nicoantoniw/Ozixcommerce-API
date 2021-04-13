@@ -164,7 +164,6 @@ exports.addExpense = async (req, res, next) => {
             account: req.body.expense.account,
             total: Number(req.body.expense.total),
             subtotal: req.body.expense.subtotal,
-            taxes: req.body.expense.taxes,
             discounts: Number(req.body.expense.discounts),
             creator: req.groupId,
             supplier: req.body.expense.supplier,
@@ -260,9 +259,6 @@ exports.createPDF = async (req, res, next) => {
     expense.paymentDate = moment.utc(expense.paymentDate).format("LL");
     if (expense.total[0] === "$") {
         expense.total = req.body.expense.total.substring(1);
-    }
-    if (Number.isInteger(expense.taxes)) {
-        expense.taxes = expense.taxes.toFixed(2);
     }
     if (Number.isInteger(expense.subtotal)) {
         expense.subtotal = expense.subtotal.toFixed(2);
@@ -433,21 +429,6 @@ exports.createPDF = async (req, res, next) => {
                                             text: `$${expense.subtotal}`,
                                             alignment: 'right',
                                             fillColor: '#f5f5f5',
-                                            margin: [0, 5, 0, 5],
-                                        },
-                                    ],
-                                    [
-                                        {
-                                            text: 'Taxes',
-                                            border: [false, false, false, true],
-                                            alignment: 'right',
-                                            margin: [0, 5, 0, 5],
-                                        },
-                                        {
-                                            text: `$${expense.taxes}`,
-                                            border: [false, false, false, true],
-                                            fillColor: '#f5f5f5',
-                                            alignment: 'right',
                                             margin: [0, 5, 0, 5],
                                         },
                                     ],
@@ -626,21 +607,6 @@ exports.createPDF = async (req, res, next) => {
                                         text: `$${expense.subtotal}`,
                                         alignment: 'right',
                                         fillColor: '#f5f5f5',
-                                        margin: [0, 5, 0, 5],
-                                    },
-                                ],
-                                [
-                                    {
-                                        text: 'Taxes',
-                                        border: [false, false, false, true],
-                                        alignment: 'right',
-                                        margin: [0, 5, 0, 5],
-                                    },
-                                    {
-                                        text: `$${expense.taxes}`,
-                                        border: [false, false, false, true],
-                                        fillColor: '#f5f5f5',
-                                        alignment: 'right',
                                         margin: [0, 5, 0, 5],
                                     },
                                 ],

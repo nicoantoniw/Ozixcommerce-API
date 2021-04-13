@@ -172,7 +172,6 @@ exports.addPurchase = async (req, res, next) => {
       description: req.body.purchase.description,
       total: Number(req.body.purchase.total),
       subtotal: req.body.purchase.subtotal,
-      taxes: req.body.purchase.taxes,
       discounts: Number(req.body.purchase.discounts),
       creator: req.groupId,
       supplier: req.body.purchase.supplier,
@@ -297,9 +296,6 @@ exports.createPDF = async (req, res, next) => {
   const purchaseName = `PURCHASE-ORDER-${purchase.number}.pdf`;
   if (purchase.total[0] === "$") {
     purchase.total = req.body.purchase.total.substring(1);
-  }
-  if (Number.isInteger(purchase.taxes)) {
-    purchase.taxes = purchase.taxes.toFixed(2);
   }
   if (Number.isInteger(purchase.subtotal)) {
     purchase.subtotal = purchase.subtotal.toFixed(2);
@@ -471,21 +467,6 @@ exports.createPDF = async (req, res, next) => {
                       text: `$${purchase.subtotal}`,
                       alignment: 'right',
                       fillColor: '#f5f5f5',
-                      margin: [0, 5, 0, 5],
-                    },
-                  ],
-                  [
-                    {
-                      text: 'Taxes',
-                      border: [false, false, false, true],
-                      alignment: 'right',
-                      margin: [0, 5, 0, 5],
-                    },
-                    {
-                      text: `$${purchase.taxes}`,
-                      border: [false, false, false, true],
-                      fillColor: '#f5f5f5',
-                      alignment: 'right',
                       margin: [0, 5, 0, 5],
                     },
                   ],
@@ -664,21 +645,6 @@ exports.createPDF = async (req, res, next) => {
                     text: `$${purchase.subtotal}`,
                     alignment: 'right',
                     fillColor: '#f5f5f5',
-                    margin: [0, 5, 0, 5],
-                  },
-                ],
-                [
-                  {
-                    text: 'Taxes',
-                    border: [false, false, false, true],
-                    alignment: 'right',
-                    margin: [0, 5, 0, 5],
-                  },
-                  {
-                    text: `$${purchase.taxes}`,
-                    border: [false, false, false, true],
-                    fillColor: '#f5f5f5',
-                    alignment: 'right',
                     margin: [0, 5, 0, 5],
                   },
                 ],

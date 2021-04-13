@@ -31,10 +31,6 @@ const purchaseSchema = new Schema({
     type: Number,
     required: true
   },
-  taxes: {
-    type: Number,
-    required: true
-  },
   discounts: {
     type: Number,
     required: true

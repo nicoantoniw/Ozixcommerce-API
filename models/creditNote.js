@@ -12,6 +12,24 @@ const creditNoteSchema = new Schema({
         ref: 'Contact',
         required: false
     },
+    shippingAddress: {
+        street: {
+            type: String,
+            default: ''
+        },
+        city: {
+            type: String,
+            default: ''
+        },
+        state: {
+            type: String,
+            default: ''
+        },
+        zip: {
+            type: String,
+            default: ''
+        }
+    },
     number: {
         type: String,
         required: true
@@ -49,7 +67,14 @@ const creditNoteSchema = new Schema({
             quantity: {
                 type: Number,
             },
+            taxable: {
+                type: String,
+
+            },
             price: {
+                type: Number,
+            },
+            taxes: {
                 type: Number,
             }
         }

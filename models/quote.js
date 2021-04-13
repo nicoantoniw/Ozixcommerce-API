@@ -14,6 +14,24 @@ const quoteSchema = new Schema({
     description: {
         type: String
     },
+    shippingAddress: {
+        street: {
+            type: String,
+            default: ''
+        },
+        city: {
+            type: String,
+            default: ''
+        },
+        state: {
+            type: String,
+            default: ''
+        },
+        zip: {
+            type: String,
+            default: ''
+        }
+    },
     total: {
         type: Number,
         required: true
@@ -49,7 +67,15 @@ const quoteSchema = new Schema({
                 type: Number,
                 required: true
             },
+            taxable: {
+                type: String,
+
+            },
             price: {
+                type: Number,
+                required: true
+            },
+            taxes: {
                 type: Number,
                 required: true
             }

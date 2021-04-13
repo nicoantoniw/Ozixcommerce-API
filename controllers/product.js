@@ -338,7 +338,9 @@ exports.updateProduct = async (req, res, next) => {
       product.taxable = req.body.taxable;
       if (product.trackItem) {
         product.stock = Number(req.body.stock);
-        product.locations = locations;
+        if (locations) {
+          product.locations = locations;
+        }
         product.costOfGoodsAccount = req.body.costOfGoodsAccount;
         if (product.stock < totalStock) {
           product.stock = totalStock;
