@@ -111,6 +111,11 @@ exports.addDebitNote = async (req, res, next) => {
         next(error);
     }
     try {
+        if (req.body.expired) {
+            const error = new Error('Transaction is overdue');
+            error.statusCode = 104;
+            throw error;
+        }
         const debitNote = new DebitNote({
             number: req.body.debitNote.number,
             details: req.body.debitNote.details,

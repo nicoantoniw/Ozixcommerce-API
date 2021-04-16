@@ -77,6 +77,11 @@ exports.addPayment = async (req, res, next) => {
             createdAt: req.body.createdAt,
             creator: req.groupId
         });
+        if (req.body.expired) {
+            const error = new Error('Transaction is overdue');
+            error.statusCode = 104;
+            throw error;
+        }
         let receiver;
         if (req.body.receiveMoney) {
             payment.contact = req.body.contact;

@@ -111,6 +111,11 @@ exports.addCreditNote = async (req, res, next) => {
         next(error);
     }
     try {
+        if (req.body.expired) {
+            const error = new Error('Transaction is overdue');
+            error.statusCode = 104;
+            throw error;
+        }
         const creditNote = new CreditNote({
             number: req.body.creditNote.number,
             details: req.body.creditNote.details,
