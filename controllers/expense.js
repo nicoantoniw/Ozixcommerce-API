@@ -131,6 +131,7 @@ exports.getExpense = async (req, res, next) => {
     try {
         const expense = await Expense.findById(expenseId)
             .populate('supplier', { name: 1, _id: 1, email: 1 })
+            .populate('account', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 });
         if (!expense) {
             const error = new Error('No expense found');

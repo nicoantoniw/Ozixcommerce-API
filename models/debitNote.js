@@ -76,7 +76,15 @@ const debitNoteSchema = new Schema({
         type: String,
         default: 'No'
     },
-
+    fromBill: {
+        type: Boolean,
+        default: false
+    },
+    bill: {
+        type: Schema.Types.ObjectId,
+        ref: 'Bill',
+        required: false
+    },
     createdAt: {
         type: Date
     },

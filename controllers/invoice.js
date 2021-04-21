@@ -194,7 +194,7 @@ exports.getInvoice = async (req, res, next) => {
     const invoice = await Invoice.findById(invoiceId)
       .populate('seller', { name: 1, _id: 1 })
       .populate('creator', { name: 1, _id: 1 })
-      .populate('customer', { name: 1, _id: 1, email: 1, credit: 1 });
+      .populate('customer');
     if (!invoice) {
       const error = new Error('No invoice found');
       error.statusCode = 404;

@@ -105,7 +105,15 @@ const creditNoteSchema = new Schema({
         type: String,
         default: 'No'
     },
-
+    fromInvoice: {
+        type: Boolean,
+        default: false
+    },
+    invoice: {
+        type: Schema.Types.ObjectId,
+        ref: 'Invoice',
+        required: false
+    },
     createdAt: {
         type: Date
     },

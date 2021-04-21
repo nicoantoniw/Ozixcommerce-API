@@ -2,6 +2,7 @@
 102 - Business address not validated
 103 - Contact address not validated
 104 - Expired transaction
+105 - Credit or Debit notes can't be created in transactions that received a payment
 601 - Amount is greater than due.
 604 - Some fields in the file are not correct
 605 - the resource already exists

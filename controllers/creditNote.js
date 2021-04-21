@@ -130,6 +130,11 @@ exports.addCreditNote = async (req, res, next) => {
         });
 
         if (req.body.fromInvoice) {
+            if (creditNote.paid != 0) {
+                const error = new Error('Credit or Debit notes cant be created in transactions that received a payment');
+                error.statusCode = 105;
+                throw error;
+            }
             const creditNotes = await CreditNote.find({ creator: req.groupId })
                 .populate('creator', { name: 1, _id: 1 })
                 .populate('contact', { name: 1, _id: 1, email: 1 })
@@ -142,9 +147,11 @@ exports.addCreditNote = async (req, res, next) => {
             invoice.paid = creditNote.total;
             invoice.due = 0;
             await invoice.save();
-            CreditNote.status = 'Paid';
-            CreditNote.paid = creditNote.total;
-            CreditNote.due = 0;
+            creditNote.status = 'Paid';
+            creditNote.paid = creditNote.total;
+            creditNote.due = 0;
+            creditNote.fromInvoice = true;
+            creditNote.invoice = invoice._id;
         }
         //contact
         const contact = await Contact.findById(creditNote.contact);
@@ -390,6 +397,15 @@ exports.deleteCreditNote = async (req, res, next) => {
         } else {
             contact.owes = 0;
             contact.credit = 0;
+        }
+
+        // invoice
+        if (creditNote.fromInvoice) {
+            const invoice = await Bill.findById(creditNote.invoice);
+            invoice.status = 'Unpaid';
+            invoice.paid = 0;
+            invoice.due = creditNote.total;
+            await invoice.save();
         }
 
         // accounts receivable
