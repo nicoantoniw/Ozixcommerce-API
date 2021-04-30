@@ -6,9 +6,7 @@ const aws = require('aws-sdk');
 const path = require('path');
 
 const Product = require('../models/product');
-const Option = require('../models/option');
-const Location = require('../models/location');
-const Group = require('../models/group');
+const Account = require('../models/account');
 
 exports.getProducts = async (req, res, next) => {
   try {
@@ -66,8 +64,12 @@ exports.getProduct = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
+    const costOfGoodsAccount = await Account.findById(product.costOfGoodsAccount);
+    const salesAccount = await Account.findById(product.salesAccount);
     res.status(200).json({
-      product
+      product,
+      costOfGoodsAccount,
+      salesAccount
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -774,7 +776,7 @@ exports.updateVariant = async (req, res, next) => {
   let totalStock2 = 0;
   let index;
   const locations = req.body.locations;
-  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly && !req.body.stockOnly) {
+  if (!req.body.updateLocationsOnly && !req.body.deleteLocationsOnly && !req.body.stockOnly && !req.body.salePrice) {
     for (let index = 0; index < locations.length; index++) {
       totalStock += Number(locations[index].quantity);
     }
@@ -802,8 +804,11 @@ exports.updateVariant = async (req, res, next) => {
             name: req.body.name,
             quantity: req.body.quantity
           });
-          for (let index2 = 0; index < variant.locations.length; index2++) {
-            totalStock += Number(variant.locations[index2].quantity);
+          // check this
+          for (let index2 = 0; index2 < variant.locations.length; index2++) {
+            location = variant.locations[index2];
+            console.log(location);
+            totalStock += location.quantity;
           }
           if (variant.stock < totalStock) {
             variant.stock = totalStock;
@@ -825,6 +830,8 @@ exports.updateVariant = async (req, res, next) => {
           variant.stock += Number(req.body.stock);
           product.stock += Number(req.body.stock);
           variant.unassignedStock += Number(req.body.stock);
+        } else if (req.body.salePrice) {
+          variant.salePrice = req.body.price;
         } else {
           name = product.name;
           for (let index4 = 0; index4 < req.body.values.length; index4++) {

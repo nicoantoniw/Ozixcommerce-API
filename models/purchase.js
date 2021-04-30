@@ -12,10 +12,6 @@ const purchaseSchema = new Schema({
     ref: 'Contact',
     required: false
   },
-  account: {
-    type: Schema.Types.ObjectId,
-    ref: 'Account'
-  },
   description: {
     type: String,
   },

@@ -25,7 +25,7 @@ exports.getQuotes = async (req, res, next) => {
         }).countDocuments();
         const quotes = await Quote.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('customer', { name: 1, _id: 1, email: 1 })
+            .populate('customer')
             .sort({ number: -1 });
 
         if (totalQuotes === 0) {
@@ -67,22 +67,22 @@ exports.getQuotesByFilter = async (req, res, next) => {
         if (dateFrom === null && dateTo === null && customer != '') {
             quotes = await Quote.find({ customer: customer, creator: req.groupId })
                 .populate('creator', { name: 1, _id: 1 })
-                .populate('customer', { name: 1, _id: 1, email: 1 })
+                .populate('customer')
                 .sort({ number: -1 });
         } else if (customer === '' && dateFrom != null && dateTo != null) {
             quotes = await Quote.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, creator: req.groupId })
                 .populate('creator', { name: 1, _id: 1 })
-                .populate('customer', { name: 1, _id: 1, email: 1 })
+                .populate('customer')
                 .sort({ number: -1 });
         } else if (dateFrom != null && dateTo != null && customer != '') {
             quotes = await Quote.find({ createdAt: { '$gte': dateFrom, '$lte': dateTo }, customer: customer, creator: req.groupId })
                 .populate('creator', { name: 1, _id: 1 })
-                .populate('customer', { name: 1, _id: 1, email: 1 })
+                .populate('customer')
                 .sort({ number: -1 });
         } else {
             quotes = await Quote.find({ creator: req.groupId })
                 .populate('creator', { name: 1, _id: 1 })
-                .populate('customer', { name: 1, _id: 1, email: 1 })
+                .populate('customer')
                 .sort({ number: -1 });
         }
         if (quotes.length < 1) {
@@ -107,7 +107,7 @@ exports.getQuote = async (req, res, next) => {
     try {
         const quote = await Quote.findById(quoteId)
             .populate('creator', { name: 1, _id: 1 })
-            .populate('customer', { name: 1, _id: 1, email: 1 });
+            .populate('customer');
         if (!quote) {
             const error = new Error('No quote found');
             error.statusCode = 404;

@@ -12,7 +12,7 @@ const creditNoteSchema = new Schema({
         ref: 'Contact',
         required: false
     },
-    shippingAddress: {
+    saleLocation: {
         street: {
             type: String,
             default: ''

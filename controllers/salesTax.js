@@ -26,7 +26,8 @@ exports.getSalesTax = async (req, res, next) => {
             error.statusCode = 102;
             throw error;
         }
-        if (req.query.shipToAddressCheckbox === 'false') {
+        if (req.query.shipToAddressCheckbox === 'false' || req.query.customerAddressCheckbox === 'false') {
+            return console.log('1');
             taxjarClient.taxForOrder({
                 from_country: 'US',
                 from_zip: group.companyAddress.zip,
@@ -55,6 +56,8 @@ exports.getSalesTax = async (req, res, next) => {
                 next(err);
             });
         } else {
+            return console.log('2');
+
             taxjarClient.taxForOrder({
                 from_country: 'US',
                 from_zip: group.companyAddress.zip,

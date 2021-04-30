@@ -50,7 +50,7 @@ exports.getPayment = async (req, res, next) => {
     try {
         const payment = await Payment.findOne({
             _id: paymentId
-        }).populate('creator', { name: 1, _id: 1 });
+        }).populate('creator', { name: 1, _id: 1 }).populate('contact').populate('account');
         if (!payment) {
             const error = new Error('No payment found');
             error.statusCode = 404;

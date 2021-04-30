@@ -27,7 +27,7 @@ exports.getCreditNotes = async (req, res, next) => {
         }).countDocuments();
         const creditNotes = await CreditNote.find({ creator: req.groupId })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('contact', { name: 1, email: 1, _id: 1 })
+            .populate('contact',)
             .sort({ number: -1 });
 
         if (totalCreditNotes === 0) {
@@ -60,7 +60,7 @@ exports.getCreditNotesByContact = async (req, res, next) => {
             $or: [{ status: 'Partially Paid' }, { status: 'Unpaid' }]
         })
             .populate('creator', { name: 1, _id: 1 })
-            .populate('contact', { name: 1, email: 1, _id: 1 })
+            .populate('contact')
             .sort({ number: -1 });
 
         if (totalCreditNotes === 0) {
@@ -85,7 +85,7 @@ exports.getCreditNote = async (req, res, next) => {
     try {
         const creditNote = await CreditNote.findById(creditNoteId)
             .populate('creator', { name: 1, _id: 1 })
-            .populate('contact', { name: 1, _id: 1, email: 1 });
+            .populate('contact');
         if (!creditNote) {
             const error = new Error('No creditNote found');
             error.statusCode = 404;
@@ -161,7 +161,7 @@ exports.addCreditNote = async (req, res, next) => {
             contact.type = 'All';
         }
         if (req.body.shipToAddressCheckbox) {
-            creditNote.shippingAddress = req.body.creditNote.shippingAddress;
+            creditNote.saleLocation = req.body.creditNote.saleLocation;
         }
         contact.totalDebt -= Math.round((creditNote.total + Number.EPSILON) * 100) / 100;
         if (contact.totalDebt > 0) {
