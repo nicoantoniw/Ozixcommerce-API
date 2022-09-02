@@ -7,7 +7,7 @@ const WebsiteUser = require('../models/websiteUser');
 const Product = require('../models/product');
 const Quote = require('../models/quote');
 
-AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
+AWS.config.loadFromPath('../config.json');
 
 exports.getWebsiteUser = async (req, res, next) => {
     try {
