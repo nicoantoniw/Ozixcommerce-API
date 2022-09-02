@@ -14,11 +14,7 @@ const Group = require('../models/group');
 const Account = require('../models/account');
 const Notification = require('../models/notification');
 
-AWS.config.update({
-    region: 'us-east-1',
-    accessKeyId: 'AKIAJFUT6AOGGD44UV7Q',
-    secretAccessKey: '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'
-});
+AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
 
 exports.getDebitNotes = async (req, res, next) => {
     try {

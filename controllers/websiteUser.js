@@ -7,11 +7,7 @@ const WebsiteUser = require('../models/websiteUser');
 const Product = require('../models/product');
 const Quote = require('../models/quote');
 
-AWS.config.update({
-    region: 'us-east-1',
-    accessKeyId: 'AKIAIO7VWTQE6SOGBPCA',
-    secretAccessKey: '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'
-});
+AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
 
 exports.getWebsiteUser = async (req, res, next) => {
     try {
@@ -452,6 +448,7 @@ exports.sendEmail = (req, res, next) => {
             sender
         ],
     };
+
 
     const sendPromise = new AWS.SES({ apiVersion: '2010-12-01' }).sendEmail(params).promise();
 

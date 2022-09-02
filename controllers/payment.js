@@ -13,11 +13,7 @@ const Bill = require('../models/bill');
 const Account = require('../models/account');
 const Group = require('../models/group');
 
-AWS.config.update({
-    region: 'us-east-1',
-    accessKeyId: 'AKIAJFUT6AOGGD44UV7Q',
-    secretAccessKey: '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'
-});
+AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
 
 exports.getPayments = async (req, res, next) => {
     try {
