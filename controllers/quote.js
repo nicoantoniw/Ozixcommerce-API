@@ -12,7 +12,8 @@ const Product = require('../models/product');
 const Group = require('../models/group');
 const Account = require('../models/account');
 
-AWS.config.loadFromPath('../config.json');
+const relativePath = path.join(__dirname, '..', 'config.json');
+AWS.config.loadFromPath(relativePath);
 
 exports.getQuotes = async (req, res, next) => {
     try {
