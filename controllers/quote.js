@@ -12,7 +12,7 @@ const Product = require('../models/product');
 const Group = require('../models/group');
 const Account = require('../models/account');
 
-AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
+AWS.config.loadFromPath('../config.json');
 
 exports.getQuotes = async (req, res, next) => {
     try {

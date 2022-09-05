@@ -13,7 +13,7 @@ const Bill = require('../models/bill');
 const Account = require('../models/account');
 const Group = require('../models/group');
 
-AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
+AWS.config.loadFromPath('../config.json');
 
 exports.getPayments = async (req, res, next) => {
     try {

@@ -14,7 +14,7 @@ const Group = require('../models/group');
 const Account = require('../models/account');
 const Notification = require('../models/notification');
 
-AWS.config.loadFromPath('/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/config.json');
+AWS.config.loadFromPath('../config.json');
 
 exports.getExpenses = async (req, res, next) => {
     try {
