@@ -2,6 +2,7 @@ const path = require('path');
 
 const bodyParser = require('body-parser');
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
 const multer = require('multer');
@@ -48,7 +49,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'None');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
     'Access-Control-Allow-Methods',
     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
@@ -57,6 +58,8 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Expose-Headers', 'Authorization');
   next();
 });
+
+app.use(cors());
 
 app.use(
   multer({ storage: storage }).single('file')
