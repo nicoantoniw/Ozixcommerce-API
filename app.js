@@ -48,7 +48,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://nicolasantoniw.me');
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
   res.setHeader(
     'Access-Control-Allow-Methods',
     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
