@@ -66,6 +66,8 @@ app.use((req, res, next) => {
   // Set custom headers for CORS
   res.header("Access-Control-Allow-Headers", "Content-type,Accept,X-Custom-Header");
 
+  console.log(req.method);
+
   if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
