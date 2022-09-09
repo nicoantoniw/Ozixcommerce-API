@@ -49,7 +49,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // app.use((req, res, next) => {
-//   res.setHeader('Access-Control-Allow-Origin', '*');
+//   res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
 //   res.setHeader(
 //     'Access-Control-Allow-Methods',
 //     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
@@ -59,12 +59,20 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 //   next();
 // });
 
-app.use(cors({
-  credentials: true,
-  preflightContinue: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  origin: true
-}));
+app.use((req, res, next) => {
+  // CORS headers
+  res.header("Access-Control-Allow-Origin", "https://www.nicolasantoniw.me"); // restrict it to the required domain
+  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
+  // Set custom headers for CORS
+  res.header("Access-Control-Allow-Headers", "Content-type,Accept,X-Custom-Header");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
 
 app.use(
   multer({ storage: storage }).single('file')
