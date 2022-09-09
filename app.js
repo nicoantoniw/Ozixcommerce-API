@@ -48,27 +48,22 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-// app.use((req, res, next) => {
-//   res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
-//   res.setHeader(
-//     'Access-Control-Allow-Methods',
-//     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
-//   );
-//   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-//   res.setHeader('Access-Control-Expose-Headers', 'Authorization');
-//   next();
-// });
 
 app.use((req, res, next) => {
-  // CORS headers
-  res.header("Access-Control-Allow-Origin", "https://www.nicolasantoniw.me"); // restrict it to the required domain
-  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
+  res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'OPTIONS, GET, POST, PUT, PATCH, DELETE'
+  );
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Authorization');
+
   // Set custom headers for CORS
   res.header("Access-Control-Allow-Headers", "Content-type,Accept,X-Custom-Header");
 
   console.log(req.method);
 
-  if (req.method === "OPTIONS") {
+  if (req.method == "OPTIONS") {
     return res.status(200).end();
   }
 
