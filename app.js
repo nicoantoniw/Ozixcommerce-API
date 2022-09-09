@@ -48,18 +48,23 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-// app.use((req, res, next) => {
-//   res.setHeader('Access-Control-Allow-Origin', '*');
-//   res.setHeader(
-//     'Access-Control-Allow-Methods',
-//     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
-//   );
-//   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-//   res.setHeader('Access-Control-Expose-Headers', 'Authorization');
-//   next();
-// });
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'OPTIONS, GET, POST, PUT, PATCH, DELETE'
+  );
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Expose-Headers', 'Authorization');
 
-app.use(cors({ origin: true, credentials: true }));
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
+// app.use(cors({ origin: true, credentials: true }));
 
 app.use(
   multer({ storage: storage }).single('file')
