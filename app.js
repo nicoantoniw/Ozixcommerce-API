@@ -49,7 +49,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 
-// res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
 app.use((req, res, next) => {
   res.setHeader(
     'Access-Control-Allow-Methods',
@@ -62,7 +61,7 @@ app.use((req, res, next) => {
   if (req.method == "OPTIONS") {
     res.header('Access-Control-Allow-Origin', req.headers.origin);
   } else {
-    res.header('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
   }
 
   next();
