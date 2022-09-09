@@ -1,3 +1,5 @@
+const path = require('path');
+
 const { validationResult } = require('express-validator');
 const AWS = require('aws-sdk');
 const bcrypt = require('bcryptjs');
