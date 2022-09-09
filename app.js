@@ -57,6 +57,7 @@ app.use((req, res, next) => {
   );
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Expose-Headers', 'Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', true);
 
   // Set custom headers for CORS
   // res.header("Access-Control-Allow-Headers", "Content-type,Accept,X-Custom-Header");
