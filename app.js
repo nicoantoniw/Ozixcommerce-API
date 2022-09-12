@@ -61,7 +61,7 @@ app.use((req, res, next) => {
   if (req.method == "OPTIONS") {
     res.header('Access-Control-Allow-Origin', req.headers.origin);
   } else {
-    res.setHeader('Access-Control-Allow-Origin', 'https://www.nicolasantoniw.me');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
   next();
