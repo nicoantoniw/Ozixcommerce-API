@@ -50,19 +50,20 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 
 app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
     'Access-Control-Allow-Methods',
     'OPTIONS, GET, POST, PUT, PATCH, DELETE'
   );
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Expose-Headers', 'Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // res.setHeader('Access-Control-Expose-Headers', 'Authorization');
 
 
-  if (req.method == "OPTIONS") {
-    res.header('Access-Control-Allow-Origin', req.headers.origin);
-  } else {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  }
+  // if (req.method == "OPTIONS") {
+  //   res.header('Access-Control-Allow-Origin', req.headers.origin);
+  // } else {
+  //   res.setHeader('Access-Control-Allow-Origin', '*');
+  // }
 
   next();
 });
