@@ -14,7 +14,7 @@ const Account = require('../models/account');
 const Group = require('../models/group');
 
 const relativePath = path.join(__dirname, '..', 'config.json');
-AWS.config.loadFromPath(relativePath);
+// AWS.config.loadFromPath(relativePath);
 
 exports.getPayments = async (req, res, next) => {
     try {

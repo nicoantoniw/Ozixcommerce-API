@@ -10,7 +10,7 @@ const Product = require('../models/product');
 const Quote = require('../models/quote');
 
 const relativePath = path.join(__dirname, '..', 'config.json');
-AWS.config.loadFromPath(relativePath);
+// AWS.config.loadFromPath(relativePath);
 
 exports.getWebsiteUser = async (req, res, next) => {
     try {

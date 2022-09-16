@@ -108,51 +108,51 @@ exports.updateBusinessInfo = async (req, res, next) => {
 };
 
 exports.addLogo = async (req, res, next) => {
-    const groupId = req.groupId;
-    let data;
-    const s3 = new aws.S3({
-        accessKeyId: 'AKIAUEN42P7LBOUCJDJF',
-        secretAccessKey: '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',
-        Bucket: 'ozixcommerce.com-images'
-    });
-    const ext = req.file.originalname.split('.').pop();
-    // const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
-    const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
-    if (ext === 'jpg') {
-        ext2 = 'jpeg';
-    } else {
-        ext2 = 'png';
-    }
-    const params = {
-        Bucket: 'ozixcommerce.com-images',
-        acl: 'public-read',
-        Key: `${Date.now()}-${req.file.originalname}`,
-        Body: file,
-        ContentType: `image/${ext2}`
-    };
-    try {
-        const group = await Group.findById(groupId);
-        s3.upload(params, (err, data) => {
-            if (err) {
-                throw err;
-            }
-            group.logo = {
-                url: data.Location,
-                key: data.Key
-            };
-            group.hasLogo = true;
-            group.save().then(success => {
-                // fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
-                fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
-                res.status(200).json({
-                    message: 'Logo uploaded'
-                });
-            }).catch(err => console.log(err));
-        });
-    } catch (error) {
-        if (!error.statusCode) {
-            error.statusCode = 500;
-        }
-        next(error);
-    }
+    // const groupId = req.groupId;
+    // let data;
+    // const s3 = new aws.S3({
+    //     accessKeyId: 'AKIAUEN42P7LBOUCJDJF',
+    //     secretAccessKey: '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',
+    //     Bucket: 'ozixcommerce.com-images'
+    // });
+    // const ext = req.file.originalname.split('.').pop();
+    // // const file = fs.readFileSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+    // const file = fs.readFileSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
+    // if (ext === 'jpg') {
+    //     ext2 = 'jpeg';
+    // } else {
+    //     ext2 = 'png';
+    // }
+    // const params = {
+    //     Bucket: 'ozixcommerce.com-images',
+    //     acl: 'public-read',
+    //     Key: `${Date.now()}-${req.file.originalname}`,
+    //     Body: file,
+    //     ContentType: `image/${ext2}`
+    // };
+    // try {
+    //     const group = await Group.findById(groupId);
+    //     s3.upload(params, (err, data) => {
+    //         if (err) {
+    //             throw err;
+    //         }
+    //         group.logo = {
+    //             url: data.Location,
+    //             key: data.Key
+    //         };
+    //         group.hasLogo = true;
+    //         group.save().then(success => {
+    //             // fs.unlinkSync(`/home/ubuntu/apps/Ozixcommerce-API/assets/file.${ext}`);
+    //             fs.unlinkSync(`/home/nicolas/Documents/dev/Projects/Ozix/Ozixcommerce/app/api/assets/file.${ext}`);
+    //             res.status(200).json({
+    //                 message: 'Logo uploaded'
+    //             });
+    //         }).catch(err => console.log(err));
+    //     });
+    // } catch (error) {
+    //     if (!error.statusCode) {
+    //         error.statusCode = 500;
+    //     }
+    //     next(error);
+    // }
 };

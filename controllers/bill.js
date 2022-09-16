@@ -14,7 +14,7 @@ const Account = require('../models/account');
 const Notification = require('../models/notification');
 
 const relativePath = path.join(__dirname, '..', 'config.json');
-AWS.config.loadFromPath(relativePath);
+// AWS.config.loadFromPath(relativePath);
 
 exports.getBills = async (req, res, next) => {
     try {
