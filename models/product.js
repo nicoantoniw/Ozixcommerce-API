@@ -82,7 +82,7 @@ const productSchema = new Schema({
   salesAccount: {
     type: Schema.Types.ObjectId,
     ref: 'Account',
-    required: true
+    required: false
   },
   costOfGoodsAccount: {
     type: Schema.Types.ObjectId,

@@ -70,9 +70,9 @@ exports.updateWebsiteUser = async (req, res, next) => {
 exports.getProductsPerfumeriaLiliana = async (req, res, next) => {
     try {
         const totalItems = await Product.find({
-            creator: '5ea9c4a058eb5371b70d4dc6'
+            creator: '63235472f886f749fc21806c'
         }).countDocuments();
-        const products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6' })
+        const products = await Product.find({ creator: '63235472f886f749fc21806c' })
             .populate('category', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 })
             .sort({ createdAt: -1 });
@@ -99,7 +99,7 @@ exports.getProductPerfumeriaLiliana = async (req, res, next) => {
     const sku = req.params.sku;
     try {
         const product = await Product.findOne({
-            _id: productId, creator: '5ea9c4a058eb5371b70d4dc6'
+            _id: productId, creator: '63235472f886f749fc21806c'
         })
             .populate('category', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 });

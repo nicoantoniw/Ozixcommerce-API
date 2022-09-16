@@ -134,7 +134,7 @@ exports.websiteLogin = async (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   try {
-    if (email === 'liliana') {
+    if (email === 'perfumeria') {
       const user = await User.findOne({ username: email });
       if (!user) {
         const error = new Error('User not found');
@@ -207,7 +207,7 @@ exports.websiteLogin = async (req, res, next) => {
 };
 exports.websiteSignup = async (req, res, next) => {
   const email = req.body.email;
-  const groupId = '5eb9d8dcdb624f0a8b7822cb';
+  const groupId = '5f288a5ec01d7f3971a2952b';
   const password = req.body.password;
   const name = req.body.name;
   const surname = req.body.surname;
@@ -219,11 +219,11 @@ exports.websiteSignup = async (req, res, next) => {
   const zip = req.body.zip;
   let regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   const result = regex.test(email);
-  if (!result) {
-    const error = new Error('Email incorrect');
-    error.statusCode = 422;
-    next(error);
-  }
+  // if (!result) {
+  //   const error = new Error('Email incorrect');
+  //   error.statusCode = 422;
+  //   next(error);
+  // }
   try {
     const websiteUser = await WebsiteUser.findOne({ email: email });
     if (websiteUser) {
@@ -254,7 +254,7 @@ exports.websiteSignup = async (req, res, next) => {
 
     const contact = new Contact({
       name: `${name} ${surname}`,
-      type: 'customer',
+      type: 'Customer',
       description: 'Cliente de pagina web',
       numberId: id,
       address: `${address} ${province} ${city} ${zip}`,

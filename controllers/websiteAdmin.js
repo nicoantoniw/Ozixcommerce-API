@@ -7,13 +7,12 @@ const Category = require('../models/category');
 exports.getWebsiteProducts = async (req, res, next) => {
     try {
         const totalItems = await Product.find({
-            creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1
+            creator: '63235472f886f749fc21806c', websiteStatus: 1
         }).countDocuments();
-        const products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1 })
+        const products = await Product.find({ creator: '63235472f886f749fc21806c', websiteStatus: 1 })
             .populate('category', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 });
         // .sort({ sellingPrice: -1 });
-
         if (totalItems === 0) {
             const error = new Error('No products found');
             error.statusCode = 404;
@@ -37,24 +36,24 @@ exports.getCategoryProducts = async (req, res, next) => {
     const pagination = req.query.pagination;
     let products;
     try {
-        const category = await Category.findOne({ name: req.params.category });
+        const category = await Category.findOne({ name: 'category' });
         const totalItems = await Product.find({
-            creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1, category: category._id
+            creator: '63235472f886f749fc21806c', websiteStatus: 1, category: category._id
         }).countDocuments();
         if (pagination) {
-            products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1, category: category._id })
+            products = await Product.find({ creator: '63235472f886f749fc21806c', websiteStatus: 1, category: category._id })
                 .populate('category', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .sort({ createdAt: 1 });
         }
         else if (sort == 0) {
-            products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1, category: category._id })
+            products = await Product.find({ creator: '63235472f886f749fc21806c', websiteStatus: 1, category: category._id })
                 .populate('category', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .limit(6).skip(skip)
                 .sort({ createdAt: 1 });
         } else {
-            products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websiteStatus: 1, category: category._id })
+            products = await Product.find({ creator: '63235472f886f749fc21806c', websiteStatus: 1, category: category._id })
                 .populate('category', { name: 1, _id: 1 })
                 .populate('creator', { name: 1, _id: 1 })
                 .limit(6).skip(skip)
@@ -80,9 +79,9 @@ exports.getCategoryProducts = async (req, res, next) => {
 exports.getFeaturedProducts = async (req, res, next) => {
     try {
         const totalItems = await Product.find({
-            creator: '5ea9c4a058eb5371b70d4dc6', websiteFeaturedStatus: 1
+            creator: '63235472f886f749fc21806c', websiteFeaturedStatus: 1
         }).countDocuments();
-        const products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websiteFeaturedStatus: 1 })
+        const products = await Product.find({ creator: '63235472f886f749fc21806c', websiteFeaturedStatus: 1 })
             .populate('category', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 })
             .sort({ createdAt: -1 });
@@ -107,9 +106,9 @@ exports.getFeaturedProducts = async (req, res, next) => {
 exports.getPromotionProducts = async (req, res, next) => {
     try {
         const totalItems = await Product.find({
-            creator: '5ea9c4a058eb5371b70d4dc6', websitePromotionsStatus: 1
+            creator: '63235472f886f749fc21806c', websitePromotionsStatus: 1
         }).countDocuments();
-        const products = await Product.find({ creator: '5ea9c4a058eb5371b70d4dc6', websitePromotionsStatus: 1 })
+        const products = await Product.find({ creator: '63235472f886f749fc21806c', websitePromotionsStatus: 1 })
             .populate('category', { name: 1, _id: 1 })
             .populate('creator', { name: 1, _id: 1 })
             .sort({ createdAt: -1 });
