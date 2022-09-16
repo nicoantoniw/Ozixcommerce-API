@@ -1,2 +1,2 @@
 npm install - to install repositories.
-npm start - to start API on localhost port 3000.
+npm start - to start API on port 3000.
